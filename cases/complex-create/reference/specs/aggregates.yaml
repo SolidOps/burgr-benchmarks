@@ -1,0 +1,74 @@
+burgr-model-version: 1.0.0
+
+aggregate_roots:
+  # ---- #
+  venue:
+    properties:
+      name:
+        is_unique: true
+        field_size: 100
+      address: address
+      capacity: int
+      shows: ->show[]
+    rules:
+      before_remove:
+        - check_no_show
+    api:
+      query:
+      get:
+      add:
+        mandatory_right: ManageVenues
+      update:
+        mandatory_right: ManageVenues
+      remove:
+        mandatory_right: ManageVenues
+
+  # ---- #
+  show:
+    properties:
+      title:
+        field_size: 200
+      starts_at: datetime
+      status: $show_status
+      venue: venue
+      ticket_tiers: ~>ticket_tier[]
+      is_sold_out: =bool
+    dependencies:
+      venue: read
+    rules:
+      before_add:
+        - check_capacity
+      before_update:
+        - check_capacity
+    api:
+      query:
+      get:
+      add:
+        mandatory_right: ManageShows
+      update:
+        mandatory_right: ManageShows
+      remove:
+        mandatory_right: ManageShows
+
+  # ---- #
+  booking:
+    properties:
+      show: show
+      tier:
+        field_size: 50
+      customer_email:
+        field_size: 100
+      quantity: int
+      total_price: decimal
+    api:
+      query:
+        mandatory_right: ManageShows
+      get:
+        mandatory_right: ManageShows
+
+enums:
+  show_status:
+    values:
+      Draft: 0
+      OnSale: 1
+      Cancelled: 2

@@ -1,0 +1,43 @@
+burgr-model-version: 1.0.0
+
+aggregate_roots:
+  supplier:
+    properties:
+      name:
+        is_unique: true
+        field_size: 100
+      email:
+        type: string?
+        field_size: 100
+      products: ->product[]
+    api:
+      query:
+      get:
+      add:
+      update:
+      remove:
+
+  product:
+    properties:
+      sku:
+        is_unique: true
+        field_size: 20
+      name:
+        field_size: 100
+      stock: int
+      reorder_level: int
+      status: $product_status
+      supplier: supplier
+      needs_reorder: =bool
+    api:
+      query:
+      get:
+      add:
+      update:
+      remove:
+
+enums:
+  product_status:
+    values:
+      Active: 0
+      Discontinued: 1

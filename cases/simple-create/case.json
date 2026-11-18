@@ -1,0 +1,10 @@
+{
+  "description": "Create a small CRUD API (2 aggregates, an enum, a reference, a calculated property, validation rules) from scratch.",
+  "templateSet": "mini",
+  "solution": "Warehouse.slnx",
+  "api": "src/Warehouse/Warehouse.csproj",
+  "connectionString": "Warehouse",
+  "judge": "acceptance",
+  "maxTurns": 150,
+  "timeoutMinutes": 45
+}

@@ -1,0 +1,11 @@
+burgr-model-version: 1.0.0
+
+value_objects:
+  address:
+    properties:
+      street:
+        field_size: 100
+      city:
+        field_size: 50
+      postal_code:
+        field_size: 10

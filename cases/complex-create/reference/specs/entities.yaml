@@ -1,0 +1,14 @@
+burgr-model-version: 1.0.0
+
+entities:
+  # ---- #
+  ticket_tier:
+    properties:
+      show: show
+      name:
+        field_size: 50
+      price: decimal
+      quota: int
+      sold:
+        type: int
+        is_readonly: true

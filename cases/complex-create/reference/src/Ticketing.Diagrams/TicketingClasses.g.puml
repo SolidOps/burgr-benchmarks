@@ -1,0 +1,85 @@
+@startuml
+hide empty members
+' Object [AG]
+class Venue <<aggregate root>>
+class Show <<aggregate root>>
+class Booking <<aggregate root>>
+' Object [EN]
+class TicketTier <<entity>>
+' Object [VO]
+class Address <<value object>>
+' Object [AG][EN][VO]
+class Venue {
+    ' Property [S][NO][CA][NAR][PUO]
+    +name: string[100]
+
+    +capacity: number
+
+    ' Rule 
+    +CheckNoShow()
+
+}
+' Property [M][NO][NAR][VO][NN]
+Venue *-- "1" Address : address
+' Property [M][LNA][AG][EN]
+Venue o-- "*" Show : shows
+class Address {
+    ' Property [S][NO][CA][NAR][PUO]
+    +street: string[100]
+
+    +city: string[50]
+
+    +postalCode: string[10]
+
+}
+class Show {
+    ' Property [S][NO][CA][NAR][PUO]
+    +title: string[200]
+
+    +startsAt: string
+
+    +isSoldOut: boolean
+
+    ' Rule 
+    +CheckCapacity()
+
+}
+' Property [E][NO][CA][NAR][PUO]
+Show --> ShowStatus : status
+' Property [M][NO][NAR][AG][EN][NN]
+Show --> "1" Venue : venue
+' Property [M][LNA][AG][EN]
+Show o-- "*" TicketTier : ticketTiers
+class TicketTier {
+    ' Property [S][NO][CA][NAR][PUO]
+    +name: string[50]
+
+    +price: number
+
+    +quota: number
+
+    +sold: number
+
+}
+' Property [M][NO][NAR][AG][EN][NN]
+TicketTier --> "1" Show : show
+class Booking {
+    ' Property [S][NO][CA][NAR][PUO]
+    +tier: string[50]
+
+    +customerEmail: string[100]
+
+    +quantity: number
+
+    +totalPrice: number
+
+}
+' Property [M][NO][NAR][AG][EN][NN]
+Booking --> "1" Show : show
+' Enum 
+enum ShowStatus {
+    Draft = 0,
+OnSale = 1,
+Cancelled = 2
+}
+@enduml

@@ -1,0 +1,25 @@
+burgr-model-version: 1.0.0
+
+services:
+  # ---- #
+  box_office:
+    methods:
+      book:
+        result: booking
+        inputs:
+          request: booking_request
+        api_description:
+          force_post: true
+    dependencies:
+      show:
+      booking:
+
+transients:
+  booking_request:
+    properties:
+      show_id: guid
+      tier:
+        field_size: 50
+      customer_email:
+        field_size: 100
+      quantity: int

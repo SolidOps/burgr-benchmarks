@@ -1,0 +1,11 @@
+{
+  "description": "Create an onion-architecture API (3 aggregates, an entity edited with its parent, a value object, rules, a service, rights, JWT) from scratch.",
+  "templateSet": "onion",
+  "solution": "Ticketing.slnx",
+  "api": "src/Ticketing.Api/Ticketing.Api.csproj",
+  "connectionString": "Ticketing",
+  "jwt": { "key": "burgr-benchmarks-signing-key-0123456789" },
+  "judge": "acceptance",
+  "maxTurns": 300,
+  "timeoutMinutes": 90
+}

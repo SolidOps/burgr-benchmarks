@@ -1,0 +1,6 @@
+{
+  "model": "claude-sonnet-5-5",
+  "claudeCodeVersion": "2.1.327",
+  "dotnetSdkImage": "mcr.microsoft.com/dotnet/sdk:10.0",
+  "runs": 5
+}

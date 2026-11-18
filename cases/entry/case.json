@@ -1,0 +1,10 @@
+{
+  "description": "Answer a question about an existing onion-architecture API without changing it (unfavorable case: the entry cost of the harness).",
+  "templateSet": "onion",
+  "solution": "UM.slnx",
+  "api": "src/UM.Api/UM.Api.csproj",
+  "connectionString": "UM",
+  "judge": "unchanged",
+  "maxTurns": 40,
+  "timeoutMinutes": 15
+}

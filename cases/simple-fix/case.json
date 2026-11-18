@@ -1,0 +1,10 @@
+{
+  "description": "Fix a one-character bug in a calculated property of an existing small API (unfavorable case: nothing to generate).",
+  "templateSet": "mini",
+  "solution": "Library.slnx",
+  "api": "src/Library/Library.csproj",
+  "connectionString": "Library",
+  "judge": "acceptance",
+  "maxTurns": 60,
+  "timeoutMinutes": 20
+}

@@ -1,0 +1,11 @@
+{
+  "description": "Add an aggregate with synchronized children, two rules and a right to an existing onion-architecture API.",
+  "templateSet": "onion",
+  "solution": "UM.slnx",
+  "api": "src/UM.Api/UM.Api.csproj",
+  "connectionString": "UM",
+  "jwt": { "key": "burgr-benchmarks-signing-key-0123456789", "issuer": "um" },
+  "judge": "acceptance",
+  "maxTurns": 200,
+  "timeoutMinutes": 60
+}
