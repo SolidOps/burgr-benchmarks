@@ -1,0 +1,517 @@
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (22ms) [Parameters=[], CommandType='Text', CommandTimeout='30']
+      PRAGMA journal_mode = 'wal';
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (0ms) [Parameters=[], CommandType='Text', CommandTimeout='30']
+      CREATE TABLE "Authors" (
+          "Id" TEXT NOT NULL CONSTRAINT "PK_Authors" PRIMARY KEY,
+          "Name" TEXT NOT NULL,
+          "Biography" TEXT NULL
+      );
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (0ms) [Parameters=[], CommandType='Text', CommandTimeout='30']
+      CREATE TABLE "Books" (
+          "Id" TEXT NOT NULL CONSTRAINT "PK_Books" PRIMARY KEY,
+          "Title" TEXT NOT NULL,
+          "Isbn" TEXT NOT NULL,
+          "Copies" INTEGER NOT NULL,
+          "Status" TEXT NOT NULL,
+          "AuthorId" TEXT NOT NULL,
+          CONSTRAINT "FK_Books_Authors_AuthorId" FOREIGN KEY ("AuthorId") REFERENCES "Authors" ("Id") ON DELETE CASCADE
+      );
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (0ms) [Parameters=[], CommandType='Text', CommandTimeout='30']
+      CREATE UNIQUE INDEX "IX_Authors_Name" ON "Authors" ("Name");
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (0ms) [Parameters=[], CommandType='Text', CommandTimeout='30']
+      CREATE INDEX "IX_Books_AuthorId" ON "Books" ("AuthorId");
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (0ms) [Parameters=[], CommandType='Text', CommandTimeout='30']
+      CREATE UNIQUE INDEX "IX_Books_Isbn" ON "Books" ("Isbn");
+warn: Microsoft.AspNetCore.Hosting.Diagnostics[15]
+      Overriding HTTP_PORTS '8080' and HTTPS_PORTS ''. Binding to values defined by URLS instead 'http://127.0.0.1:5080'.
+info: Microsoft.Hosting.Lifetime[14]
+      Now listening on: http://127.0.0.1:5080
+info: Microsoft.Hosting.Lifetime[0]
+      Application started. Press Ctrl+C to shut down.
+info: Microsoft.Hosting.Lifetime[0]
+      Hosting environment: Production
+info: Microsoft.Hosting.Lifetime[0]
+      Content root path: /work/src/Library
+info: Microsoft.AspNetCore.Hosting.Diagnostics[1]
+      Request starting HTTP/1.1 GET http://127.0.0.1:5080/ - - -
+info: Microsoft.AspNetCore.Hosting.Diagnostics[2]
+      Request finished HTTP/1.1 GET http://127.0.0.1:5080/ - 404 0 - 69.7354ms
+info: Microsoft.AspNetCore.Hosting.Diagnostics[16]
+      Request reached the end of the middleware pipeline without being handled by application code. Request path: GET http://127.0.0.1:5080/, Response status code: 404
+info: Microsoft.AspNetCore.Hosting.Diagnostics[1]
+      Request starting HTTP/1.1 POST http://127.0.0.1:5080/authors - application/json;+charset=utf-8 -
+info: Microsoft.AspNetCore.Routing.EndpointMiddleware[0]
+      Executing endpoint 'HTTP: POST /authors/'
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (20ms) [Parameters=[@p0='?' (DbType = Guid), @p1='?', @p2='?' (Size = 39)], CommandType='Text', CommandTimeout='30']
+      INSERT INTO "Authors" ("Id", "Biography", "Name")
+      VALUES (@p0, @p1, @p2);
+info: Microsoft.AspNetCore.Http.Result.CreatedResult[1]
+      Setting HTTP status code 201.
+info: Microsoft.AspNetCore.Http.Result.CreatedResult[3]
+      Writing value of type 'AuthorDto' as Json.
+info: Microsoft.AspNetCore.Routing.EndpointMiddleware[1]
+      Executed endpoint 'HTTP: POST /authors/'
+info: Microsoft.AspNetCore.Hosting.Diagnostics[2]
+      Request finished HTTP/1.1 POST http://127.0.0.1:5080/authors - 201 - application/json;+charset=utf-8 162.2036ms
+info: Microsoft.AspNetCore.Hosting.Diagnostics[1]
+      Request starting HTTP/1.1 POST http://127.0.0.1:5080/books - application/json;+charset=utf-8 -
+info: Microsoft.AspNetCore.Routing.EndpointMiddleware[0]
+      Executing endpoint 'HTTP: POST /books/'
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (0ms) [Parameters=[@input_AuthorId='?' (DbType = Guid)], CommandType='Text', CommandTimeout='30']
+      SELECT EXISTS (
+          SELECT 1
+          FROM "Authors" AS "a"
+          WHERE "a"."Id" = @input_AuthorId)
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (4ms) [Parameters=[@p0='?' (DbType = Guid), @p1='?' (DbType = Guid), @p2='?' (DbType = Int32), @p3='?' (Size = 20), @p4='?' (Size = 9), @p5='?' (Size = 7)], CommandType='Text', CommandTimeout='30']
+      INSERT INTO "Books" ("Id", "AuthorId", "Copies", "Isbn", "Status", "Title")
+      VALUES (@p0, @p1, @p2, @p3, @p4, @p5);
+info: Microsoft.AspNetCore.Http.Result.CreatedResult[1]
+      Setting HTTP status code 201.
+info: Microsoft.AspNetCore.Http.Result.CreatedResult[3]
+      Writing value of type 'BookDto' as Json.
+info: Microsoft.AspNetCore.Routing.EndpointMiddleware[1]
+      Executed endpoint 'HTTP: POST /books/'
+info: Microsoft.AspNetCore.Hosting.Diagnostics[2]
+      Request finished HTTP/1.1 POST http://127.0.0.1:5080/books - 201 - application/json;+charset=utf-8 220.9060ms
+info: Microsoft.AspNetCore.Hosting.Diagnostics[1]
+      Request starting HTTP/1.1 GET http://127.0.0.1:5080/books/9298d82a-b90a-4246-b210-093b9e4cecec - - -
+info: Microsoft.AspNetCore.Routing.EndpointMiddleware[0]
+      Executing endpoint 'HTTP: GET /books/{id}'
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (0ms) [Parameters=[@id='?' (DbType = Guid)], CommandType='Text', CommandTimeout='30']
+      SELECT "b"."Id", "b"."AuthorId", "b"."Copies", "b"."Isbn", "b"."Status", "b"."Title"
+      FROM "Books" AS "b"
+      WHERE "b"."Id" = @id
+      LIMIT 1
+info: Microsoft.AspNetCore.Http.Result.OkObjectResult[1]
+      Setting HTTP status code 200.
+info: Microsoft.AspNetCore.Http.Result.OkObjectResult[3]
+      Writing value of type 'BookDto' as Json.
+info: Microsoft.AspNetCore.Routing.EndpointMiddleware[1]
+      Executed endpoint 'HTTP: GET /books/{id}'
+info: Microsoft.AspNetCore.Hosting.Diagnostics[2]
+      Request finished HTTP/1.1 GET http://127.0.0.1:5080/books/9298d82a-b90a-4246-b210-093b9e4cecec - 200 - application/json;+charset=utf-8 38.3566ms
+info: Microsoft.AspNetCore.Hosting.Diagnostics[1]
+      Request starting HTTP/1.1 POST http://127.0.0.1:5080/authors - application/json;+charset=utf-8 -
+info: Microsoft.AspNetCore.Routing.EndpointMiddleware[0]
+      Executing endpoint 'HTTP: POST /authors/'
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (4ms) [Parameters=[@p0='?' (DbType = Guid), @p1='?', @p2='?' (Size = 39)], CommandType='Text', CommandTimeout='30']
+      INSERT INTO "Authors" ("Id", "Biography", "Name")
+      VALUES (@p0, @p1, @p2);
+info: Microsoft.AspNetCore.Http.Result.CreatedResult[1]
+      Setting HTTP status code 201.
+info: Microsoft.AspNetCore.Http.Result.CreatedResult[3]
+      Writing value of type 'AuthorDto' as Json.
+info: Microsoft.AspNetCore.Routing.EndpointMiddleware[1]
+      Executed endpoint 'HTTP: POST /authors/'
+info: Microsoft.AspNetCore.Hosting.Diagnostics[2]
+      Request finished HTTP/1.1 POST http://127.0.0.1:5080/authors - 201 - application/json;+charset=utf-8 5.5297ms
+info: Microsoft.AspNetCore.Hosting.Diagnostics[1]
+      Request starting HTTP/1.1 POST http://127.0.0.1:5080/books - application/json;+charset=utf-8 -
+info: Microsoft.AspNetCore.Routing.EndpointMiddleware[0]
+      Executing endpoint 'HTTP: POST /books/'
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (0ms) [Parameters=[@input_AuthorId='?' (DbType = Guid)], CommandType='Text', CommandTimeout='30']
+      SELECT EXISTS (
+          SELECT 1
+          FROM "Authors" AS "a"
+          WHERE "a"."Id" = @input_AuthorId)
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (2ms) [Parameters=[@p0='?' (DbType = Guid), @p1='?' (DbType = Guid), @p2='?' (DbType = Int32), @p3='?' (Size = 20), @p4='?' (Size = 9), @p5='?' (Size = 7)], CommandType='Text', CommandTimeout='30']
+      INSERT INTO "Books" ("Id", "AuthorId", "Copies", "Isbn", "Status", "Title")
+      VALUES (@p0, @p1, @p2, @p3, @p4, @p5);
+info: Microsoft.AspNetCore.Http.Result.CreatedResult[1]
+      Setting HTTP status code 201.
+info: Microsoft.AspNetCore.Http.Result.CreatedResult[3]
+      Writing value of type 'BookDto' as Json.
+info: Microsoft.AspNetCore.Routing.EndpointMiddleware[1]
+      Executed endpoint 'HTTP: POST /books/'
+info: Microsoft.AspNetCore.Hosting.Diagnostics[2]
+      Request finished HTTP/1.1 POST http://127.0.0.1:5080/books - 201 - application/json;+charset=utf-8 5.5760ms
+info: Microsoft.AspNetCore.Hosting.Diagnostics[1]
+      Request starting HTTP/1.1 GET http://127.0.0.1:5080/books/97801ed0-347e-4f56-980c-68377340cc1d - - -
+info: Microsoft.AspNetCore.Routing.EndpointMiddleware[0]
+      Executing endpoint 'HTTP: GET /books/{id}'
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (0ms) [Parameters=[@id='?' (DbType = Guid)], CommandType='Text', CommandTimeout='30']
+      SELECT "b"."Id", "b"."AuthorId", "b"."Copies", "b"."Isbn", "b"."Status", "b"."Title"
+      FROM "Books" AS "b"
+      WHERE "b"."Id" = @id
+      LIMIT 1
+info: Microsoft.AspNetCore.Http.Result.OkObjectResult[1]
+      Setting HTTP status code 200.
+info: Microsoft.AspNetCore.Http.Result.OkObjectResult[3]
+      Writing value of type 'BookDto' as Json.
+info: Microsoft.AspNetCore.Routing.EndpointMiddleware[1]
+      Executed endpoint 'HTTP: GET /books/{id}'
+info: Microsoft.AspNetCore.Hosting.Diagnostics[2]
+      Request finished HTTP/1.1 GET http://127.0.0.1:5080/books/97801ed0-347e-4f56-980c-68377340cc1d - 200 - application/json;+charset=utf-8 0.8948ms
+info: Microsoft.AspNetCore.Hosting.Diagnostics[1]
+      Request starting HTTP/1.1 POST http://127.0.0.1:5080/authors - application/json;+charset=utf-8 -
+info: Microsoft.AspNetCore.Routing.EndpointMiddleware[0]
+      Executing endpoint 'HTTP: POST /authors/'
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (4ms) [Parameters=[@p0='?' (DbType = Guid), @p1='?', @p2='?' (Size = 39)], CommandType='Text', CommandTimeout='30']
+      INSERT INTO "Authors" ("Id", "Biography", "Name")
+      VALUES (@p0, @p1, @p2);
+info: Microsoft.AspNetCore.Http.Result.CreatedResult[1]
+      Setting HTTP status code 201.
+info: Microsoft.AspNetCore.Http.Result.CreatedResult[3]
+      Writing value of type 'AuthorDto' as Json.
+info: Microsoft.AspNetCore.Routing.EndpointMiddleware[1]
+      Executed endpoint 'HTTP: POST /authors/'
+info: Microsoft.AspNetCore.Hosting.Diagnostics[2]
+      Request finished HTTP/1.1 POST http://127.0.0.1:5080/authors - 201 - application/json;+charset=utf-8 6.3958ms
+info: Microsoft.AspNetCore.Hosting.Diagnostics[1]
+      Request starting HTTP/1.1 POST http://127.0.0.1:5080/books - application/json;+charset=utf-8 -
+info: Microsoft.AspNetCore.Routing.EndpointMiddleware[0]
+      Executing endpoint 'HTTP: POST /books/'
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (0ms) [Parameters=[@input_AuthorId='?' (DbType = Guid)], CommandType='Text', CommandTimeout='30']
+      SELECT EXISTS (
+          SELECT 1
+          FROM "Authors" AS "a"
+          WHERE "a"."Id" = @input_AuthorId)
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (2ms) [Parameters=[@p0='?' (DbType = Guid), @p1='?' (DbType = Guid), @p2='?' (DbType = Int32), @p3='?' (Size = 20), @p4='?' (Size = 5), @p5='?' (Size = 7)], CommandType='Text', CommandTimeout='30']
+      INSERT INTO "Books" ("Id", "AuthorId", "Copies", "Isbn", "Status", "Title")
+      VALUES (@p0, @p1, @p2, @p3, @p4, @p5);
+info: Microsoft.AspNetCore.Http.Result.CreatedResult[1]
+      Setting HTTP status code 201.
+info: Microsoft.AspNetCore.Http.Result.CreatedResult[3]
+      Writing value of type 'BookDto' as Json.
+info: Microsoft.AspNetCore.Routing.EndpointMiddleware[1]
+      Executed endpoint 'HTTP: POST /books/'
+info: Microsoft.AspNetCore.Hosting.Diagnostics[2]
+      Request finished HTTP/1.1 POST http://127.0.0.1:5080/books - 201 - application/json;+charset=utf-8 4.3703ms
+info: Microsoft.AspNetCore.Hosting.Diagnostics[1]
+      Request starting HTTP/1.1 GET http://127.0.0.1:5080/books/cd2a0e0b-6e07-4fd5-99fa-abb26d9815b7 - - -
+info: Microsoft.AspNetCore.Routing.EndpointMiddleware[0]
+      Executing endpoint 'HTTP: GET /books/{id}'
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (0ms) [Parameters=[@id='?' (DbType = Guid)], CommandType='Text', CommandTimeout='30']
+      SELECT "b"."Id", "b"."AuthorId", "b"."Copies", "b"."Isbn", "b"."Status", "b"."Title"
+      FROM "Books" AS "b"
+      WHERE "b"."Id" = @id
+      LIMIT 1
+info: Microsoft.AspNetCore.Http.Result.OkObjectResult[1]
+      Setting HTTP status code 200.
+info: Microsoft.AspNetCore.Http.Result.OkObjectResult[3]
+      Writing value of type 'BookDto' as Json.
+info: Microsoft.AspNetCore.Routing.EndpointMiddleware[1]
+      Executed endpoint 'HTTP: GET /books/{id}'
+info: Microsoft.AspNetCore.Hosting.Diagnostics[2]
+      Request finished HTTP/1.1 GET http://127.0.0.1:5080/books/cd2a0e0b-6e07-4fd5-99fa-abb26d9815b7 - 200 - application/json;+charset=utf-8 0.8389ms
+info: Microsoft.AspNetCore.Hosting.Diagnostics[1]
+      Request starting HTTP/1.1 POST http://127.0.0.1:5080/authors - application/json;+charset=utf-8 -
+info: Microsoft.AspNetCore.Routing.EndpointMiddleware[0]
+      Executing endpoint 'HTTP: POST /authors/'
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (2ms) [Parameters=[@p0='?' (DbType = Guid), @p1='?', @p2='?' (Size = 39)], CommandType='Text', CommandTimeout='30']
+      INSERT INTO "Authors" ("Id", "Biography", "Name")
+      VALUES (@p0, @p1, @p2);
+info: Microsoft.AspNetCore.Http.Result.CreatedResult[1]
+      Setting HTTP status code 201.
+info: Microsoft.AspNetCore.Http.Result.CreatedResult[3]
+      Writing value of type 'AuthorDto' as Json.
+info: Microsoft.AspNetCore.Routing.EndpointMiddleware[1]
+      Executed endpoint 'HTTP: POST /authors/'
+info: Microsoft.AspNetCore.Hosting.Diagnostics[2]
+      Request finished HTTP/1.1 POST http://127.0.0.1:5080/authors - 201 - application/json;+charset=utf-8 3.0871ms
+info: Microsoft.AspNetCore.Hosting.Diagnostics[1]
+      Request starting HTTP/1.1 POST http://127.0.0.1:5080/books - application/json;+charset=utf-8 -
+info: Microsoft.AspNetCore.Routing.EndpointMiddleware[0]
+      Executing endpoint 'HTTP: POST /books/'
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (0ms) [Parameters=[@input_AuthorId='?' (DbType = Guid)], CommandType='Text', CommandTimeout='30']
+      SELECT EXISTS (
+          SELECT 1
+          FROM "Authors" AS "a"
+          WHERE "a"."Id" = @input_AuthorId)
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (2ms) [Parameters=[@p0='?' (DbType = Guid), @p1='?' (DbType = Guid), @p2='?' (DbType = Int32), @p3='?' (Size = 20), @p4='?' (Size = 10), @p5='?' (Size = 7)], CommandType='Text', CommandTimeout='30']
+      INSERT INTO "Books" ("Id", "AuthorId", "Copies", "Isbn", "Status", "Title")
+      VALUES (@p0, @p1, @p2, @p3, @p4, @p5);
+info: Microsoft.AspNetCore.Http.Result.CreatedResult[1]
+      Setting HTTP status code 201.
+info: Microsoft.AspNetCore.Http.Result.CreatedResult[3]
+      Writing value of type 'BookDto' as Json.
+info: Microsoft.AspNetCore.Routing.EndpointMiddleware[1]
+      Executed endpoint 'HTTP: POST /books/'
+info: Microsoft.AspNetCore.Hosting.Diagnostics[2]
+      Request finished HTTP/1.1 POST http://127.0.0.1:5080/books - 201 - application/json;+charset=utf-8 3.5869ms
+info: Microsoft.AspNetCore.Hosting.Diagnostics[1]
+      Request starting HTTP/1.1 GET http://127.0.0.1:5080/books/05490c0a-9a40-4700-a058-6ccca9024a79 - - -
+info: Microsoft.AspNetCore.Routing.EndpointMiddleware[0]
+      Executing endpoint 'HTTP: GET /books/{id}'
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (0ms) [Parameters=[@id='?' (DbType = Guid)], CommandType='Text', CommandTimeout='30']
+      SELECT "b"."Id", "b"."AuthorId", "b"."Copies", "b"."Isbn", "b"."Status", "b"."Title"
+      FROM "Books" AS "b"
+      WHERE "b"."Id" = @id
+      LIMIT 1
+info: Microsoft.AspNetCore.Http.Result.OkObjectResult[1]
+      Setting HTTP status code 200.
+info: Microsoft.AspNetCore.Http.Result.OkObjectResult[3]
+      Writing value of type 'BookDto' as Json.
+info: Microsoft.AspNetCore.Routing.EndpointMiddleware[1]
+      Executed endpoint 'HTTP: GET /books/{id}'
+info: Microsoft.AspNetCore.Hosting.Diagnostics[2]
+      Request finished HTTP/1.1 GET http://127.0.0.1:5080/books/05490c0a-9a40-4700-a058-6ccca9024a79 - 200 - application/json;+charset=utf-8 0.9642ms
+info: Microsoft.AspNetCore.Hosting.Diagnostics[1]
+      Request starting HTTP/1.1 POST http://127.0.0.1:5080/authors - application/json;+charset=utf-8 -
+info: Microsoft.AspNetCore.Routing.EndpointMiddleware[0]
+      Executing endpoint 'HTTP: POST /authors/'
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (3ms) [Parameters=[@p0='?' (DbType = Guid), @p1='?', @p2='?' (Size = 39)], CommandType='Text', CommandTimeout='30']
+      INSERT INTO "Authors" ("Id", "Biography", "Name")
+      VALUES (@p0, @p1, @p2);
+info: Microsoft.AspNetCore.Http.Result.CreatedResult[1]
+      Setting HTTP status code 201.
+info: Microsoft.AspNetCore.Http.Result.CreatedResult[3]
+      Writing value of type 'AuthorDto' as Json.
+info: Microsoft.AspNetCore.Routing.EndpointMiddleware[1]
+      Executed endpoint 'HTTP: POST /authors/'
+info: Microsoft.AspNetCore.Hosting.Diagnostics[2]
+      Request finished HTTP/1.1 POST http://127.0.0.1:5080/authors - 201 - application/json;+charset=utf-8 4.1322ms
+info: Microsoft.AspNetCore.Hosting.Diagnostics[1]
+      Request starting HTTP/1.1 POST http://127.0.0.1:5080/books - application/json;+charset=utf-8 -
+info: Microsoft.AspNetCore.Routing.EndpointMiddleware[0]
+      Executing endpoint 'HTTP: POST /books/'
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (0ms) [Parameters=[@input_AuthorId='?' (DbType = Guid)], CommandType='Text', CommandTimeout='30']
+      SELECT EXISTS (
+          SELECT 1
+          FROM "Authors" AS "a"
+          WHERE "a"."Id" = @input_AuthorId)
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (2ms) [Parameters=[@p0='?' (DbType = Guid), @p1='?' (DbType = Guid), @p2='?' (DbType = Int32), @p3='?' (Size = 20), @p4='?' (Size = 9), @p5='?' (Size = 7)], CommandType='Text', CommandTimeout='30']
+      INSERT INTO "Books" ("Id", "AuthorId", "Copies", "Isbn", "Status", "Title")
+      VALUES (@p0, @p1, @p2, @p3, @p4, @p5);
+info: Microsoft.AspNetCore.Http.Result.CreatedResult[1]
+      Setting HTTP status code 201.
+info: Microsoft.AspNetCore.Http.Result.CreatedResult[3]
+      Writing value of type 'BookDto' as Json.
+info: Microsoft.AspNetCore.Routing.EndpointMiddleware[1]
+      Executed endpoint 'HTTP: POST /books/'
+info: Microsoft.AspNetCore.Hosting.Diagnostics[2]
+      Request finished HTTP/1.1 POST http://127.0.0.1:5080/books - 201 - application/json;+charset=utf-8 3.9325ms
+info: Microsoft.AspNetCore.Hosting.Diagnostics[1]
+      Request starting HTTP/1.1 PUT http://127.0.0.1:5080/books/1464a3b7-762e-45f8-90d9-bd5e66c20429 - application/json;+charset=utf-8 -
+info: Microsoft.AspNetCore.Routing.EndpointMiddleware[0]
+      Executing endpoint 'HTTP: PUT /books/{id}'
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (0ms) [Parameters=[@id='?' (DbType = Guid)], CommandType='Text', CommandTimeout='30']
+      SELECT "b"."Id", "b"."AuthorId", "b"."Copies", "b"."Isbn", "b"."Status", "b"."Title"
+      FROM "Books" AS "b"
+      WHERE "b"."Id" = @id
+      LIMIT 1
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (0ms) [Parameters=[@input_AuthorId='?' (DbType = Guid)], CommandType='Text', CommandTimeout='30']
+      SELECT EXISTS (
+          SELECT 1
+          FROM "Authors" AS "a"
+          WHERE "a"."Id" = @input_AuthorId)
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (0ms) [Parameters=[@p1='?' (DbType = Guid), @p0='?' (DbType = Int32)], CommandType='Text', CommandTimeout='30']
+      UPDATE "Books" SET "Copies" = @p0
+      WHERE "Id" = @p1
+      RETURNING 1;
+info: Microsoft.AspNetCore.Http.Result.OkObjectResult[1]
+      Setting HTTP status code 200.
+info: Microsoft.AspNetCore.Http.Result.OkObjectResult[3]
+      Writing value of type 'BookDto' as Json.
+info: Microsoft.AspNetCore.Routing.EndpointMiddleware[1]
+      Executed endpoint 'HTTP: PUT /books/{id}'
+info: Microsoft.AspNetCore.Hosting.Diagnostics[2]
+      Request finished HTTP/1.1 PUT http://127.0.0.1:5080/books/1464a3b7-762e-45f8-90d9-bd5e66c20429 - 200 - application/json;+charset=utf-8 14.6620ms
+info: Microsoft.AspNetCore.Hosting.Diagnostics[1]
+      Request starting HTTP/1.1 GET http://127.0.0.1:5080/books/1464a3b7-762e-45f8-90d9-bd5e66c20429 - - -
+info: Microsoft.AspNetCore.Routing.EndpointMiddleware[0]
+      Executing endpoint 'HTTP: GET /books/{id}'
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (0ms) [Parameters=[@id='?' (DbType = Guid)], CommandType='Text', CommandTimeout='30']
+      SELECT "b"."Id", "b"."AuthorId", "b"."Copies", "b"."Isbn", "b"."Status", "b"."Title"
+      FROM "Books" AS "b"
+      WHERE "b"."Id" = @id
+      LIMIT 1
+info: Microsoft.AspNetCore.Http.Result.OkObjectResult[1]
+      Setting HTTP status code 200.
+info: Microsoft.AspNetCore.Http.Result.OkObjectResult[3]
+      Writing value of type 'BookDto' as Json.
+info: Microsoft.AspNetCore.Routing.EndpointMiddleware[1]
+      Executed endpoint 'HTTP: GET /books/{id}'
+info: Microsoft.AspNetCore.Hosting.Diagnostics[2]
+      Request finished HTTP/1.1 GET http://127.0.0.1:5080/books/1464a3b7-762e-45f8-90d9-bd5e66c20429 - 200 - application/json;+charset=utf-8 2.0578ms
+info: Microsoft.AspNetCore.Hosting.Diagnostics[1]
+      Request starting HTTP/1.1 GET http://127.0.0.1:5080/authors/bf11bcb9-5bcf-444a-acfa-b4b66e412de1 - - -
+info: Microsoft.AspNetCore.Routing.EndpointMiddleware[0]
+      Executing endpoint 'HTTP: GET /authors/{id}'
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (0ms) [Parameters=[@id='?' (DbType = Guid)], CommandType='Text', CommandTimeout='30']
+      SELECT "a0"."Id", "a0"."Biography", "a0"."Name", "b"."Id", "b"."AuthorId", "b"."Copies", "b"."Isbn", "b"."Status", "b"."Title"
+      FROM (
+          SELECT "a"."Id", "a"."Biography", "a"."Name"
+          FROM "Authors" AS "a"
+          WHERE "a"."Id" = @id
+          LIMIT 1
+      ) AS "a0"
+      LEFT JOIN "Books" AS "b" ON "a0"."Id" = "b"."AuthorId"
+      ORDER BY "a0"."Id"
+info: Microsoft.AspNetCore.Http.Result.OkObjectResult[1]
+      Setting HTTP status code 200.
+info: Microsoft.AspNetCore.Http.Result.OkObjectResult[3]
+      Writing value of type 'AuthorDto' as Json.
+info: Microsoft.AspNetCore.Routing.EndpointMiddleware[1]
+      Executed endpoint 'HTTP: GET /authors/{id}'
+info: Microsoft.AspNetCore.Hosting.Diagnostics[2]
+      Request finished HTTP/1.1 GET http://127.0.0.1:5080/authors/bf11bcb9-5bcf-444a-acfa-b4b66e412de1 - 200 - application/json;+charset=utf-8 51.2384ms
+info: Microsoft.AspNetCore.Hosting.Diagnostics[1]
+      Request starting HTTP/1.1 POST http://127.0.0.1:5080/authors - application/json;+charset=utf-8 -
+info: Microsoft.AspNetCore.Routing.EndpointMiddleware[0]
+      Executing endpoint 'HTTP: POST /authors/'
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (3ms) [Parameters=[@p0='?' (DbType = Guid), @p1='?', @p2='?' (Size = 39)], CommandType='Text', CommandTimeout='30']
+      INSERT INTO "Authors" ("Id", "Biography", "Name")
+      VALUES (@p0, @p1, @p2);
+info: Microsoft.AspNetCore.Http.Result.CreatedResult[1]
+      Setting HTTP status code 201.
+info: Microsoft.AspNetCore.Http.Result.CreatedResult[3]
+      Writing value of type 'AuthorDto' as Json.
+info: Microsoft.AspNetCore.Routing.EndpointMiddleware[1]
+      Executed endpoint 'HTTP: POST /authors/'
+info: Microsoft.AspNetCore.Hosting.Diagnostics[2]
+      Request finished HTTP/1.1 POST http://127.0.0.1:5080/authors - 201 - application/json;+charset=utf-8 4.1646ms
+info: Microsoft.AspNetCore.Hosting.Diagnostics[1]
+      Request starting HTTP/1.1 POST http://127.0.0.1:5080/books - application/json;+charset=utf-8 -
+info: Microsoft.AspNetCore.Routing.EndpointMiddleware[0]
+      Executing endpoint 'HTTP: POST /books/'
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (0ms) [Parameters=[@input_AuthorId='?' (DbType = Guid)], CommandType='Text', CommandTimeout='30']
+      SELECT EXISTS (
+          SELECT 1
+          FROM "Authors" AS "a"
+          WHERE "a"."Id" = @input_AuthorId)
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (2ms) [Parameters=[@p0='?' (DbType = Guid), @p1='?' (DbType = Guid), @p2='?' (DbType = Int32), @p3='?' (Size = 20), @p4='?' (Size = 9), @p5='?' (Size = 7)], CommandType='Text', CommandTimeout='30']
+      INSERT INTO "Books" ("Id", "AuthorId", "Copies", "Isbn", "Status", "Title")
+      VALUES (@p0, @p1, @p2, @p3, @p4, @p5);
+info: Microsoft.AspNetCore.Http.Result.CreatedResult[1]
+      Setting HTTP status code 201.
+info: Microsoft.AspNetCore.Http.Result.CreatedResult[3]
+      Writing value of type 'BookDto' as Json.
+info: Microsoft.AspNetCore.Routing.EndpointMiddleware[1]
+      Executed endpoint 'HTTP: POST /books/'
+info: Microsoft.AspNetCore.Hosting.Diagnostics[2]
+      Request finished HTTP/1.1 POST http://127.0.0.1:5080/books - 201 - application/json;+charset=utf-8 3.8065ms
+info: Microsoft.AspNetCore.Hosting.Diagnostics[1]
+      Request starting HTTP/1.1 POST http://127.0.0.1:5080/books - application/json;+charset=utf-8 -
+info: Microsoft.AspNetCore.Routing.EndpointMiddleware[0]
+      Executing endpoint 'HTTP: POST /books/'
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (0ms) [Parameters=[@input_AuthorId='?' (DbType = Guid)], CommandType='Text', CommandTimeout='30']
+      SELECT EXISTS (
+          SELECT 1
+          FROM "Authors" AS "a"
+          WHERE "a"."Id" = @input_AuthorId)
+info: Microsoft.AspNetCore.Http.HttpResults.ValidationProblem[1]
+      Setting HTTP status code 400.
+info: Microsoft.AspNetCore.Http.HttpResults.ValidationProblem[3]
+      Writing value of type 'HttpValidationProblemDetails' as Json.
+info: Microsoft.AspNetCore.Routing.EndpointMiddleware[1]
+      Executed endpoint 'HTTP: POST /books/'
+info: Microsoft.AspNetCore.Hosting.Diagnostics[2]
+      Request finished HTTP/1.1 POST http://127.0.0.1:5080/books - 400 - application/problem+json 10.5582ms
+info: Microsoft.AspNetCore.Hosting.Diagnostics[1]
+      Request starting HTTP/1.1 POST http://127.0.0.1:5080/books - application/json;+charset=utf-8 -
+info: Microsoft.AspNetCore.Routing.EndpointMiddleware[0]
+      Executing endpoint 'HTTP: POST /books/'
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (0ms) [Parameters=[@input_AuthorId='?' (DbType = Guid)], CommandType='Text', CommandTimeout='30']
+      SELECT EXISTS (
+          SELECT 1
+          FROM "Authors" AS "a"
+          WHERE "a"."Id" = @input_AuthorId)
+info: Microsoft.AspNetCore.Http.HttpResults.ValidationProblem[1]
+      Setting HTTP status code 400.
+info: Microsoft.AspNetCore.Http.HttpResults.ValidationProblem[3]
+      Writing value of type 'HttpValidationProblemDetails' as Json.
+info: Microsoft.AspNetCore.Routing.EndpointMiddleware[1]
+      Executed endpoint 'HTTP: POST /books/'
+info: Microsoft.AspNetCore.Hosting.Diagnostics[2]
+      Request finished HTTP/1.1 POST http://127.0.0.1:5080/books - 400 - application/problem+json 1.2152ms
+info: Microsoft.AspNetCore.Hosting.Diagnostics[1]
+      Request starting HTTP/1.1 DELETE http://127.0.0.1:5080/books/660a307f-6998-4b08-ab9e-4d22d661b4a7 - - -
+info: Microsoft.AspNetCore.Routing.EndpointMiddleware[0]
+      Executing endpoint 'HTTP: DELETE /books/{id}'
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (0ms) [Parameters=[@id='?' (DbType = Guid)], CommandType='Text', CommandTimeout='30']
+      SELECT "b"."Id", "b"."AuthorId", "b"."Copies", "b"."Isbn", "b"."Status", "b"."Title"
+      FROM "Books" AS "b"
+      WHERE "b"."Id" = @id
+      LIMIT 1
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (0ms) [Parameters=[@p0='?' (DbType = Guid)], CommandType='Text', CommandTimeout='30']
+      DELETE FROM "Books"
+      WHERE "Id" = @p0
+      RETURNING 1;
+info: Microsoft.AspNetCore.Http.Result.NoContentResult[1]
+      Setting HTTP status code 204.
+info: Microsoft.AspNetCore.Routing.EndpointMiddleware[1]
+      Executed endpoint 'HTTP: DELETE /books/{id}'
+info: Microsoft.AspNetCore.Hosting.Diagnostics[2]
+      Request finished HTTP/1.1 DELETE http://127.0.0.1:5080/books/660a307f-6998-4b08-ab9e-4d22d661b4a7 - 204 - - 13.2379ms
+info: Microsoft.AspNetCore.Hosting.Diagnostics[1]
+      Request starting HTTP/1.1 DELETE http://127.0.0.1:5080/authors/367b011e-d968-453a-aa97-1e458accd0ec - - -
+info: Microsoft.AspNetCore.Routing.EndpointMiddleware[0]
+      Executing endpoint 'HTTP: DELETE /authors/{id}'
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (0ms) [Parameters=[@id='?' (DbType = Guid)], CommandType='Text', CommandTimeout='30']
+      SELECT "a"."Id", "a"."Biography", "a"."Name"
+      FROM "Authors" AS "a"
+      WHERE "a"."Id" = @id
+      LIMIT 1
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (0ms) [Parameters=[@p0='?' (DbType = Guid)], CommandType='Text', CommandTimeout='30']
+      DELETE FROM "Authors"
+      WHERE "Id" = @p0
+      RETURNING 1;
+info: Microsoft.AspNetCore.Http.Result.NoContentResult[1]
+      Setting HTTP status code 204.
+info: Microsoft.AspNetCore.Routing.EndpointMiddleware[1]
+      Executed endpoint 'HTTP: DELETE /authors/{id}'
+info: Microsoft.AspNetCore.Hosting.Diagnostics[2]
+      Request finished HTTP/1.1 DELETE http://127.0.0.1:5080/authors/367b011e-d968-453a-aa97-1e458accd0ec - 204 - - 10.8319ms
+info: Microsoft.AspNetCore.Hosting.Diagnostics[1]
+      Request starting HTTP/1.1 GET http://127.0.0.1:5080/authors/367b011e-d968-453a-aa97-1e458accd0ec - - -
+info: Microsoft.AspNetCore.Routing.EndpointMiddleware[0]
+      Executing endpoint 'HTTP: GET /authors/{id}'
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (0ms) [Parameters=[@id='?' (DbType = Guid)], CommandType='Text', CommandTimeout='30']
+      SELECT "a0"."Id", "a0"."Biography", "a0"."Name", "b"."Id", "b"."AuthorId", "b"."Copies", "b"."Isbn", "b"."Status", "b"."Title"
+      FROM (
+          SELECT "a"."Id", "a"."Biography", "a"."Name"
+          FROM "Authors" AS "a"
+          WHERE "a"."Id" = @id
+          LIMIT 1
+      ) AS "a0"
+      LEFT JOIN "Books" AS "b" ON "a0"."Id" = "b"."AuthorId"
+      ORDER BY "a0"."Id"
+info: Microsoft.AspNetCore.Http.Result.NotFoundObjectResult[1]
+      Setting HTTP status code 404.
+info: Microsoft.AspNetCore.Routing.EndpointMiddleware[1]
+      Executed endpoint 'HTTP: GET /authors/{id}'
+info: Microsoft.AspNetCore.Hosting.Diagnostics[2]
+      Request finished HTTP/1.1 GET http://127.0.0.1:5080/authors/367b011e-d968-453a-aa97-1e458accd0ec - 404 0 - 1.5097ms
+info: Microsoft.Hosting.Lifetime[0]
+      Application is shutting down...

@@ -1,0 +1,13 @@
+  Determining projects to restore...
+  All projects are up-to-date for restore.
+  UM.Domain -> /work/src/UM.Domain/bin/Debug/net10.0/SolidOps.UM.Domain.dll
+  UM.Application -> /work/src/UM.Application/bin/Debug/net10.0/SolidOps.UM.Application.dll
+  UM.Infrastructure -> /work/src/UM.Infrastructure/bin/Debug/net10.0/SolidOps.UM.Infrastructure.dll
+  UM.Api -> /work/src/UM.Api/bin/Debug/net10.0/SolidOps.UM.Api.dll
+  UM.Tests -> /work/src/UM.Tests/bin/Debug/net10.0/SolidOps.UM.Tests.dll
+
+Build succeeded.
+    0 Warning(s)
+    0 Error(s)
+
+Time Elapsed 00:00:01.17

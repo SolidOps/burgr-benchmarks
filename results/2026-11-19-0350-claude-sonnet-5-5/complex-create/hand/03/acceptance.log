@@ -1,0 +1,8 @@
+  Determining projects to restore...
+  Restored /judge/cases/complex-create/acceptance/Acceptance.csproj (in 200 ms).
+  Acceptance -> /judge/cases/complex-create/acceptance/bin/Debug/net10.0/Acceptance.dll
+Test run for /judge/cases/complex-create/acceptance/bin/Debug/net10.0/Acceptance.dll (.NETCoreApp,Version=v10.0)
+A total of 1 test files matched the specified pattern.
+Results File: /bench/out/acceptance.trx
+
+Passed!  - Failed:     0, Passed:    27, Skipped:     0, Total:    27, Duration: 1 s - Acceptance.dll (net10.0)

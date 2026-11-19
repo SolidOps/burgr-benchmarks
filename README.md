@@ -97,6 +97,35 @@ skipped, so an interrupted run resumes where it stopped.
 
 Under [`results/`](results), one directory per run, with its `README.md` of tables.
 
+First full run: [`2026-11-19-0350-claude-sonnet-5-5`](results/2026-11-19-0350-claude-sonnet-5-5),
+5 passes per case and variant (50 passes), `claude-sonnet-5-5`, Claude Code 2.1.327,
+Burgr 1.10.0. Every pass built and passed its own tests and the hidden acceptance suite
+(`entry` left the code unchanged). Burgr against hand-written C#, ratio of the medians
+(negative is cheaper or faster with Burgr):
+
+| Case | Cost | Output tokens | Duration | Input tokens |
+|---|---|---|---|---|
+| `complex-create` | −37 % | −63 % | −52 % | +105 % |
+| `complex-evolve` | −47 % | −54 % | −30 % | −30 % |
+| `simple-create` | −31 % | −51 % | −34 % | +36 % |
+| `simple-fix` (unfavorable) | +12 % | 0 % | −4 % | +8 % |
+| `entry` (unfavorable) | +18 % | −9 % | −15 % | +15 % |
+
+What to read from it:
+
+- When there is something to generate (creating or extending an API), Burgr is 31 to 47 %
+  cheaper and the agent writes about three times less code on the complex creation (493
+  lines against 1,435). The cost ranges of the two variants do not overlap on
+  `complex-create`.
+- Input tokens go up when creating (more turns, almost all served from the cache): compare
+  the cost and the output tokens, not the input alone.
+- Burgr does not save build iterations: the first build of `complex-create` never succeeded
+  with Burgr (0 of 5, against 1 of 5 by hand).
+- When there is nothing to generate (a one-character fix, a question), the harness costs a
+  few cents more: +12 to +18 %.
+- One model, one agent, 5 passes: the figures are medians with their ranges in the
+  generated tables, not a guarantee. Costs are those Claude Code reports.
+
 ## Limits
 
 - One model, one agent, one language (C#). The protocol admits more without change: a

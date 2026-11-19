@@ -1,0 +1,12 @@
+A  src/UM.Api/TeamEndpoints.cs
+M  src/UM.Api/UMEndpoints.cs
+A  src/UM.Application/Teams.cs
+M  src/UM.Application/UMApplicationRegistration.cs
+M  src/UM.Application/UMRights.cs
+A  src/UM.Domain/Team.cs
+M  src/UM.Infrastructure/Framework/EfRepository.cs
+A  src/UM.Infrastructure/Teams.cs
+M  src/UM.Infrastructure/UMDbContext.Core.cs
+M  src/UM.Infrastructure/UMDbContext.cs
+M  src/UM.Infrastructure/UMInfrastructureRegistration.cs
+A  src/UM.Tests/TeamTests.cs

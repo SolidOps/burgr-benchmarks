@@ -1,0 +1,1071 @@
+diff --git a/specs/aggregates.yaml b/specs/aggregates.yaml
+index 7901f36..6445cd3 100755
+--- a/specs/aggregates.yaml
++++ b/specs/aggregates.yaml
+@@ -40,6 +40,35 @@ aggregate_roots:
+       remove:
+         mandatory_right: ManageUsers
+ 
++  # ---- #
++  team:
++    properties:
++      name:
++        is_unique: true
++        field_size: 50
++      description:
++        type: string?
++        field_size: 200
++      members: ~>team_member[]
++    dependencies:
++      user: read
++    rules:
++      before_add:
++        - check_members
++      before_update:
++        - check_members
++      before_remove:
++        - refuse_if_has_members
++    api:
++      query:
++      get:
++      add:
++        mandatory_right: ManageTeams
++      update:
++        mandatory_right: ManageTeams
++      remove:
++        mandatory_right: ManageTeams
++
+   # ---- #
+   invite:
+     properties:
+diff --git a/specs/entities.yaml b/specs/entities.yaml
+index ee15cdb..7ad9680 100755
+--- a/specs/entities.yaml
++++ b/specs/entities.yaml
+@@ -15,3 +15,13 @@ entities:
+         type: user
+         multiple_unique_constraint_with: right
+       right: right
++
++  # ---- #
++  team_member:
++    properties:
++      team:
++        type: team
++        multiple_unique_constraint_with: user_email
++      user_email:
++        field_size: 50
++      is_owner: bool
+diff --git a/src/UM.Api/Framework/HttpResults.f.cs b/src/UM.Api/Framework/HttpResults.f.cs
+old mode 100755
+new mode 100644
+diff --git a/src/UM.Api/Framework/Program.f.cs b/src/UM.Api/Framework/Program.f.cs
+old mode 100755
+new mode 100644
+diff --git a/src/UM.Api/Framework/Security.f.cs b/src/UM.Api/Framework/Security.f.cs
+old mode 100755
+new mode 100644
+diff --git a/src/UM.Api/UMEndpoints.g.cs b/src/UM.Api/UMEndpoints.g.cs
+old mode 100755
+new mode 100644
+index 70a3902..798331b
+--- a/src/UM.Api/UMEndpoints.g.cs
++++ b/src/UM.Api/UMEndpoints.g.cs
+@@ -13,6 +13,8 @@ public static partial class UMEndpoints
+         // Object [AG][R]
+         MapUserEndpoints(app.MapGroup("/users").WithTags("Users"));
+ 
++        MapTeamEndpoints(app.MapGroup("/teams").WithTags("Teams"));
++
+         MapInviteEndpoints(app.MapGroup("/invites").WithTags("Invites"));
+ 
+         // Service 
+@@ -71,6 +73,46 @@ public static partial class UMEndpoints
+ 
+     }
+ 
++    private static void MapTeamEndpoints(RouteGroupBuilder group)
++    {
++
++        group.MapGet("/", async (int? page, int? pageSize, string? orderBy, bool? descending, TeamService service, CancellationToken cancellationToken) =>
++            (await service.QueryAsync(HttpResults.ToPageRequest(page, pageSize, orderBy, descending), cancellationToken)).ToHttpResult())
++
++            .RequireRight("")
++
++            ;
++
++        group.MapGet("/{id}", async (Guid id, TeamService service, CancellationToken cancellationToken) =>
++            (await service.GetAsync(id, cancellationToken)).ToHttpResult())
++
++            .RequireRight("")
++
++            ;
++
++        group.MapPost("/", async (TeamInput input, TeamService service, CancellationToken cancellationToken) =>
++            (await service.AddAsync(input, cancellationToken)).ToCreatedHttpResult(dto => $"/teams/{dto.Id}"))
++
++            .RequireRight("ManageTeams")
++
++            ;
++
++        group.MapPut("/{id}", async (Guid id, TeamInput input, TeamService service, CancellationToken cancellationToken) =>
++            (await service.UpdateAsync(id, input, cancellationToken)).ToHttpResult())
++
++            .RequireRight("ManageTeams")
++
++            ;
++
++        group.MapDelete("/{id}", async (Guid id, TeamService service, CancellationToken cancellationToken) =>
++            (await service.RemoveAsync(id, cancellationToken)).ToHttpResult())
++
++            .RequireRight("ManageTeams")
++
++            ;
++
++    }
++
+     private static void MapInviteEndpoints(RouteGroupBuilder group)
+     {
+ 
+diff --git a/src/UM.Application/Framework/Events.f.cs b/src/UM.Application/Framework/Events.f.cs
+old mode 100755
+new mode 100644
+diff --git a/src/UM.Application/Framework/Paging.f.cs b/src/UM.Application/Framework/Paging.f.cs
+old mode 100755
+new mode 100644
+diff --git a/src/UM.Application/Framework/Result.f.cs b/src/UM.Application/Framework/Result.f.cs
+old mode 100755
+new mode 100644
+diff --git a/src/UM.Application/Framework/Security.f.cs b/src/UM.Application/Framework/Security.f.cs
+old mode 100755
+new mode 100644
+diff --git a/src/UM.Application/Framework/UnitOfWork.f.cs b/src/UM.Application/Framework/UnitOfWork.f.cs
+old mode 100755
+new mode 100644
+diff --git a/src/UM.Application/Teams.cs b/src/UM.Application/Teams.cs
+new file mode 100644
+index 0000000..c6d202c
+--- /dev/null
++++ b/src/UM.Application/Teams.cs
+@@ -0,0 +1,36 @@
++using SolidOps.UM.Domain;
++
++namespace SolidOps.UM.Application;
++
++public partial class TeamService
++{
++    // a member is the email of an existing user, once per team; a team with members has exactly one owner
++    private async partial Task<Error?> CheckMembersAsync(Team aggregate, CancellationToken cancellationToken)
++    {
++        var errors = new Dictionary<string, string[]>();
++        var members = aggregate.Members.ToList();
++        var seen = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
++        for (var i = 0; i < members.Count; i++)
++        {
++            var email = members[i].UserEmail;
++            if (!seen.Add(email))
++            {
++                errors[$"Members[{i}].UserEmail"] = ["The user is already a member of the team"];
++            }
++            else if (await UserRepository.FindByEmailAsync(email, cancellationToken) is null)
++            {
++                errors[$"Members[{i}].UserEmail"] = ["User not found"];
++            }
++        }
++        if (members.Count > 0 && members.Count(m => m.IsOwner) != 1)
++        {
++            errors["Members"] = ["A team with members must have exactly one owner"];
++        }
++        return errors.Count > 0 ? Error.Invalid(errors) : null;
++    }
++
++    private partial Task<Error?> RefuseIfHasMembersAsync(Team aggregate, CancellationToken cancellationToken)
++    {
++        return Task.FromResult(aggregate.Members.Count > 0 ? Error.Conflict("The team still has members") : null);
++    }
++}
+diff --git a/src/UM.Application/UMApplicationRegistration.g.cs b/src/UM.Application/UMApplicationRegistration.g.cs
+old mode 100755
+new mode 100644
+index 89f3a4c..314ef21
+--- a/src/UM.Application/UMApplicationRegistration.g.cs
++++ b/src/UM.Application/UMApplicationRegistration.g.cs
+@@ -9,6 +9,8 @@ public static partial class UMApplicationRegistration
+         // Object [AG][R]
+         services.AddScoped<UserService>();
+ 
++        services.AddScoped<TeamService>();
++
+         services.AddScoped<InviteService>();
+ 
+         // Service 
+@@ -33,6 +35,10 @@ public static partial class UMApplicationRegistration
+ 
+         services.AddScoped<IRightFactory, RightFactory>();
+ 
++        services.AddScoped<ITeamFactory, TeamFactory>();
++
++        services.AddScoped<ITeamMemberFactory, TeamMemberFactory>();
++
+         services.AddScoped<IInviteFactory, InviteFactory>();
+ 
+         services.AddEventHandlers(typeof(UMApplicationRegistration).Assembly);
+diff --git a/src/UM.Application/UMContracts.g.cs b/src/UM.Application/UMContracts.g.cs
+old mode 100755
+new mode 100644
+index 4b7a8bc..93445d9
+--- a/src/UM.Application/UMContracts.g.cs
++++ b/src/UM.Application/UMContracts.g.cs
+@@ -90,6 +90,54 @@ public sealed partial class RightDto
+ 
+     };
+ }
++public sealed partial class TeamDto
++{
++    public Guid Id { get; set; }
++    // Property [S][NO][CA][NAR][PUO]
++    public System.String Name { get; set; } = string.Empty;
++
++    public String? Description { get; set; } = null;
++
++    // Property [M][LNA][AG][EN][PUO]
++    public List<TeamMemberDto> Members { get; set; } = [];
++
++    public static TeamDto From(Domain.Team entity) => new()
++    {
++        Id = entity.Id,
++        // Property [S][NO][CA][NAR][PUO]
++        Name = entity.Name,
++
++        Description = entity.Description,
++
++        // Property [M][LNA][AG][EN][PUO]
++        Members = entity.Members.Select(TeamMemberDto.From).ToList(),
++
++    };
++}
++public sealed partial class TeamMemberDto
++{
++    public Guid Id { get; set; }
++    // Property [S][NO][CA][NAR][PUO]
++    public System.String UserEmail { get; set; } = string.Empty;
++
++    public System.Boolean IsOwner { get; set; } = default(System.Boolean);
++
++    // Property [M][NO][NAR][AG][EN][PUO]
++    public Guid TeamId { get; set; }
++
++    public static TeamMemberDto From(Domain.TeamMember entity) => new()
++    {
++        Id = entity.Id,
++        // Property [S][NO][CA][NAR][PUO]
++        UserEmail = entity.UserEmail,
++
++        IsOwner = entity.IsOwner,
++
++        // Property [M][NO][NAR][AG][EN][PUO]
++        TeamId = entity.TeamId,
++
++    };
++}
+ public sealed partial class InviteDto
+ {
+     public Guid Id { get; set; }
+@@ -236,6 +284,89 @@ public sealed partial class UserInput
+ 
+     }
+ }
++public sealed partial class TeamDto
++{
++    /// <summary>The values accepted by the orderBy parameter of the query.</summary>
++    public static readonly IReadOnlyCollection<string> SortableProperties =
++    [
++        "Id",
++        // Property [S][NO][NAR][PUO]
++        "Name",
++
++        "Description",
++
++    ];
++}
++public sealed partial class TeamInput
++{
++    // Property [S][NO][NAR][PUO][NRO]
++    public System.String Name { get; set; } = string.Empty;
++
++    public String? Description { get; set; } = null;
++
++    // Property [M][LNA][SY][EN][PUO][NRO]
++    /// <summary>The whole list: a child without Id is added, a child missing from the list is removed.</summary>
++    public List<TeamMemberInput> Members { get; set; } = [];
++
++    /// <summary>Required values, maximum lengths, enum values, value objects and synchronized children, then <see cref="OnValidating"/>.</summary>
++    public Dictionary<string, string[]> Validate()
++    {
++        var errors = new Dictionary<string, string[]>();
++        // Property [S][NO][NAR][PUO][NRO]
++        // VALIDATION RULE - NULLABLE_PROPERTY
++        if (string.IsNullOrWhiteSpace(Name))
++        {
++            errors["Name"] = ["Name is required"];
++        }
++
++        // Property [S][NO][NAR][PUO][NRO]
++        // VALIDATION RULE - PROPERTY_HAS_MAX_SIZE
++        if (Name?.Length > 50)
++        {
++            errors["Name"] = ["Name is longer than 50 characters"];
++        }
++
++        // VALIDATION RULE - PROPERTY_HAS_MAX_SIZE
++        if (Description?.Length > 200)
++        {
++            errors["Description"] = ["Description is longer than 200 characters"];
++        }
++
++        // Property [M][LNA][SY][EN][PUO][NRO]
++        for (var i = 0; i < Members.Count; i++)
++        {
++            foreach (var (key, messages) in Members[i].Validate())
++            {
++                errors[$"Members[{i}].{key}"] = messages;
++            }
++        }
++
++        OnValidating(errors);
++        return errors;
++    }
++    partial void OnValidating(Dictionary<string, string[]> errors);
++    public void ApplyTo(Domain.Team entity)
++    {
++        // Property [S][NO][NAR][PUO][NRO]
++        entity.Name = Name;
++
++        entity.Description = Description;
++
++        // Property [M][LNA][SY][EN][PUO][NRO]
++        entity.Members.RemoveAll(child => !Members.Exists(input => Equals(input.Id, child.Id)));
++        foreach (var childInput in Members)
++        {
++            var child = childInput.Id is { } childId ? entity.Members.Find(c => c.Id.Equals(childId)) : null;
++            if (child is null)
++            {
++                child = new Domain.TeamMember();
++                entity.Members.Add(child);
++            }
++            childInput.ApplyTo(child);
++        }
++
++    }
++}
+ public sealed partial class InviteDto
+ {
+     /// <summary>The values accepted by the orderBy parameter of the query.</summary>
+@@ -405,6 +536,47 @@ public sealed partial class RightInput
+ 
+     }
+ }
++// a child of a synchronized navigation; its references to aggregate roots are set by the navigation
++public sealed partial class TeamMemberInput
++{
++    /// <summary>The child to update; null for a new child.</summary>
++    public Guid? Id { get; set; }
++    // Property [S][NO][NAR][PUO][NRO]
++    public System.String UserEmail { get; set; } = string.Empty;
++
++    public System.Boolean IsOwner { get; set; } = default(System.Boolean);
++
++    /// <summary>Required values, maximum lengths, enum values and value objects, then <see cref="OnValidating"/>.</summary>
++    public Dictionary<string, string[]> Validate()
++    {
++        var errors = new Dictionary<string, string[]>();
++        // Property [S][NO][NAR][PUO][NRO]
++        // VALIDATION RULE - NULLABLE_PROPERTY
++        if (string.IsNullOrWhiteSpace(UserEmail))
++        {
++            errors["UserEmail"] = ["UserEmail is required"];
++        }
++
++        // Property [S][NO][NAR][PUO][NRO]
++        // VALIDATION RULE - PROPERTY_HAS_MAX_SIZE
++        if (UserEmail?.Length > 50)
++        {
++            errors["UserEmail"] = ["UserEmail is longer than 50 characters"];
++        }
++
++        OnValidating(errors);
++        return errors;
++    }
++    partial void OnValidating(Dictionary<string, string[]> errors);
++    public void ApplyTo(Domain.TeamMember entity)
++    {
++        // Property [S][NO][NAR][PUO][NRO]
++        entity.UserEmail = UserEmail;
++
++        entity.IsOwner = IsOwner;
++
++    }
++}
+ // Object [TR]
+ public sealed partial class InviteResultDto : IValidatable
+ {
+diff --git a/src/UM.Application/UMFactories.g.cs b/src/UM.Application/UMFactories.g.cs
+old mode 100755
+new mode 100644
+index e8b859e..9183fea
+--- a/src/UM.Application/UMFactories.g.cs
++++ b/src/UM.Application/UMFactories.g.cs
+@@ -75,6 +75,42 @@ public partial class RightFactory(
+     /// <summary>The services this class needs besides the repositories of its model dependencies.</summary>
+     protected IServiceProvider Services { get; } = serviceProvider;
+ }
++/// <summary>The factories of Team declared by the model; a new object is not saved by its factory.</summary>
++public partial interface ITeamFactory
++{
++
++}
++// the methods of ITeamFactory are written by hand in another part of this class
++public partial class TeamFactory(
++    // Dependency [AG]
++    Domain.IUserRepository UserRepository,
++
++    IUnitOfWork unitOfWork,
++    IServiceProvider serviceProvider) : ITeamFactory
++{
++    // Dependency [AG]
++    protected Domain.IUserRepository UserRepository { get; } = UserRepository;
++
++    protected IUnitOfWork UnitOfWork { get; } = unitOfWork;
++    /// <summary>The services this class needs besides the repositories of its model dependencies.</summary>
++    protected IServiceProvider Services { get; } = serviceProvider;
++}
++/// <summary>The factories of TeamMember declared by the model; a new object is not saved by its factory.</summary>
++public partial interface ITeamMemberFactory
++{
++
++}
++// the methods of ITeamMemberFactory are written by hand in another part of this class
++public partial class TeamMemberFactory(
++
++    IUnitOfWork unitOfWork,
++    IServiceProvider serviceProvider) : ITeamMemberFactory
++{
++
++    protected IUnitOfWork UnitOfWork { get; } = unitOfWork;
++    /// <summary>The services this class needs besides the repositories of its model dependencies.</summary>
++    protected IServiceProvider Services { get; } = serviceProvider;
++}
+ /// <summary>The factories of Invite declared by the model; a new object is not saved by its factory.</summary>
+ public partial interface IInviteFactory
+ {
+diff --git a/src/UM.Application/UMRights.g.cs b/src/UM.Application/UMRights.g.cs
+old mode 100755
+new mode 100644
+index 1d2296c..19e68ae
+--- a/src/UM.Application/UMRights.g.cs
++++ b/src/UM.Application/UMRights.g.cs
+@@ -6,6 +6,8 @@ public static partial class UMRights
+     // Right [NW]
+     public const string ManageUsers = "ManageUsers";
+ 
++    public const string ManageTeams = "ManageTeams";
++
+     public const string CreateUser = "CreateUser";
+ 
+ }
+\ No newline at end of file
+diff --git a/src/UM.Application/UMServices.g.cs b/src/UM.Application/UMServices.g.cs
+old mode 100755
+new mode 100644
+index 0bea804..9ca94be
+--- a/src/UM.Application/UMServices.g.cs
++++ b/src/UM.Application/UMServices.g.cs
+@@ -120,6 +120,131 @@ public partial class UserService(
+         return errors;
+     }
+ }
++public partial class TeamService(
++    Domain.ITeamRepository repository,
++    // Dependency [AG]
++    Domain.IUserRepository UserRepository,
++
++    IUnitOfWork unitOfWork,
++    IEventPublisher events,
++    ICurrentUser currentUser,
++    IServiceProvider serviceProvider)
++{
++    protected Domain.ITeamRepository Repository { get; } = repository;
++    // Dependency [AG]
++    protected Domain.IUserRepository UserRepository { get; } = UserRepository;
++
++    protected IUnitOfWork UnitOfWork { get; } = unitOfWork;
++    protected IEventPublisher Events { get; } = events;
++    protected ICurrentUser CurrentUser { get; } = currentUser;
++    /// <summary>The services the rules need besides the repositories of the model dependencies.</summary>
++    protected IServiceProvider Services { get; } = serviceProvider;
++
++    public async Task<Result<Page<TeamDto>>> QueryAsync(PageRequest request, CancellationToken cancellationToken = default)
++    {
++        var errors = Paging.Validate(request, TeamDto.SortableProperties);
++        if (errors.Count > 0)
++        {
++            return Error.Invalid(errors);
++        }
++        var page = await Repository.QueryAsync(request, cancellationToken);
++        return page.Map(TeamDto.From);
++    }
++
++    public async Task<Result<TeamDto>> GetAsync(Guid id, CancellationToken cancellationToken = default)
++    {
++        var aggregate = await Repository.FindAsync(id, cancellationToken);
++        return aggregate is null ? Error.NotFound() : TeamDto.From(aggregate);
++    }
++
++    public async Task<Result<TeamDto>> AddAsync(TeamInput input, CancellationToken cancellationToken = default)
++    {
++        var errors = await ValidateAsync(input, cancellationToken);
++        if (errors.Count > 0)
++        {
++            return Error.Invalid(errors);
++        }
++        var aggregate = new Domain.Team();
++        input.ApplyTo(aggregate);
++        // Rule [BA]
++        if (await CheckMembersAsync(aggregate, cancellationToken) is { } CheckMembersError)
++        {
++            return CheckMembersError;
++        }
++
++        Repository.Add(aggregate);
++        if (await UnitOfWork.SaveChangesAsync(cancellationToken) is { } error)
++        {
++            return error;
++        }
++
++        return TeamDto.From(aggregate);
++    }
++
++    public async Task<Result<TeamDto>> UpdateAsync(Guid id, TeamInput input, CancellationToken cancellationToken = default)
++    {
++        var aggregate = await Repository.FindAsync(id, cancellationToken);
++        if (aggregate is null)
++        {
++            return Error.NotFound();
++        }
++        var errors = await ValidateAsync(input, cancellationToken);
++        if (errors.Count > 0)
++        {
++            return Error.Invalid(errors);
++        }
++        input.ApplyTo(aggregate);
++        // Rule [BU]
++        if (await CheckMembersAsync(aggregate, cancellationToken) is { } CheckMembersError)
++        {
++            return CheckMembersError;
++        }
++
++        if (await UnitOfWork.SaveChangesAsync(cancellationToken) is { } error)
++        {
++            return error;
++        }
++
++        return TeamDto.From(aggregate);
++    }
++
++    public async Task<Result> RemoveAsync(Guid id, CancellationToken cancellationToken = default)
++    {
++        var aggregate = await Repository.FindAsync(id, cancellationToken);
++        if (aggregate is null)
++        {
++            return Error.NotFound();
++        }
++        // Rule [BR]
++        if (await RefuseIfHasMembersAsync(aggregate, cancellationToken) is { } RefuseIfHasMembersError)
++        {
++            return RefuseIfHasMembersError;
++        }
++
++        Repository.Remove(aggregate);
++        if (await UnitOfWork.SaveChangesAsync(cancellationToken) is { } error)
++        {
++            return error;
++        }
++
++        return Result.Success();
++    }
++
++    // Rule 
++    /// <summary>The rule CheckMembers of the model, written by hand: null to go on, or the error that stops the use case.</summary>
++    private partial Task<Error?> CheckMembersAsync(Domain.Team aggregate, CancellationToken cancellationToken);
++
++    /// <summary>The rule RefuseIfHasMembers of the model, written by hand: null to go on, or the error that stops the use case.</summary>
++    private partial Task<Error?> RefuseIfHasMembersAsync(Domain.Team aggregate, CancellationToken cancellationToken);
++
++    // the input's own rules, then the existence of the aggregates and entities it references
++    private async Task<Dictionary<string, string[]>> ValidateAsync(TeamInput input, CancellationToken cancellationToken)
++    {
++        var errors = input.Validate();
++
++        return errors;
++    }
++}
+ public partial class InviteService(
+     Domain.IInviteRepository repository,
+ 
+diff --git a/src/UM.Diagrams/UMClasses.g.puml b/src/UM.Diagrams/UMClasses.g.puml
+old mode 100755
+new mode 100644
+index cea70c6..e323c17
+--- a/src/UM.Diagrams/UMClasses.g.puml
++++ b/src/UM.Diagrams/UMClasses.g.puml
+@@ -3,10 +3,12 @@ hide empty members
+ ' Object [AG]
+ class LocalUser <<aggregate root>>
+ class User <<aggregate root>>
++class Team <<aggregate root>>
+ class Invite <<aggregate root>>
+ ' Object [EN]
+ class UserRight <<entity>>
+ class Right <<entity>>
++class TeamMember <<entity>>
+ ' Object [VO]
+ class Preferences <<value object>>
+ ' Object [AG][EN][VO]
+@@ -51,6 +53,29 @@ class Right {
+     +name: string[50]
+ 
+ }
++class Team {
++    ' Property [S][NO][CA][NAR][PUO]
++    +name: string[50]
++
++    +description: string[200]?
++
++    ' Rule 
++    +CheckMembers()
++
++    +RefuseIfHasMembers()
++
++}
++' Property [M][LNA][AG][EN]
++Team o-- "*" TeamMember : members
++class TeamMember {
++    ' Property [S][NO][CA][NAR][PUO]
++    +userEmail: string[50]
++
++    +isOwner: boolean
++
++}
++' Property [M][NO][NAR][AG][EN][NN]
++TeamMember --> "1" Team : team
+ class Invite {
+     ' Property [S][NO][CA][NAR][PUO]
+     +email: string
+diff --git a/src/UM.Domain/Framework/Entity.f.cs b/src/UM.Domain/Framework/Entity.f.cs
+old mode 100755
+new mode 100644
+diff --git a/src/UM.Domain/Framework/Repository.f.cs b/src/UM.Domain/Framework/Repository.f.cs
+old mode 100755
+new mode 100644
+diff --git a/src/UM.Domain/UMModel.g.cs b/src/UM.Domain/UMModel.g.cs
+old mode 100755
+new mode 100644
+index 81ec55d..84f4808
+--- a/src/UM.Domain/UMModel.g.cs
++++ b/src/UM.Domain/UMModel.g.cs
+@@ -16,6 +16,9 @@ public partial class LocalUser : AggregateRoot
+ public partial class User : AggregateRoot
+ {
+ }
++public partial class Team : AggregateRoot
++{
++}
+ public partial class Invite : AggregateRoot
+ {
+ }
+@@ -26,6 +29,9 @@ public partial class UserRight : Entity
+ public partial class Right : Entity
+ {
+ }
++public partial class TeamMember : Entity
++{
++}
+ // Object [AG][EN]
+ public partial class LocalUser
+ {
+@@ -67,6 +73,29 @@ public partial class Right
+     // Property [S][NO][NAR]
+     public System.String Name { get; set; } = string.Empty;
+ 
++}
++public partial class Team
++{
++    // Property [S][NO][NAR]
++    public System.String Name { get; set; } = string.Empty;
++
++    public String? Description { get; set; } = null;
++
++    // Property [M][LNA][AG][EN]
++    public List<TeamMember> Members { get; set; } = [];
++
++}
++public partial class TeamMember
++{
++    // Property [S][NO][NAR]
++    public System.String UserEmail { get; set; } = string.Empty;
++
++    public System.Boolean IsOwner { get; set; } = default(System.Boolean);
++
++    // Property [M][NO][NAR][AG][EN]
++    public Guid TeamId { get; set; }
++    public Team? Team { get; set; }
++
+ }
+ public partial class Invite
+ {
+diff --git a/src/UM.Domain/UMRepositories.g.cs b/src/UM.Domain/UMRepositories.g.cs
+old mode 100755
+new mode 100644
+index db1681d..0135d64
+--- a/src/UM.Domain/UMRepositories.g.cs
++++ b/src/UM.Domain/UMRepositories.g.cs
+@@ -7,6 +7,9 @@ public partial interface ILocalUserRepository : IRepository<LocalUser>
+ public partial interface IUserRepository : IRepository<User>
+ {
+ }
++public partial interface ITeamRepository : IRepository<Team>
++{
++}
+ public partial interface IInviteRepository : IRepository<Invite>
+ {
+ }
+\ No newline at end of file
+diff --git a/src/UM.Infrastructure/Framework/EfRepository.f.cs b/src/UM.Infrastructure/Framework/EfRepository.f.cs
+old mode 100755
+new mode 100644
+diff --git a/src/UM.Infrastructure/Framework/ModelConventions.f.cs b/src/UM.Infrastructure/Framework/ModelConventions.f.cs
+old mode 100755
+new mode 100644
+diff --git a/src/UM.Infrastructure/Framework/UnitOfWork.f.cs b/src/UM.Infrastructure/Framework/UnitOfWork.f.cs
+old mode 100755
+new mode 100644
+diff --git a/src/UM.Infrastructure/UMDbContext.cs b/src/UM.Infrastructure/UMDbContext.cs
+index 094d68b..1079147 100755
+--- a/src/UM.Infrastructure/UMDbContext.cs
++++ b/src/UM.Infrastructure/UMDbContext.cs
+@@ -7,12 +7,14 @@ public partial class UMDbContext
+ {
+     public static readonly Guid AdminRightId = new("8e0d6a2c-34a1-4c55-9a3e-6f1d2b7c9e01");
+     public static readonly Guid ManageUsersRightId = new("8e0d6a2c-34a1-4c55-9a3e-6f1d2b7c9e02");
++    public static readonly Guid ManageTeamsRightId = new("8e0d6a2c-34a1-4c55-9a3e-6f1d2b7c9e03");
+ 
+     // the rights are fixed: no API creates them
+     partial void OnModelCreatingPartial(ModelBuilder modelBuilder)
+     {
+         modelBuilder.Entity<Right>().HasData(
+             new Right { Id = AdminRightId, Name = "Admin" },
+-            new Right { Id = ManageUsersRightId, Name = "ManageUsers" });
++            new Right { Id = ManageUsersRightId, Name = "ManageUsers" },
++            new Right { Id = ManageTeamsRightId, Name = "ManageTeams" });
+     }
+ }
+diff --git a/src/UM.Infrastructure/UMDbContext.g.cs b/src/UM.Infrastructure/UMDbContext.g.cs
+old mode 100755
+new mode 100644
+index dac35a0..6219369
+--- a/src/UM.Infrastructure/UMDbContext.g.cs
++++ b/src/UM.Infrastructure/UMDbContext.g.cs
+@@ -12,6 +12,10 @@ public partial class UMDbContext(DbContextOptions<UMDbContext> options) : DbCont
+ 
+     public DbSet<Domain.Right> Rights => Set<Domain.Right>();
+ 
++    public DbSet<Domain.Team> Teams => Set<Domain.Team>();
++
++    public DbSet<Domain.TeamMember> TeamMembers => Set<Domain.TeamMember>();
++
+     public DbSet<Domain.Invite> Invites => Set<Domain.Invite>();
+ 
+     protected override void OnModelCreating(ModelBuilder modelBuilder)
+@@ -74,6 +78,35 @@ public partial class UMDbContext(DbContextOptions<UMDbContext> options) : DbCont
+ 
+         });
+ 
++        modelBuilder.Entity<Domain.Team>(builder =>
++        {
++            builder.HasKey(x => x.Id);
++            // Property [S][NO][NAR]
++            // VALIDATION RULE - PROPERTY_HAS_MAX_SIZE
++            builder.Property(x => x.Name).HasMaxLength(50);
++
++            // VALIDATION RULE - PROPERTY_HAS_MAX_SIZE
++            builder.Property(x => x.Description).HasMaxLength(200);
++
++            // Property [S][NO][NAR]
++            // VALIDATION RULE - PROPERTY_IS_UNIQUE
++            builder.HasIndex(x => x.Name).IsUnique();
++
++        });
++
++        modelBuilder.Entity<Domain.TeamMember>(builder =>
++        {
++            builder.HasKey(x => x.Id);
++            // Property [S][NO][NAR]
++            // VALIDATION RULE - PROPERTY_HAS_MAX_SIZE
++            builder.Property(x => x.UserEmail).HasMaxLength(50);
++
++            // Property [S][NO][NAR]
++            // MultipleUniqueQueryableProperty 
++            builder.HasIndex(entity => new { entity.TeamId, entity.UserEmail }).IsUnique();
++
++        });
++
+         modelBuilder.Entity<Domain.Invite>(builder =>
+         {
+             builder.HasKey(x => x.Id);
+diff --git a/src/UM.Infrastructure/UMInfrastructureRegistration.g.cs b/src/UM.Infrastructure/UMInfrastructureRegistration.g.cs
+old mode 100755
+new mode 100644
+index d9f7f48..759fecd
+--- a/src/UM.Infrastructure/UMInfrastructureRegistration.g.cs
++++ b/src/UM.Infrastructure/UMInfrastructureRegistration.g.cs
+@@ -15,6 +15,8 @@ public static partial class UMInfrastructureRegistration
+ 
+         services.AddScoped<Domain.IUserRepository, UserRepository>();
+ 
++        services.AddScoped<Domain.ITeamRepository, TeamRepository>();
++
+         services.AddScoped<Domain.IInviteRepository, InviteRepository>();
+ 
+         return services;
+diff --git a/src/UM.Infrastructure/UMRepositories.g.cs b/src/UM.Infrastructure/UMRepositories.g.cs
+old mode 100755
+new mode 100644
+index 96c5e8f..0230873
+--- a/src/UM.Infrastructure/UMRepositories.g.cs
++++ b/src/UM.Infrastructure/UMRepositories.g.cs
+@@ -23,6 +23,17 @@ public partial class UserRepository(UMDbContext db) : EfRepository<Domain.User>(
+             ;
+     }
+ }
++public partial class TeamRepository(UMDbContext db) : EfRepository<Domain.Team>(db), Domain.ITeamRepository
++{
++    protected override IQueryable<Domain.Team> WithDetails(IQueryable<Domain.Team> query)
++    {
++        return query
++            // Property [M][LNA][AG][EN]
++            .Include(x => x.Members)
++
++            ;
++    }
++}
+ public partial class InviteRepository(UMDbContext db) : EfRepository<Domain.Invite>(db), Domain.IInviteRepository
+ {
+     protected override IQueryable<Domain.Invite> WithDetails(IQueryable<Domain.Invite> query)
+diff --git a/src/UM.Tests/Framework/ApiTestBase.f.cs b/src/UM.Tests/Framework/ApiTestBase.f.cs
+old mode 100755
+new mode 100644
+diff --git a/src/UM.Tests/TeamTests.cs b/src/UM.Tests/TeamTests.cs
+new file mode 100644
+index 0000000..3f994cb
+--- /dev/null
++++ b/src/UM.Tests/TeamTests.cs
+@@ -0,0 +1,164 @@
++using System.Net;
++using System.Net.Http.Json;
++using SolidOps.UM.Application;
++using SolidOps.UM.Domain;
++
++namespace SolidOps.UM.Tests;
++
++[TestClass]
++public sealed class TeamTests : ApiTestBase
++{
++    [TestMethod]
++    public async Task TeamGoesThroughTheWholeCrudAndItsMembersAreSynchronized()
++    {
++        await AddUserAsync("ada@example.com");
++        await AddUserAsync("bob@example.com");
++        await AddUserAsync("eve@example.com");
++
++        var team = await PostAsync<TeamDto>("/teams", NewTeam("Core", Member("ada@example.com", true), Member("bob@example.com", false)));
++        Assert.HasCount(2, team.Members);
++        Assert.IsTrue(team.Members.All(m => m.Id != Guid.Empty));
++        var ada = team.Members.Single(m => m.UserEmail == "ada@example.com");
++        var bob = team.Members.Single(m => m.UserEmail == "bob@example.com");
++
++        // ada updated (owner changes to bob), bob updated, eve added
++        var update = NewTeam("Core 2", Member("ada@example.com", false, ada.Id), Member("bob@example.com", true, bob.Id), Member("eve@example.com", false));
++        update.Description = "The core";
++        var updated = await PutAsync(team.Id, update);
++        Assert.AreEqual("Core 2", updated.Name);
++        Assert.AreEqual("The core", updated.Description);
++        Assert.HasCount(3, updated.Members);
++        Assert.IsFalse(updated.Members.Single(m => m.Id == ada.Id).IsOwner);
++        Assert.IsTrue(updated.Members.Single(m => m.Id == bob.Id).IsOwner);
++
++        // ada and eve removed
++        var one = await PutAsync(team.Id, NewTeam("Core 2", Member("bob@example.com", true, bob.Id)));
++        Assert.AreEqual(bob.Id, one.Members.Single().Id);
++
++        var read = await Client.GetFromJsonAsync<TeamDto>($"/teams/{team.Id}");
++        Assert.HasCount(1, read!.Members);
++
++        var page = await Client.GetFromJsonAsync<Page<TeamDto>>("/teams");
++        Assert.AreEqual(team.Id, page!.Items.Single().Id);
++    }
++
++    [TestMethod]
++    public async Task UnknownIdGives404OnUpdateAndDelete()
++    {
++        Assert.AreEqual(HttpStatusCode.NotFound, (await Client.PutAsJsonAsync($"/teams/{Guid.NewGuid()}", NewTeam("X"))).StatusCode);
++        Assert.AreEqual(HttpStatusCode.NotFound, (await Client.DeleteAsync($"/teams/{Guid.NewGuid()}")).StatusCode);
++    }
++
++    [TestMethod]
++    public async Task TeamWithoutMembersIsAllowedAndCanBeDeleted()
++    {
++        var team = await PostAsync<TeamDto>("/teams", NewTeam("Empty"));
++
++        Assert.AreEqual(HttpStatusCode.NoContent, (await Client.DeleteAsync($"/teams/{team.Id}")).StatusCode);
++        Assert.AreEqual(HttpStatusCode.NotFound, (await Client.GetAsync($"/teams/{team.Id}")).StatusCode);
++    }
++
++    [TestMethod]
++    public async Task TeamWithMembersCannotBeDeleted()
++    {
++        await AddUserAsync("ada@example.com");
++        var team = await PostAsync<TeamDto>("/teams", NewTeam("Core", Member("ada@example.com", true)));
++
++        Assert.AreEqual(HttpStatusCode.Conflict, (await Client.DeleteAsync($"/teams/{team.Id}")).StatusCode);
++        Assert.AreEqual(HttpStatusCode.OK, (await Client.GetAsync($"/teams/{team.Id}")).StatusCode);
++
++        await PutAsync(team.Id, NewTeam("Core"));
++        Assert.AreEqual(HttpStatusCode.NoContent, (await Client.DeleteAsync($"/teams/{team.Id}")).StatusCode);
++    }
++
++    [TestMethod]
++    public async Task NameMustBeUnique()
++    {
++        await PostAsync<TeamDto>("/teams", NewTeam("Core"));
++        var other = await PostAsync<TeamDto>("/teams", NewTeam("Other"));
++
++        Assert.AreEqual(HttpStatusCode.Conflict, (await Client.PostAsJsonAsync("/teams", NewTeam("Core"))).StatusCode);
++        Assert.AreEqual(HttpStatusCode.Conflict, (await Client.PutAsJsonAsync($"/teams/{other.Id}", NewTeam("Core"))).StatusCode);
++    }
++
++    [TestMethod]
++    public async Task InvalidFieldsAreReported()
++    {
++        await AssertInvalidAsync(await Client.PostAsJsonAsync("/teams", NewTeam("")), "Name");
++        await AssertInvalidAsync(await Client.PostAsJsonAsync("/teams", NewTeam(new string('a', 51))), "Name");
++
++        var team = NewTeam("Long");
++        team.Description = new string('d', 201);
++        await AssertInvalidAsync(await Client.PostAsJsonAsync("/teams", team), "Description");
++
++        await AssertInvalidAsync(await Client.PostAsJsonAsync("/teams", NewTeam("Mail", Member("", true))), "Members[0].UserEmail");
++        await AssertInvalidAsync(await Client.PostAsJsonAsync("/teams", NewTeam("Mail", Member(new string('a', 51), true))), "Members[0].UserEmail");
++    }
++
++    [TestMethod]
++    public async Task MemberEmailMustMatchAUser()
++    {
++        var response = await Client.PostAsJsonAsync("/teams", NewTeam("Core", Member("nobody@example.com", true)));
++
++        await AssertInvalidAsync(response, "Members[0].UserEmail");
++    }
++
++    [TestMethod]
++    public async Task MemberEmailAppearsOnceInATeam()
++    {
++        await AddUserAsync("ada@example.com");
++
++        var response = await Client.PostAsJsonAsync("/teams", NewTeam("Core", Member("ada@example.com", true), Member("ada@example.com", false)));
++
++        await AssertInvalidAsync(response, "Members[1].UserEmail");
++    }
++
++    [TestMethod]
++    public async Task TeamWithMembersHasExactlyOneOwner()
++    {
++        await AddUserAsync("ada@example.com");
++        await AddUserAsync("bob@example.com");
++
++        await AssertInvalidAsync(await Client.PostAsJsonAsync("/teams", NewTeam("None", Member("ada@example.com", false))), "Members");
++        await AssertInvalidAsync(await Client.PostAsJsonAsync("/teams", NewTeam("Two", Member("ada@example.com", true), Member("bob@example.com", true))), "Members");
++
++        var team = await PostAsync<TeamDto>("/teams", NewTeam("One", Member("ada@example.com", true)));
++        var response = await Client.PutAsJsonAsync($"/teams/{team.Id}", NewTeam("One", Member("ada@example.com", false, team.Members[0].Id)));
++        await AssertInvalidAsync(response, "Members");
++    }
++
++    [TestMethod]
++    public async Task ReadingRequiresAnAuthenticatedCallerAndWritingTheManageTeamsRight()
++    {
++        var team = await PostAsync<TeamDto>("/teams", NewTeam("Core"));
++
++        Unauthenticate();
++        Assert.AreEqual(HttpStatusCode.Unauthorized, (await Client.GetAsync("/teams")).StatusCode);
++        Assert.AreEqual(HttpStatusCode.Unauthorized, (await Client.PostAsJsonAsync("/teams", NewTeam("A"))).StatusCode);
++
++        AuthenticateAs(UMRights.ManageUsers);
++        Assert.AreEqual(HttpStatusCode.OK, (await Client.GetAsync("/teams")).StatusCode);
++        Assert.AreEqual(HttpStatusCode.OK, (await Client.GetAsync($"/teams/{team.Id}")).StatusCode);
++        Assert.AreEqual(HttpStatusCode.Forbidden, (await Client.PostAsJsonAsync("/teams", NewTeam("A"))).StatusCode);
++        Assert.AreEqual(HttpStatusCode.Forbidden, (await Client.PutAsJsonAsync($"/teams/{team.Id}", NewTeam("A"))).StatusCode);
++        Assert.AreEqual(HttpStatusCode.Forbidden, (await Client.DeleteAsync($"/teams/{team.Id}")).StatusCode);
++
++        AuthenticateAs(UMRights.ManageTeams);
++        Assert.AreEqual(HttpStatusCode.Created, (await Client.PostAsJsonAsync("/teams", NewTeam("A"))).StatusCode);
++        Assert.AreEqual(HttpStatusCode.NoContent, (await Client.DeleteAsync($"/teams/{team.Id}")).StatusCode);
++    }
++
++    private async Task AddUserAsync(string email) =>
++        await PostAsync<UserDto>("/users", new UserInput { Email = email, Provider = "local" });
++
++    private async Task<TeamDto> PutAsync(Guid id, TeamInput input)
++    {
++        var response = await Client.PutAsJsonAsync($"/teams/{id}", input);
++        Assert.AreEqual(HttpStatusCode.OK, response.StatusCode, await response.Content.ReadAsStringAsync());
++        return (await response.Content.ReadFromJsonAsync<TeamDto>())!;
++    }
++
++    private static TeamInput NewTeam(string name, params TeamMemberInput[] members) => new() { Name = name, Members = [.. members] };
++
++    private static TeamMemberInput Member(string email, bool isOwner, Guid? id = null) => new() { Id = id, UserEmail = email, IsOwner = isOwner };
++}
+diff --git a/src/UM.Tests/UMApiTests.g.cs b/src/UM.Tests/UMApiTests.g.cs
+old mode 100755
+new mode 100644
+index 48d2775..1088962
+--- a/src/UM.Tests/UMApiTests.g.cs
++++ b/src/UM.Tests/UMApiTests.g.cs
+@@ -30,6 +30,28 @@ public partial class UMApiTests : ApiTestBase
+         Assert.AreEqual(HttpStatusCode.NotFound, response.StatusCode, await response.Content.ReadAsStringAsync());
+     }
+ 
++    [TestMethod]
++    public async Task TeamQueryAnswers()
++    {
++        var response = await Client.GetAsync("/teams?orderBy=Id&descending=true");
++        Assert.AreEqual(HttpStatusCode.OK, response.StatusCode, await response.Content.ReadAsStringAsync());
++    }
++
++    [TestMethod]
++    public async Task TeamQueryRefusesAnAnonymousCaller()
++    {
++        Unauthenticate();
++        var response = await Client.GetAsync("/teams");
++        Assert.AreEqual(HttpStatusCode.Unauthorized, response.StatusCode);
++    }
++
++    [TestMethod]
++    public async Task UnknownTeamIsNotFound()
++    {
++        var response = await Client.GetAsync($"/teams/{UnknownId}");
++        Assert.AreEqual(HttpStatusCode.NotFound, response.StatusCode, await response.Content.ReadAsStringAsync());
++    }
++
+     [TestMethod]
+     public async Task InviteQueryAnswers()
+     {

@@ -1,0 +1,718 @@
+diff --git a/src/UM.Api/TeamEndpoints.cs b/src/UM.Api/TeamEndpoints.cs
+new file mode 100644
+index 0000000..5ae3de4
+--- /dev/null
++++ b/src/UM.Api/TeamEndpoints.cs
+@@ -0,0 +1,29 @@
++using SolidOps.UM.Application;
++
++namespace SolidOps.UM.Api;
++
++public static partial class UMEndpoints
++{
++    private static void MapTeamEndpoints(RouteGroupBuilder group)
++    {
++        group.MapGet("/", async (int? page, int? pageSize, string? orderBy, bool? descending, TeamService service, CancellationToken cancellationToken) =>
++            (await service.QueryAsync(HttpResults.ToPageRequest(page, pageSize, orderBy, descending), cancellationToken)).ToHttpResult())
++            .RequireRight("");
++
++        group.MapGet("/{id}", async (Guid id, TeamService service, CancellationToken cancellationToken) =>
++            (await service.GetAsync(id, cancellationToken)).ToHttpResult())
++            .RequireRight("");
++
++        group.MapPost("/", async (TeamInput input, TeamService service, CancellationToken cancellationToken) =>
++            (await service.AddAsync(input, cancellationToken)).ToCreatedHttpResult(dto => $"/teams/{dto.Id}"))
++            .RequireRight(UMRights.ManageTeams);
++
++        group.MapPut("/{id}", async (Guid id, TeamInput input, TeamService service, CancellationToken cancellationToken) =>
++            (await service.UpdateAsync(id, input, cancellationToken)).ToHttpResult())
++            .RequireRight(UMRights.ManageTeams);
++
++        group.MapDelete("/{id}", async (Guid id, TeamService service, CancellationToken cancellationToken) =>
++            (await service.RemoveAsync(id, cancellationToken)).ToHttpResult())
++            .RequireRight(UMRights.ManageTeams);
++    }
++}
+diff --git a/src/UM.Api/UMEndpoints.cs b/src/UM.Api/UMEndpoints.cs
+index d52230f..3b5a233 100755
+--- a/src/UM.Api/UMEndpoints.cs
++++ b/src/UM.Api/UMEndpoints.cs
+@@ -14,6 +14,8 @@ public static partial class UMEndpoints
+ 
+         MapInviteEndpoints(app.MapGroup("/invites").WithTags("Invites"));
+ 
++        MapTeamEndpoints(app.MapGroup("/teams").WithTags("Teams"));
++
+         MapAuthenticationEndpoints(app.MapGroup("/authentication").WithTags("Authentication"));
+ 
+         MapInvitesEndpoints(app.MapGroup("/invites").WithTags("Invites"));
+diff --git a/src/UM.Application/Teams.cs b/src/UM.Application/Teams.cs
+new file mode 100644
+index 0000000..3bf3271
+--- /dev/null
++++ b/src/UM.Application/Teams.cs
+@@ -0,0 +1,230 @@
++using SolidOps.UM.Domain;
++
++namespace SolidOps.UM.Application;
++
++public sealed class MemberDto
++{
++    public Guid Id { get; set; }
++
++    public string UserEmail { get; set; } = string.Empty;
++
++    public bool IsOwner { get; set; }
++
++    public static MemberDto From(Member entity) => new() { Id = entity.Id, UserEmail = entity.UserEmail, IsOwner = entity.IsOwner };
++}
++
++public sealed class TeamDto
++{
++    /// <summary>The values accepted by the orderBy parameter of the query.</summary>
++    public static readonly IReadOnlyCollection<string> SortableProperties = ["Id", "Name", "Description"];
++
++    public Guid Id { get; set; }
++
++    public string Name { get; set; } = string.Empty;
++
++    public string? Description { get; set; }
++
++    public List<MemberDto> Members { get; set; } = [];
++
++    public static TeamDto From(Team entity) => new()
++    {
++        Id = entity.Id,
++        Name = entity.Name,
++        Description = entity.Description,
++        Members = entity.Members.Select(MemberDto.From).ToList(),
++    };
++}
++
++public sealed class MemberInput
++{
++    /// <summary>The member to update; null for a new member.</summary>
++    public Guid? Id { get; set; }
++
++    public string UserEmail { get; set; } = string.Empty;
++
++    public bool IsOwner { get; set; }
++}
++
++public sealed class TeamInput
++{
++    public string Name { get; set; } = string.Empty;
++
++    public string? Description { get; set; }
++
++    /// <summary>The whole list: a member without Id is added, one with its Id is updated, one missing is removed.</summary>
++    public List<MemberInput> Members { get; set; } = [];
++
++    /// <summary>The rules that need no data: required values, lengths, one owner, no duplicated email or Id.</summary>
++    public Dictionary<string, string[]> Validate()
++    {
++        var errors = new Dictionary<string, string[]>();
++        if (string.IsNullOrWhiteSpace(Name))
++        {
++            errors["Name"] = ["Name is required"];
++        }
++        else if (Name.Length > 50)
++        {
++            errors["Name"] = ["Name is longer than 50 characters"];
++        }
++        if (Description?.Length > 200)
++        {
++            errors["Description"] = ["Description is longer than 200 characters"];
++        }
++
++        var emails = new HashSet<string>(StringComparer.Ordinal);
++        var ids = new HashSet<Guid>();
++        for (var i = 0; i < Members.Count; i++)
++        {
++            var member = Members[i];
++            var key = $"Members[{i}]";
++            if (member is null)
++            {
++                errors[key] = ["Member is required"];
++                continue;
++            }
++            if (string.IsNullOrWhiteSpace(member.UserEmail))
++            {
++                errors[$"{key}.UserEmail"] = ["UserEmail is required"];
++            }
++            else if (member.UserEmail.Length > 50)
++            {
++                errors[$"{key}.UserEmail"] = ["UserEmail is longer than 50 characters"];
++            }
++            else if (!emails.Add(member.UserEmail))
++            {
++                errors[$"{key}.UserEmail"] = ["UserEmail is already a member of the team"];
++            }
++            if (member.Id is { } id && !ids.Add(id))
++            {
++                errors[$"{key}.Id"] = ["Id appears twice"];
++            }
++        }
++
++        if (Members.Count > 0 && Members.Count(m => m?.IsOwner == true) != 1)
++        {
++            errors["Members"] = ["A team with members has exactly one owner"];
++        }
++        return errors;
++    }
++
++    public void ApplyTo(Team entity)
++    {
++        entity.Name = Name;
++        entity.Description = Description;
++        entity.Members.RemoveAll(child => !Members.Exists(input => input.Id == child.Id));
++        foreach (var input in Members)
++        {
++            var child = input.Id is { } id ? entity.Members.Find(m => m.Id == id) : null;
++            if (child is null)
++            {
++                child = new Member();
++                entity.Members.Add(child);
++            }
++            child.UserEmail = input.UserEmail;
++            child.IsOwner = input.IsOwner;
++        }
++    }
++}
++
++public partial class TeamService(
++    ITeamRepository repository,
++    IUnitOfWork unitOfWork)
++{
++    public async Task<Result<Page<TeamDto>>> QueryAsync(PageRequest request, CancellationToken cancellationToken = default)
++    {
++        var errors = Paging.Validate(request, TeamDto.SortableProperties);
++        if (errors.Count > 0)
++        {
++            return Error.Invalid(errors);
++        }
++        return (await repository.QueryAsync(request, cancellationToken)).Map(TeamDto.From);
++    }
++
++    public async Task<Result<TeamDto>> GetAsync(Guid id, CancellationToken cancellationToken = default)
++    {
++        var aggregate = await repository.FindAsync(id, cancellationToken);
++        return aggregate is null ? Error.NotFound() : TeamDto.From(aggregate);
++    }
++
++    public async Task<Result<TeamDto>> AddAsync(TeamInput input, CancellationToken cancellationToken = default)
++    {
++        var errors = await ValidateAsync(input, null, cancellationToken);
++        if (errors.Count > 0)
++        {
++            return Error.Invalid(errors);
++        }
++        var aggregate = new Team();
++        input.ApplyTo(aggregate);
++        repository.Add(aggregate);
++        if (await unitOfWork.SaveChangesAsync(cancellationToken) is { } error)
++        {
++            return error;
++        }
++        return TeamDto.From(aggregate);
++    }
++
++    public async Task<Result<TeamDto>> UpdateAsync(Guid id, TeamInput input, CancellationToken cancellationToken = default)
++    {
++        var aggregate = await repository.FindAsync(id, cancellationToken);
++        if (aggregate is null)
++        {
++            return Error.NotFound();
++        }
++        var errors = await ValidateAsync(input, aggregate, cancellationToken);
++        if (errors.Count > 0)
++        {
++            return Error.Invalid(errors);
++        }
++        input.ApplyTo(aggregate);
++        if (await unitOfWork.SaveChangesAsync(cancellationToken) is { } error)
++        {
++            return error;
++        }
++        return TeamDto.From(aggregate);
++    }
++
++    public async Task<Result> RemoveAsync(Guid id, CancellationToken cancellationToken = default)
++    {
++        var aggregate = await repository.FindAsync(id, cancellationToken);
++        if (aggregate is null)
++        {
++            return Error.NotFound();
++        }
++        if (aggregate.Members.Count > 0)
++        {
++            return Error.Conflict("The team still has members");
++        }
++        repository.Remove(aggregate);
++        if (await unitOfWork.SaveChangesAsync(cancellationToken) is { } error)
++        {
++            return error;
++        }
++        return Result.Success();
++    }
++
++    // the input's own rules, then the members' ids and emails against the existing team and users
++    private async Task<Dictionary<string, string[]>> ValidateAsync(TeamInput input, Team? existing, CancellationToken cancellationToken)
++    {
++        var errors = input.Validate();
++        var members = input.Members.Where(m => m is not null).ToList();
++        for (var i = 0; i < input.Members.Count; i++)
++        {
++            if (input.Members[i]?.Id is { } id && (existing is null || !existing.Members.Exists(m => m.Id == id)))
++            {
++                errors[$"Members[{i}].Id"] = ["Member not found in the team"];
++            }
++        }
++
++        var known = await repository.FindExistingUserEmailsAsync(
++            members.Select(m => m.UserEmail).Where(e => !string.IsNullOrWhiteSpace(e)).Distinct(), cancellationToken);
++        for (var i = 0; i < input.Members.Count; i++)
++        {
++            var email = input.Members[i]?.UserEmail;
++            if (!string.IsNullOrWhiteSpace(email) && !known.Contains(email) && !errors.ContainsKey($"Members[{i}].UserEmail"))
++            {
++                errors[$"Members[{i}].UserEmail"] = ["User not found"];
++            }
++        }
++        return errors;
++    }
++}
+diff --git a/src/UM.Application/UMApplicationRegistration.cs b/src/UM.Application/UMApplicationRegistration.cs
+index 68ae29f..f862995 100755
+--- a/src/UM.Application/UMApplicationRegistration.cs
++++ b/src/UM.Application/UMApplicationRegistration.cs
+@@ -10,6 +10,8 @@ public static partial class UMApplicationRegistration
+ 
+         services.AddScoped<InviteService>();
+ 
++        services.AddScoped<TeamService>();
++
+         services.AddScoped<IAuthenticationService, AuthenticationService>();
+ 
+         services.AddScoped<IInvitesService, InvitesService>();
+diff --git a/src/UM.Application/UMRights.cs b/src/UM.Application/UMRights.cs
+index 1d2296c..19e68ae 100755
+--- a/src/UM.Application/UMRights.cs
++++ b/src/UM.Application/UMRights.cs
+@@ -6,6 +6,8 @@ public static partial class UMRights
+     // Right [NW]
+     public const string ManageUsers = "ManageUsers";
+ 
++    public const string ManageTeams = "ManageTeams";
++
+     public const string CreateUser = "CreateUser";
+ 
+ }
+\ No newline at end of file
+diff --git a/src/UM.Domain/Teams.cs b/src/UM.Domain/Teams.cs
+new file mode 100644
+index 0000000..7cead73
+--- /dev/null
++++ b/src/UM.Domain/Teams.cs
+@@ -0,0 +1,29 @@
++namespace SolidOps.UM.Domain;
++
++/// <summary>A named group of users. A team with members has exactly one owner.</summary>
++public partial class Team : AggregateRoot
++{
++    public string Name { get; set; } = string.Empty;
++
++    public string? Description { get; set; }
++
++    public List<Member> Members { get; set; } = [];
++}
++
++/// <summary>A user of a team, designated by email; each email appears at most once in a team.</summary>
++public partial class Member : Entity
++{
++    public string UserEmail { get; set; } = string.Empty;
++
++    public bool IsOwner { get; set; }
++
++    public Guid TeamId { get; set; }
++
++    public Team? Team { get; set; }
++}
++
++public partial interface ITeamRepository : IRepository<Team>
++{
++    /// <summary>Those of <paramref name="emails"/> that are the email of a user.</summary>
++    Task<HashSet<string>> FindExistingUserEmailsAsync(IEnumerable<string> emails, CancellationToken cancellationToken = default);
++}
+diff --git a/src/UM.Infrastructure/Framework/EfRepository.cs b/src/UM.Infrastructure/Framework/EfRepository.cs
+index ba62212..a2f76ce 100755
+--- a/src/UM.Infrastructure/Framework/EfRepository.cs
++++ b/src/UM.Infrastructure/Framework/EfRepository.cs
+@@ -15,6 +15,9 @@ public abstract class EfRepository<T>(UMDbContext db) : IRepository<T> where T :
+     /// <summary>The navigations loaded by <see cref="FindAsync"/>.</summary>
+     protected virtual IQueryable<T> WithDetails(IQueryable<T> query) => query;
+ 
++    /// <summary>The navigations loaded by <see cref="QueryAsync"/>; none by default.</summary>
++    protected virtual IQueryable<T> WithPageDetails(IQueryable<T> query) => query;
++
+     public Task<T?> FindAsync(Guid id, CancellationToken cancellationToken = default)
+     {
+         return WithDetails(Db.Set<T>()).FirstOrDefaultAsync(x => x.Id == id, cancellationToken);
+@@ -29,7 +32,7 @@ public abstract class EfRepository<T>(UMDbContext db) : IRepository<T> where T :
+             : request.Descending
+                 ? query.OrderByDescending(x => EF.Property<object>(x, request.OrderBy))
+                 : query.OrderBy(x => EF.Property<object>(x, request.OrderBy));
+-        var items = await query
++        var items = await WithPageDetails(query)
+             .Skip((request.Page - 1) * request.PageSize)
+             .Take(request.PageSize)
+             .ToListAsync(cancellationToken);
+diff --git a/src/UM.Infrastructure/Teams.cs b/src/UM.Infrastructure/Teams.cs
+new file mode 100644
+index 0000000..5a3b2fb
+--- /dev/null
++++ b/src/UM.Infrastructure/Teams.cs
+@@ -0,0 +1,44 @@
++using Microsoft.EntityFrameworkCore;
++using SolidOps.UM.Domain;
++
++namespace SolidOps.UM.Infrastructure;
++
++public sealed class TeamRepository(UMDbContext db) : EfRepository<Team>(db), ITeamRepository
++{
++    protected override IQueryable<Team> WithDetails(IQueryable<Team> query) => query.Include(x => x.Members);
++
++    protected override IQueryable<Team> WithPageDetails(IQueryable<Team> query) => query.Include(x => x.Members);
++
++    public async Task<HashSet<string>> FindExistingUserEmailsAsync(IEnumerable<string> emails, CancellationToken cancellationToken = default)
++    {
++        var wanted = emails.ToList();
++        var found = await Db.Users.Where(u => wanted.Contains(u.Email)).Select(u => u.Email).ToListAsync(cancellationToken);
++        return found.ToHashSet(StringComparer.Ordinal);
++    }
++}
++
++public partial class UMDbContext
++{
++    public DbSet<Team> Teams => Set<Team>();
++
++    public DbSet<Member> Members => Set<Member>();
++
++    private static void ConfigureTeams(ModelBuilder modelBuilder)
++    {
++        modelBuilder.Entity<Team>(builder =>
++        {
++            builder.HasKey(x => x.Id);
++            builder.Property(x => x.Name).HasMaxLength(50);
++            builder.Property(x => x.Description).HasMaxLength(200);
++            builder.HasIndex(x => x.Name).IsUnique();
++            builder.HasMany(x => x.Members).WithOne(x => x.Team).HasForeignKey(x => x.TeamId);
++        });
++
++        modelBuilder.Entity<Member>(builder =>
++        {
++            builder.HasKey(x => x.Id);
++            builder.Property(x => x.UserEmail).HasMaxLength(50);
++            builder.HasIndex(x => new { x.TeamId, x.UserEmail }).IsUnique();
++        });
++    }
++}
+diff --git a/src/UM.Infrastructure/UMDbContext.cs b/src/UM.Infrastructure/UMDbContext.cs
+index 094d68b..65ea80e 100755
+--- a/src/UM.Infrastructure/UMDbContext.cs
++++ b/src/UM.Infrastructure/UMDbContext.cs
+@@ -8,11 +8,15 @@ public partial class UMDbContext
+     public static readonly Guid AdminRightId = new("8e0d6a2c-34a1-4c55-9a3e-6f1d2b7c9e01");
+     public static readonly Guid ManageUsersRightId = new("8e0d6a2c-34a1-4c55-9a3e-6f1d2b7c9e02");
+ 
++    public static readonly Guid ManageTeamsRightId = new("8e0d6a2c-34a1-4c55-9a3e-6f1d2b7c9e03");
++
+     // the rights are fixed: no API creates them
+     partial void OnModelCreatingPartial(ModelBuilder modelBuilder)
+     {
++        ConfigureTeams(modelBuilder);
+         modelBuilder.Entity<Right>().HasData(
+             new Right { Id = AdminRightId, Name = "Admin" },
+-            new Right { Id = ManageUsersRightId, Name = "ManageUsers" });
++            new Right { Id = ManageUsersRightId, Name = "ManageUsers" },
++            new Right { Id = ManageTeamsRightId, Name = "ManageTeams" });
+     }
+ }
+diff --git a/src/UM.Infrastructure/UMInfrastructureRegistration.cs b/src/UM.Infrastructure/UMInfrastructureRegistration.cs
+index ac26acf..e97ea80 100755
+--- a/src/UM.Infrastructure/UMInfrastructureRegistration.cs
++++ b/src/UM.Infrastructure/UMInfrastructureRegistration.cs
+@@ -16,6 +16,8 @@ public static partial class UMInfrastructureRegistration
+ 
+         services.AddScoped<Domain.IInviteRepository, InviteRepository>();
+ 
++        services.AddScoped<Domain.ITeamRepository, TeamRepository>();
++
+         return services;
+     }
+ }
+\ No newline at end of file
+diff --git a/src/UM.Tests/TeamTests.cs b/src/UM.Tests/TeamTests.cs
+new file mode 100644
+index 0000000..41f9dd0
+--- /dev/null
++++ b/src/UM.Tests/TeamTests.cs
+@@ -0,0 +1,258 @@
++using System.Net;
++using System.Net.Http.Json;
++using SolidOps.UM.Application;
++using SolidOps.UM.Domain;
++
++namespace SolidOps.UM.Tests;
++
++[TestClass]
++public sealed class TeamTests : ApiTestBase
++{
++    [TestMethod]
++    public async Task TeamGoesThroughTheWholeCrud()
++    {
++        await AddUsersAsync("ada@example.com", "bob@example.com");
++
++        var created = await PostAsync<TeamDto>("/teams", NewTeam("Core", Member("ada@example.com", true)));
++        Assert.AreEqual("Core", created.Name);
++        Assert.HasCount(1, created.Members);
++        Assert.AreNotEqual(Guid.Empty, created.Members[0].Id);
++
++        var update = NewTeam("Core2", new MemberInput { Id = created.Members[0].Id, UserEmail = "ada@example.com", IsOwner = true }, Member("bob@example.com", false));
++        update.Description = "The core team";
++        var updateResponse = await Client.PutAsJsonAsync($"/teams/{created.Id}", update);
++        Assert.AreEqual(HttpStatusCode.OK, updateResponse.StatusCode, await updateResponse.Content.ReadAsStringAsync());
++        var updated = (await updateResponse.Content.ReadFromJsonAsync<TeamDto>())!;
++        Assert.AreEqual("Core2", updated.Name);
++        Assert.HasCount(2, updated.Members);
++        Assert.AreEqual(created.Members[0].Id, updated.Members.Single(m => m.IsOwner).Id);
++
++        var read = await Client.GetFromJsonAsync<TeamDto>($"/teams/{created.Id}");
++        Assert.AreEqual("The core team", read!.Description);
++        Assert.HasCount(2, read.Members);
++
++        var page = await Client.GetFromJsonAsync<Page<TeamDto>>("/teams");
++        Assert.AreEqual(1, page!.TotalCount);
++        Assert.HasCount(2, page.Items[0].Members);
++
++        // members must be removed before the team
++        Assert.AreEqual(HttpStatusCode.OK, (await Client.PutAsJsonAsync($"/teams/{created.Id}", NewTeam("Core2"))).StatusCode);
++        Assert.AreEqual(HttpStatusCode.NoContent, (await Client.DeleteAsync($"/teams/{created.Id}")).StatusCode);
++        Assert.AreEqual(HttpStatusCode.NotFound, (await Client.GetAsync($"/teams/{created.Id}")).StatusCode);
++    }
++
++    [TestMethod]
++    public async Task TeamWithoutMembersIsAllowed()
++    {
++        var team = await PostAsync<TeamDto>("/teams", NewTeam("Empty"));
++
++        Assert.IsEmpty(team.Members);
++    }
++
++    [TestMethod]
++    public async Task MembersAreAddedUpdatedAndRemovedByTheList()
++    {
++        await AddUsersAsync("a@example.com", "b@example.com", "c@example.com");
++        var team = await PostAsync<TeamDto>("/teams", NewTeam("T", Member("a@example.com", true), Member("b@example.com", false)));
++        var a = team.Members.Single(m => m.UserEmail == "a@example.com");
++        var b = team.Members.Single(m => m.UserEmail == "b@example.com");
++
++        // b is removed, a kept, c added; a keeps its Id
++        var response = await Client.PutAsJsonAsync($"/teams/{team.Id}", NewTeam("T",
++            new MemberInput { Id = a.Id, UserEmail = "a@example.com", IsOwner = true }, Member("c@example.com", false)));
++        var updated = (await response.Content.ReadFromJsonAsync<TeamDto>())!;
++
++        Assert.AreEqual(HttpStatusCode.OK, response.StatusCode);
++        CollectionAssert.AreEquivalent(new[] { "a@example.com", "c@example.com" }, updated.Members.Select(m => m.UserEmail).ToArray());
++        Assert.IsTrue(updated.Members.Any(m => m.Id == a.Id));
++        Assert.IsFalse(updated.Members.Any(m => m.Id == b.Id));
++    }
++
++    [TestMethod]
++    public async Task OwnershipCanMoveAndAMemberCanBeReplacedByTheSameEmail()
++    {
++        await AddUsersAsync("a@example.com", "b@example.com");
++        var team = await PostAsync<TeamDto>("/teams", NewTeam("T", Member("a@example.com", true), Member("b@example.com", false)));
++        var a = team.Members.Single(m => m.UserEmail == "a@example.com");
++        var b = team.Members.Single(m => m.UserEmail == "b@example.com");
++
++        var moved = await Client.PutAsJsonAsync($"/teams/{team.Id}", NewTeam("T",
++            new MemberInput { Id = a.Id, UserEmail = "a@example.com", IsOwner = false },
++            new MemberInput { Id = b.Id, UserEmail = "b@example.com", IsOwner = true }));
++        Assert.AreEqual(HttpStatusCode.OK, moved.StatusCode, await moved.Content.ReadAsStringAsync());
++
++        // a removed and re-added in the same request
++        var replaced = await Client.PutAsJsonAsync($"/teams/{team.Id}", NewTeam("T",
++            Member("a@example.com", false),
++            new MemberInput { Id = b.Id, UserEmail = "b@example.com", IsOwner = true }));
++        Assert.AreEqual(HttpStatusCode.OK, replaced.StatusCode, await replaced.Content.ReadAsStringAsync());
++    }
++
++    [TestMethod]
++    public async Task UnknownTeamIsNotFound()
++    {
++        Assert.AreEqual(HttpStatusCode.NotFound, (await Client.GetAsync($"/teams/{UnknownId}")).StatusCode);
++        Assert.AreEqual(HttpStatusCode.NotFound, (await Client.PutAsJsonAsync($"/teams/{UnknownId}", NewTeam("X"))).StatusCode);
++        Assert.AreEqual(HttpStatusCode.NotFound, (await Client.DeleteAsync($"/teams/{UnknownId}")).StatusCode);
++    }
++
++    [TestMethod]
++    public async Task NameIsRequiredAndAtMost50Characters()
++    {
++        await AssertInvalidAsync(await Client.PostAsJsonAsync("/teams", NewTeam("")), "Name");
++        await AssertInvalidAsync(await Client.PostAsJsonAsync("/teams", NewTeam(new string('x', 51))), "Name");
++        Assert.AreEqual(HttpStatusCode.Created, (await Client.PostAsJsonAsync("/teams", NewTeam(new string('x', 50)))).StatusCode);
++    }
++
++    [TestMethod]
++    public async Task DescriptionIsAtMost200Characters()
++    {
++        var tooLong = NewTeam("A");
++        tooLong.Description = new string('x', 201);
++        await AssertInvalidAsync(await Client.PostAsJsonAsync("/teams", tooLong), "Description");
++
++        var fine = NewTeam("B");
++        fine.Description = new string('x', 200);
++        Assert.AreEqual(HttpStatusCode.Created, (await Client.PostAsJsonAsync("/teams", fine)).StatusCode);
++    }
++
++    [TestMethod]
++    public async Task MemberEmailIsRequiredAtMost50CharactersAndOfAnExistingUser()
++    {
++        await AssertInvalidAsync(await Client.PostAsJsonAsync("/teams", NewTeam("A", Member("", true))), "Members[0].UserEmail");
++
++        var longEmail = new string('x', 45) + "@e.com";
++        await AssertInvalidAsync(await Client.PostAsJsonAsync("/teams", NewTeam("B", Member(longEmail, true))), "Members[0].UserEmail");
++
++        await AssertInvalidAsync(await Client.PostAsJsonAsync("/teams", NewTeam("C", Member("nobody@example.com", true))), "Members[0].UserEmail");
++    }
++
++    [TestMethod]
++    public async Task SameEmailCannotAppearTwiceInATeamButCanInTwoTeams()
++    {
++        await AddUsersAsync("a@example.com", "b@example.com");
++
++        await AssertInvalidAsync(await Client.PostAsJsonAsync("/teams",
++            NewTeam("A", Member("a@example.com", true), Member("a@example.com", false))), "Members[1].UserEmail");
++
++        await PostAsync<TeamDto>("/teams", NewTeam("B", Member("a@example.com", true)));
++        await PostAsync<TeamDto>("/teams", NewTeam("C", Member("a@example.com", true)));
++    }
++
++    [TestMethod]
++    public async Task TeamWithMembersHasExactlyOneOwner()
++    {
++        await AddUsersAsync("a@example.com", "b@example.com");
++
++        await AssertInvalidAsync(await Client.PostAsJsonAsync("/teams", NewTeam("None", Member("a@example.com", false))), "Members");
++        await AssertInvalidAsync(await Client.PostAsJsonAsync("/teams",
++            NewTeam("Two", Member("a@example.com", true), Member("b@example.com", true))), "Members");
++
++        var team = await PostAsync<TeamDto>("/teams", NewTeam("One", Member("a@example.com", true), Member("b@example.com", false)));
++        var response = await Client.PutAsJsonAsync($"/teams/{team.Id}", NewTeam("One", Member("a@example.com", false)));
++        await AssertInvalidAsync(response, "Members");
++    }
++
++    [TestMethod]
++    public async Task MemberIdOfAnotherTeamIsInvalid()
++    {
++        await AddUsersAsync("a@example.com");
++        var other = await PostAsync<TeamDto>("/teams", NewTeam("Other", Member("a@example.com", true)));
++        var team = await PostAsync<TeamDto>("/teams", NewTeam("Mine"));
++
++        var response = await Client.PutAsJsonAsync($"/teams/{team.Id}", NewTeam("Mine",
++            new MemberInput { Id = other.Members[0].Id, UserEmail = "a@example.com", IsOwner = true }));
++
++        await AssertInvalidAsync(response, "Members[0].Id");
++    }
++
++    [TestMethod]
++    public async Task InvalidUpdateChangesNothing()
++    {
++        var team = await PostAsync<TeamDto>("/teams", NewTeam("Keep"));
++
++        await AssertInvalidAsync(await Client.PutAsJsonAsync($"/teams/{team.Id}", NewTeam("")), "Name");
++
++        Assert.AreEqual("Keep", (await Client.GetFromJsonAsync<TeamDto>($"/teams/{team.Id}"))!.Name);
++    }
++
++    [TestMethod]
++    public async Task NameMustBeUnique()
++    {
++        var first = await PostAsync<TeamDto>("/teams", NewTeam("Same"));
++        var second = await PostAsync<TeamDto>("/teams", NewTeam("Other"));
++
++        Assert.AreEqual(HttpStatusCode.Conflict, (await Client.PostAsJsonAsync("/teams", NewTeam("Same"))).StatusCode);
++        Assert.AreEqual(HttpStatusCode.Conflict, (await Client.PutAsJsonAsync($"/teams/{second.Id}", NewTeam("Same"))).StatusCode);
++        Assert.AreEqual(HttpStatusCode.OK, (await Client.PutAsJsonAsync($"/teams/{first.Id}", NewTeam("Same"))).StatusCode);
++    }
++
++    [TestMethod]
++    public async Task TeamWithMembersCannotBeDeleted()
++    {
++        await AddUsersAsync("a@example.com");
++        var team = await PostAsync<TeamDto>("/teams", NewTeam("Busy", Member("a@example.com", true)));
++
++        Assert.AreEqual(HttpStatusCode.Conflict, (await Client.DeleteAsync($"/teams/{team.Id}")).StatusCode);
++        Assert.AreEqual(HttpStatusCode.OK, (await Client.GetAsync($"/teams/{team.Id}")).StatusCode);
++    }
++
++    [TestMethod]
++    public async Task TeamsArePagedAndSorted()
++    {
++        foreach (var name in new[] { "c", "a", "b" })
++        {
++            await PostAsync<TeamDto>("/teams", NewTeam(name));
++        }
++
++        var page = await Client.GetFromJsonAsync<Page<TeamDto>>("/teams?orderBy=Name&descending=true&page=2&pageSize=2");
++
++        Assert.AreEqual(3, page!.TotalCount);
++        Assert.AreEqual("a", page.Items.Single().Name);
++        await AssertInvalidAsync(await Client.GetAsync("/teams?orderBy=Members"), "orderBy");
++        await AssertInvalidAsync(await Client.GetAsync("/teams?pageSize=0"), "pageSize");
++    }
++
++    [TestMethod]
++    public async Task ReadingRequiresAnAuthenticatedCaller()
++    {
++        var team = await PostAsync<TeamDto>("/teams", NewTeam("Read"));
++
++        AuthenticateAs();
++        Assert.AreEqual(HttpStatusCode.OK, (await Client.GetAsync("/teams")).StatusCode);
++        Assert.AreEqual(HttpStatusCode.OK, (await Client.GetAsync($"/teams/{team.Id}")).StatusCode);
++
++        Unauthenticate();
++        Assert.AreEqual(HttpStatusCode.Unauthorized, (await Client.GetAsync("/teams")).StatusCode);
++        Assert.AreEqual(HttpStatusCode.Unauthorized, (await Client.GetAsync($"/teams/{team.Id}")).StatusCode);
++        Assert.AreEqual(HttpStatusCode.Unauthorized, (await Client.PostAsJsonAsync("/teams", NewTeam("Anon"))).StatusCode);
++    }
++
++    [TestMethod]
++    public async Task WritingRequiresTheManageTeamsRight()
++    {
++        var team = await PostAsync<TeamDto>("/teams", NewTeam("Guarded"));
++
++        AuthenticateAs(UMRights.ManageUsers);
++        Assert.AreEqual(HttpStatusCode.Forbidden, (await Client.PostAsJsonAsync("/teams", NewTeam("New"))).StatusCode);
++        Assert.AreEqual(HttpStatusCode.Forbidden, (await Client.PutAsJsonAsync($"/teams/{team.Id}", NewTeam("Guarded"))).StatusCode);
++        Assert.AreEqual(HttpStatusCode.Forbidden, (await Client.DeleteAsync($"/teams/{team.Id}")).StatusCode);
++
++        AuthenticateAs(UMRights.ManageTeams);
++        Assert.AreEqual(HttpStatusCode.Created, (await Client.PostAsJsonAsync("/teams", NewTeam("New"))).StatusCode);
++        Assert.AreEqual(HttpStatusCode.OK, (await Client.PutAsJsonAsync($"/teams/{team.Id}", NewTeam("Guarded2"))).StatusCode);
++        Assert.AreEqual(HttpStatusCode.NoContent, (await Client.DeleteAsync($"/teams/{team.Id}")).StatusCode);
++    }
++
++    private static MemberInput Member(string email, bool isOwner) => new() { UserEmail = email, IsOwner = isOwner };
++
++    private static TeamInput NewTeam(string name, params MemberInput[] members) => new() { Name = name, Members = [.. members] };
++
++    private async Task AddUsersAsync(params string[] emails)
++    {
++        foreach (var email in emails)
++        {
++            await PostAsync<UserDto>("/users", new UserInput { Email = email, Provider = "local" });
++        }
++    }
++}

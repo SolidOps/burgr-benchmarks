@@ -1,0 +1,104 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TestRun id="93a1b324-6874-45c6-a50a-cebd003beb4b" name="@59c8ac59c85f 2026-11-19 09:05:36" xmlns="http://microsoft.com/schemas/VisualStudio/TeamTest/2010">
+  <Times creation="2026-11-19T09:05:36.4194007+00:00" queuing="2026-11-19T09:05:36.4194007+00:00" start="2026-11-19T09:05:35.3437804+00:00" finish="2026-11-19T09:05:36.4915427+00:00" />
+  <TestSettings name="default" id="727866c8-796a-451c-80ed-bc18c0f1f311">
+    <Deployment runDeploymentRoot="_59c8ac59c85f_2026-11-19_09_05_36" />
+  </TestSettings>
+  <Results>
+    <UnitTestResult executionId="82318ca8-8913-4b83-bf1d-7944ddc97b05" testId="10cb37e9-bc24-840b-b0ab-48c66f7abb2d" testName="active, stock below the reorder level" computerName="59c8ac59c85f" duration="00:00:00.0150189" startTime="2026-11-19T09:05:36.3363966+00:00" endTime="2026-11-19T09:05:36.3514926+00:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="82318ca8-8913-4b83-bf1d-7944ddc97b05" />
+    <UnitTestResult executionId="6450865d-5ba7-4294-bc5e-89928f2f759b" testId="115fa7a7-4c41-8806-a5eb-750035ab9267" testName="SkuIsUnique" computerName="59c8ac59c85f" duration="00:00:00.0126654" startTime="2026-11-19T09:05:36.4284324+00:00" endTime="2026-11-19T09:05:36.4411498+00:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="6450865d-5ba7-4294-bc5e-89928f2f759b" />
+    <UnitTestResult executionId="d2de8c81-1666-4d44-a497-da10f65b6fe1" testId="15b538ae-5eb9-8c74-95ea-335b701d4906" testName="NeedsReorderFollowsTheStock" computerName="59c8ac59c85f" duration="00:00:00.0200310" startTime="2026-11-19T09:05:36.3810828+00:00" endTime="2026-11-19T09:05:36.4011581+00:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="d2de8c81-1666-4d44-a497-da10f65b6fe1" />
+    <UnitTestResult executionId="8b02beca-7f8c-4420-bfb9-0ac2c9fa42cc" testId="1cde74f4-037e-86b5-a96e-eec1ee7b2b3a" testName="SupplierNameIsRequiredAndLimited" computerName="59c8ac59c85f" duration="00:00:00.0116231" startTime="2026-11-19T09:05:36.1802117+00:00" endTime="2026-11-19T09:05:36.1918774+00:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="8b02beca-7f8c-4420-bfb9-0ac2c9fa42cc" />
+    <UnitTestResult executionId="8e4f0ffa-aa5a-4f73-b1c7-d98e48e6284e" testId="1bb9fe3e-6218-801b-bc05-d3a9713fd440" testName="UnknownProductIsNotFound" computerName="59c8ac59c85f" duration="00:00:00.0029909" startTime="2026-11-19T09:05:36.4411787+00:00" endTime="2026-11-19T09:05:36.4458843+00:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="8e4f0ffa-aa5a-4f73-b1c7-d98e48e6284e" />
+    <UnitTestResult executionId="1e0ef0f9-542c-49b2-9acd-b1d2c2a373a6" testId="132dff31-9bca-86ed-91cb-f99e12a1daba" testName="SupplierNameIsUnique" computerName="59c8ac59c85f" duration="00:00:00.0180469" startTime="2026-11-19T09:05:36.1919025+00:00" endTime="2026-11-19T09:05:36.2099907+00:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="1e0ef0f9-542c-49b2-9acd-b1d2c2a373a6" />
+    <UnitTestResult executionId="c8c9c68c-c0e7-452b-8df8-adc2e47299cd" testId="11a577c1-d244-8a21-a3e5-974ebdce34cb" testName="discontinued" computerName="59c8ac59c85f" duration="00:00:00.0119130" startTime="2026-11-19T09:05:36.3690285+00:00" endTime="2026-11-19T09:05:36.3810041+00:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="c8c9c68c-c0e7-452b-8df8-adc2e47299cd" />
+    <UnitTestResult executionId="bd3fed47-d7ad-4a74-bff7-755941fd96c3" testId="1943120c-7ec3-802e-9680-f824bb44a531" testName="UnknownSupplierIsNotFound" computerName="59c8ac59c85f" duration="00:00:00.0066088" startTime="2026-11-19T09:05:36.1730383+00:00" endTime="2026-11-19T09:05:36.1799327+00:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="bd3fed47-d7ad-4a74-bff7-755941fd96c3" />
+    <UnitTestResult executionId="01420d69-8028-46e8-b900-f88913f10bd1" testId="1ccf7c80-ecc6-8619-b591-f07f021a2735" testName="InvalidProductsAreRejected" computerName="59c8ac59c85f" duration="00:00:00.0271715" startTime="2026-11-19T09:05:36.4011891+00:00" endTime="2026-11-19T09:05:36.4284038+00:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="01420d69-8028-46e8-b900-f88913f10bd1" />
+    <UnitTestResult executionId="588cbacd-ef7e-4cf4-b69a-523b46f32927" testId="174bf4a4-d0ce-81c9-a960-84f9ddb06ddf" testName="ProductGoesThroughTheWholeCrud" computerName="59c8ac59c85f" duration="00:00:00.0464676" startTime="2026-11-19T09:05:36.2689255+00:00" endTime="2026-11-19T09:05:36.3154947+00:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="588cbacd-ef7e-4cf4-b69a-523b46f32927" />
+    <UnitTestResult executionId="e4be7058-ee14-4575-8c3d-669d3694b01c" testId="1612cbdd-78a1-89d6-bdba-788e9c58d668" testName="SupplierIsReadWithItsProducts" computerName="59c8ac59c85f" duration="00:00:00.0579983" startTime="2026-11-19T09:05:36.2100239+00:00" endTime="2026-11-19T09:05:36.2688940+00:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="e4be7058-ee14-4575-8c3d-669d3694b01c" />
+    <UnitTestResult executionId="fbc8eb5b-87a1-41a8-b888-2e55c32a8415" testId="1dd4389f-d50d-8a5d-9a5e-e109265ce760" testName="active, stock above the reorder level" computerName="59c8ac59c85f" duration="00:00:00.0104973" startTime="2026-11-19T09:05:36.3515900+00:00" endTime="2026-11-19T09:05:36.3621551+00:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="fbc8eb5b-87a1-41a8-b888-2e55c32a8415" />
+    <UnitTestResult executionId="ad4399fd-e7ed-46e3-9914-2e9751472658" testId="1246bbc4-7e2d-8a84-97bc-5cb99aec5241" testName="active, stock at the reorder level" computerName="59c8ac59c85f" duration="00:00:00.0189772" startTime="2026-11-19T09:05:36.3155242+00:00" endTime="2026-11-19T09:05:36.3363667+00:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="ad4399fd-e7ed-46e3-9914-2e9751472658" />
+    <UnitTestResult executionId="8fa81b54-b9d3-47fe-a358-a41eca46af50" testId="12526998-f8dd-8d0b-8f3f-3c99d94308b2" testName="SupplierGoesThroughTheWholeCrud" computerName="59c8ac59c85f" duration="00:00:00.4934265" startTime="2026-11-19T09:05:35.6614881+00:00" endTime="2026-11-19T09:05:36.1698182+00:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="8fa81b54-b9d3-47fe-a358-a41eca46af50" />
+  </Results>
+  <TestDefinitions>
+    <UnitTest name="UnknownSupplierIsNotFound" storage="/judge/cases/simple-create/acceptance/bin/debug/net10.0/acceptance.dll" id="1943120c-7ec3-802e-9680-f824bb44a531">
+      <Execution id="bd3fed47-d7ad-4a74-bff7-755941fd96c3" />
+      <TestMethod codeBase="/judge/cases/simple-create/acceptance/bin/Debug/net10.0/Acceptance.dll" adapterTypeName="executor://mstestadapter/v4" className="Benchmarks.SimpleCreate.SupplierTests" name="UnknownSupplierIsNotFound" />
+    </UnitTest>
+    <UnitTest name="SupplierNameIsRequiredAndLimited" storage="/judge/cases/simple-create/acceptance/bin/debug/net10.0/acceptance.dll" id="1cde74f4-037e-86b5-a96e-eec1ee7b2b3a">
+      <Execution id="8b02beca-7f8c-4420-bfb9-0ac2c9fa42cc" />
+      <TestMethod codeBase="/judge/cases/simple-create/acceptance/bin/Debug/net10.0/Acceptance.dll" adapterTypeName="executor://mstestadapter/v4" className="Benchmarks.SimpleCreate.SupplierTests" name="SupplierNameIsRequiredAndLimited" />
+    </UnitTest>
+    <UnitTest name="SupplierNameIsUnique" storage="/judge/cases/simple-create/acceptance/bin/debug/net10.0/acceptance.dll" id="132dff31-9bca-86ed-91cb-f99e12a1daba">
+      <Execution id="1e0ef0f9-542c-49b2-9acd-b1d2c2a373a6" />
+      <TestMethod codeBase="/judge/cases/simple-create/acceptance/bin/Debug/net10.0/Acceptance.dll" adapterTypeName="executor://mstestadapter/v4" className="Benchmarks.SimpleCreate.SupplierTests" name="SupplierNameIsUnique" />
+    </UnitTest>
+    <UnitTest name="SkuIsUnique" storage="/judge/cases/simple-create/acceptance/bin/debug/net10.0/acceptance.dll" id="115fa7a7-4c41-8806-a5eb-750035ab9267">
+      <Execution id="6450865d-5ba7-4294-bc5e-89928f2f759b" />
+      <TestMethod codeBase="/judge/cases/simple-create/acceptance/bin/Debug/net10.0/Acceptance.dll" adapterTypeName="executor://mstestadapter/v4" className="Benchmarks.SimpleCreate.ProductTests" name="SkuIsUnique" />
+    </UnitTest>
+    <UnitTest name="NeedsReorderFollowsTheStock" storage="/judge/cases/simple-create/acceptance/bin/debug/net10.0/acceptance.dll" id="15b538ae-5eb9-8c74-95ea-335b701d4906">
+      <Execution id="d2de8c81-1666-4d44-a497-da10f65b6fe1" />
+      <TestMethod codeBase="/judge/cases/simple-create/acceptance/bin/Debug/net10.0/Acceptance.dll" adapterTypeName="executor://mstestadapter/v4" className="Benchmarks.SimpleCreate.ProductTests" name="NeedsReorderFollowsTheStock" />
+    </UnitTest>
+    <UnitTest name="discontinued" storage="/judge/cases/simple-create/acceptance/bin/debug/net10.0/acceptance.dll" id="11a577c1-d244-8a21-a3e5-974ebdce34cb">
+      <Execution id="c8c9c68c-c0e7-452b-8df8-adc2e47299cd" />
+      <TestMethod codeBase="/judge/cases/simple-create/acceptance/bin/Debug/net10.0/Acceptance.dll" adapterTypeName="executor://mstestadapter/v4" className="Benchmarks.SimpleCreate.ProductTests" name="ProductNeedsReorderWhenActiveAndLow" />
+    </UnitTest>
+    <UnitTest name="active, stock above the reorder level" storage="/judge/cases/simple-create/acceptance/bin/debug/net10.0/acceptance.dll" id="1dd4389f-d50d-8a5d-9a5e-e109265ce760">
+      <Execution id="fbc8eb5b-87a1-41a8-b888-2e55c32a8415" />
+      <TestMethod codeBase="/judge/cases/simple-create/acceptance/bin/Debug/net10.0/Acceptance.dll" adapterTypeName="executor://mstestadapter/v4" className="Benchmarks.SimpleCreate.ProductTests" name="ProductNeedsReorderWhenActiveAndLow" />
+    </UnitTest>
+    <UnitTest name="SupplierIsReadWithItsProducts" storage="/judge/cases/simple-create/acceptance/bin/debug/net10.0/acceptance.dll" id="1612cbdd-78a1-89d6-bdba-788e9c58d668">
+      <Execution id="e4be7058-ee14-4575-8c3d-669d3694b01c" />
+      <TestMethod codeBase="/judge/cases/simple-create/acceptance/bin/Debug/net10.0/Acceptance.dll" adapterTypeName="executor://mstestadapter/v4" className="Benchmarks.SimpleCreate.SupplierTests" name="SupplierIsReadWithItsProducts" />
+    </UnitTest>
+    <UnitTest name="SupplierGoesThroughTheWholeCrud" storage="/judge/cases/simple-create/acceptance/bin/debug/net10.0/acceptance.dll" id="12526998-f8dd-8d0b-8f3f-3c99d94308b2">
+      <Execution id="8fa81b54-b9d3-47fe-a358-a41eca46af50" />
+      <TestMethod codeBase="/judge/cases/simple-create/acceptance/bin/Debug/net10.0/Acceptance.dll" adapterTypeName="executor://mstestadapter/v4" className="Benchmarks.SimpleCreate.SupplierTests" name="SupplierGoesThroughTheWholeCrud" />
+    </UnitTest>
+    <UnitTest name="ProductGoesThroughTheWholeCrud" storage="/judge/cases/simple-create/acceptance/bin/debug/net10.0/acceptance.dll" id="174bf4a4-d0ce-81c9-a960-84f9ddb06ddf">
+      <Execution id="588cbacd-ef7e-4cf4-b69a-523b46f32927" />
+      <TestMethod codeBase="/judge/cases/simple-create/acceptance/bin/Debug/net10.0/Acceptance.dll" adapterTypeName="executor://mstestadapter/v4" className="Benchmarks.SimpleCreate.ProductTests" name="ProductGoesThroughTheWholeCrud" />
+    </UnitTest>
+    <UnitTest name="active, stock at the reorder level" storage="/judge/cases/simple-create/acceptance/bin/debug/net10.0/acceptance.dll" id="1246bbc4-7e2d-8a84-97bc-5cb99aec5241">
+      <Execution id="ad4399fd-e7ed-46e3-9914-2e9751472658" />
+      <TestMethod codeBase="/judge/cases/simple-create/acceptance/bin/Debug/net10.0/Acceptance.dll" adapterTypeName="executor://mstestadapter/v4" className="Benchmarks.SimpleCreate.ProductTests" name="ProductNeedsReorderWhenActiveAndLow" />
+    </UnitTest>
+    <UnitTest name="InvalidProductsAreRejected" storage="/judge/cases/simple-create/acceptance/bin/debug/net10.0/acceptance.dll" id="1ccf7c80-ecc6-8619-b591-f07f021a2735">
+      <Execution id="01420d69-8028-46e8-b900-f88913f10bd1" />
+      <TestMethod codeBase="/judge/cases/simple-create/acceptance/bin/Debug/net10.0/Acceptance.dll" adapterTypeName="executor://mstestadapter/v4" className="Benchmarks.SimpleCreate.ProductTests" name="InvalidProductsAreRejected" />
+    </UnitTest>
+    <UnitTest name="UnknownProductIsNotFound" storage="/judge/cases/simple-create/acceptance/bin/debug/net10.0/acceptance.dll" id="1bb9fe3e-6218-801b-bc05-d3a9713fd440">
+      <Execution id="8e4f0ffa-aa5a-4f73-b1c7-d98e48e6284e" />
+      <TestMethod codeBase="/judge/cases/simple-create/acceptance/bin/Debug/net10.0/Acceptance.dll" adapterTypeName="executor://mstestadapter/v4" className="Benchmarks.SimpleCreate.ProductTests" name="UnknownProductIsNotFound" />
+    </UnitTest>
+    <UnitTest name="active, stock below the reorder level" storage="/judge/cases/simple-create/acceptance/bin/debug/net10.0/acceptance.dll" id="10cb37e9-bc24-840b-b0ab-48c66f7abb2d">
+      <Execution id="82318ca8-8913-4b83-bf1d-7944ddc97b05" />
+      <TestMethod codeBase="/judge/cases/simple-create/acceptance/bin/Debug/net10.0/Acceptance.dll" adapterTypeName="executor://mstestadapter/v4" className="Benchmarks.SimpleCreate.ProductTests" name="ProductNeedsReorderWhenActiveAndLow" />
+    </UnitTest>
+  </TestDefinitions>
+  <TestEntries>
+    <TestEntry testId="10cb37e9-bc24-840b-b0ab-48c66f7abb2d" executionId="82318ca8-8913-4b83-bf1d-7944ddc97b05" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="115fa7a7-4c41-8806-a5eb-750035ab9267" executionId="6450865d-5ba7-4294-bc5e-89928f2f759b" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="15b538ae-5eb9-8c74-95ea-335b701d4906" executionId="d2de8c81-1666-4d44-a497-da10f65b6fe1" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="1cde74f4-037e-86b5-a96e-eec1ee7b2b3a" executionId="8b02beca-7f8c-4420-bfb9-0ac2c9fa42cc" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="1bb9fe3e-6218-801b-bc05-d3a9713fd440" executionId="8e4f0ffa-aa5a-4f73-b1c7-d98e48e6284e" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="132dff31-9bca-86ed-91cb-f99e12a1daba" executionId="1e0ef0f9-542c-49b2-9acd-b1d2c2a373a6" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="11a577c1-d244-8a21-a3e5-974ebdce34cb" executionId="c8c9c68c-c0e7-452b-8df8-adc2e47299cd" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="1943120c-7ec3-802e-9680-f824bb44a531" executionId="bd3fed47-d7ad-4a74-bff7-755941fd96c3" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="1ccf7c80-ecc6-8619-b591-f07f021a2735" executionId="01420d69-8028-46e8-b900-f88913f10bd1" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="174bf4a4-d0ce-81c9-a960-84f9ddb06ddf" executionId="588cbacd-ef7e-4cf4-b69a-523b46f32927" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="1612cbdd-78a1-89d6-bdba-788e9c58d668" executionId="e4be7058-ee14-4575-8c3d-669d3694b01c" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="1dd4389f-d50d-8a5d-9a5e-e109265ce760" executionId="fbc8eb5b-87a1-41a8-b888-2e55c32a8415" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="1246bbc4-7e2d-8a84-97bc-5cb99aec5241" executionId="ad4399fd-e7ed-46e3-9914-2e9751472658" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="12526998-f8dd-8d0b-8f3f-3c99d94308b2" executionId="8fa81b54-b9d3-47fe-a358-a41eca46af50" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+  </TestEntries>
+  <TestLists>
+    <TestList name="Results Not in a List" id="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestList name="All Loaded Results" id="19431567-8539-422a-85d7-44ee4e166bda" />
+  </TestLists>
+  <ResultSummary outcome="Completed">
+    <Counters total="14" executed="14" passed="14" failed="0" error="0" timeout="0" aborted="0" inconclusive="0" passedButRunAborted="0" notRunnable="0" notExecuted="0" disconnected="0" warning="0" completed="0" inProgress="0" pending="0" />
+  </ResultSummary>
+</TestRun>

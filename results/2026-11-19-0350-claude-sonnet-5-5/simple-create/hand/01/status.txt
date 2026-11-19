@@ -1,0 +1,10 @@
+A  src/Warehouse.Tests/ApiTests.cs
+A  src/Warehouse/Api/WarehouseEndpoints.cs
+A  src/Warehouse/Contracts/ProductContracts.cs
+A  src/Warehouse/Contracts/SupplierContracts.cs
+A  src/Warehouse/Domain/Product.cs
+A  src/Warehouse/Domain/ProductStatus.cs
+A  src/Warehouse/Domain/Supplier.cs
+A  src/Warehouse/Infrastructure/WarehouseDbContext.cs
+A  src/Warehouse/Program.cs
+A  src/Warehouse/appsettings.json

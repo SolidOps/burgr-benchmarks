@@ -1,0 +1,10 @@
+25	0	src/UM.Api/UMEndpoints.cs
+250	0	src/UM.Application/Teams.cs
+2	0	src/UM.Application/UMApplicationRegistration.cs
+2	0	src/UM.Application/UMRights.cs
+27	0	src/UM.Domain/Teams.cs
+4	1	src/UM.Infrastructure/Framework/EfRepository.cs
+12	0	src/UM.Infrastructure/Teams.cs
+24	1	src/UM.Infrastructure/UMDbContext.cs
+2	0	src/UM.Infrastructure/UMInfrastructureRegistration.cs
+218	0	src/UM.Tests/TeamTests.cs

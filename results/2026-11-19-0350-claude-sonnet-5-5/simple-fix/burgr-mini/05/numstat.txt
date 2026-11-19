@@ -1,0 +1,2 @@
+13	0	src/Library.Tests/LibraryApiTests.cs
+1	1	src/Library/Domain/Book.cs

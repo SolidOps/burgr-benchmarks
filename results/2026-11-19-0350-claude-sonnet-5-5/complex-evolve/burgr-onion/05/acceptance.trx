@@ -1,0 +1,104 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TestRun id="d1154122-8174-4f3d-8f2d-c085ab75cd84" name="@15002c7bf8b1 2026-11-19 04:35:00" xmlns="http://microsoft.com/schemas/VisualStudio/TeamTest/2010">
+  <Times creation="2026-11-19T04:35:00.2986529+00:00" queuing="2026-11-19T04:35:00.2986529+00:00" start="2026-11-19T04:34:59.2768197+00:00" finish="2026-11-19T04:35:00.3978000+00:00" />
+  <TestSettings name="default" id="7b66c7f8-95a6-498e-b988-76be3419d0c8">
+    <Deployment runDeploymentRoot="_15002c7bf8b1_2026-11-19_04_35_00" />
+  </TestSettings>
+  <Results>
+    <UnitTestResult executionId="19242ea0-8d52-4879-bea1-985d94f3dfd4" testId="19a52e59-14f9-84f0-8c3e-f488fc744b3b" testName="UnknownTeamIsNotFound" computerName="15002c7bf8b1" duration="00:00:00.0047540" startTime="2026-11-19T04:35:00.2436831+00:00" endTime="2026-11-19T04:35:00.2494237+00:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="19242ea0-8d52-4879-bea1-985d94f3dfd4" />
+    <UnitTestResult executionId="23318259-6537-49c1-80b0-41795e1cbba6" testId="1410facd-52aa-8d64-98d0-0c9aa788f4b3" testName="UpdateSynchronizesTheMembers" computerName="15002c7bf8b1" duration="00:00:00.0457289" startTime="2026-11-19T04:35:00.1369065+00:00" endTime="2026-11-19T04:35:00.1830482+00:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="23318259-6537-49c1-80b0-41795e1cbba6" />
+    <UnitTestResult executionId="aa1f11f6-4038-476d-874b-c04467a73210" testId="18fa3931-9795-8707-bae1-35e99ca6362a" testName="UsersStillGoThroughTheWholeCrud" computerName="15002c7bf8b1" duration="00:00:00.0493533" startTime="2026-11-19T04:35:00.2944053+00:00" endTime="2026-11-19T04:35:00.3438823+00:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="aa1f11f6-4038-476d-874b-c04467a73210" />
+    <UnitTestResult executionId="53d9fb6e-fbd0-464e-be36-3b07aa1b739b" testId="182dce30-32f9-869d-ba4a-5813e7c1f71d" testName="AnyAuthenticatedUserReadsTeams" computerName="15002c7bf8b1" duration="00:00:00.0169154" startTime="2026-11-19T04:35:00.2614249+00:00" endTime="2026-11-19T04:35:00.2783962+00:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="53d9fb6e-fbd0-464e-be36-3b07aa1b739b" />
+    <UnitTestResult executionId="c2f2f4cd-4753-4d83-bfac-ad728176f77f" testId="1cc36ce3-0c52-8c46-9bc7-dd86788e665a" testName="WritingUsersStillRequiresManageUsers" computerName="15002c7bf8b1" duration="00:00:00.0024286" startTime="2026-11-19T04:35:00.3439211+00:00" endTime="2026-11-19T04:35:00.3463990+00:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="c2f2f4cd-4753-4d83-bfac-ad728176f77f" />
+    <UnitTestResult executionId="32bb931c-3874-42a1-bea6-fcfed515104c" testId="13170a98-fca2-8c0a-8417-647cf851d1f7" testName="AnonymousCallersAreRejected" computerName="15002c7bf8b1" duration="00:00:00.0041156" startTime="2026-11-19T04:35:00.2494539+00:00" endTime="2026-11-19T04:35:00.2537354+00:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="32bb931c-3874-42a1-bea6-fcfed515104c" />
+    <UnitTestResult executionId="91817e17-34d3-4506-b3ec-6c8081a492f5" testId="10d1894c-a677-85d4-9d3d-caada7a00bfe" testName="TeamNameIsUnique" computerName="15002c7bf8b1" duration="00:00:00.0162016" startTime="2026-11-19T04:35:00.2124059+00:00" endTime="2026-11-19T04:35:00.2286501+00:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="91817e17-34d3-4506-b3ec-6c8081a492f5" />
+    <UnitTestResult executionId="7220cf35-3577-481c-80d3-2a8d87d109c0" testId="1e8458ec-0c9f-8a03-a378-dc8f4a3eadc7" testName="InvalidTeamsAreRejected" computerName="15002c7bf8b1" duration="00:00:00.0033566" startTime="2026-11-19T04:35:00.2089912+00:00" endTime="2026-11-19T04:35:00.2123836+00:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="7220cf35-3577-481c-80d3-2a8d87d109c0" />
+    <UnitTestResult executionId="2e1d22ea-efdd-498d-896a-dee12d15af5e" testId="1ad084f8-5d03-8f10-b34b-0dc2511e5cb3" testName="MembersAreExistingUsers" computerName="15002c7bf8b1" duration="00:00:00.0021355" startTime="2026-11-19T04:35:00.2067828+00:00" endTime="2026-11-19T04:35:00.2089628+00:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="2e1d22ea-efdd-498d-896a-dee12d15af5e" />
+    <UnitTestResult executionId="4de72dc3-05cc-4da3-9f4c-8af85fee719f" testId="1eeba514-f162-8d17-97ba-afe8cd427db4" testName="ATeamWithMembersHasExactlyOneOwner" computerName="15002c7bf8b1" duration="00:00:00.0233739" startTime="2026-11-19T04:35:00.1833098+00:00" endTime="2026-11-19T04:35:00.2067404+00:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="4de72dc3-05cc-4da3-9f4c-8af85fee719f" />
+    <UnitTestResult executionId="5c94a92c-7c88-45ba-ba77-64c7fc76f420" testId="138084b3-04c9-8b8f-b7c5-548ea9c35561" testName="InvitesStillAnswer" computerName="15002c7bf8b1" duration="00:00:00.0096619" startTime="2026-11-19T04:35:00.3464223+00:00" endTime="2026-11-19T04:35:00.3572140+00:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="5c94a92c-7c88-45ba-ba77-64c7fc76f420" />
+    <UnitTestResult executionId="021ff28b-7724-4a3e-8afb-c8232ad58e57" testId="122fe326-55d2-8b49-970e-69a43eb233c5" testName="TeamGoesThroughTheWholeCrudWithItsMembers" computerName="15002c7bf8b1" duration="00:00:00.6051337" startTime="2026-11-19T04:34:59.5169364+00:00" endTime="2026-11-19T04:35:00.1340779+00:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="021ff28b-7724-4a3e-8afb-c8232ad58e57" />
+    <UnitTestResult executionId="97fa1a5e-6604-4878-96f2-0fa700041422" testId="11e294c3-8bac-869e-b51a-27e7e7df4890" testName="ATeamWithMembersCannotBeDeleted" computerName="15002c7bf8b1" duration="00:00:00.0149118" startTime="2026-11-19T04:35:00.2286825+00:00" endTime="2026-11-19T04:35:00.2436484+00:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="97fa1a5e-6604-4878-96f2-0fa700041422" />
+    <UnitTestResult executionId="b43814b2-47d5-4358-ac4b-17d3089c7dd0" testId="1c28834d-d605-8eee-89e0-1e3382d46073" testName="WritingTeamsRequiresManageTeams" computerName="15002c7bf8b1" duration="00:00:00.0158549" startTime="2026-11-19T04:35:00.2784342+00:00" endTime="2026-11-19T04:35:00.2943629+00:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="b43814b2-47d5-4358-ac4b-17d3089c7dd0" />
+  </Results>
+  <TestDefinitions>
+    <UnitTest name="ATeamWithMembersHasExactlyOneOwner" storage="/judge/cases/complex-evolve/acceptance/bin/debug/net10.0/acceptance.dll" id="1eeba514-f162-8d17-97ba-afe8cd427db4">
+      <Execution id="4de72dc3-05cc-4da3-9f4c-8af85fee719f" />
+      <TestMethod codeBase="/judge/cases/complex-evolve/acceptance/bin/Debug/net10.0/Acceptance.dll" adapterTypeName="executor://mstestadapter/v4" className="Benchmarks.ComplexEvolve.TeamTests" name="ATeamWithMembersHasExactlyOneOwner" />
+    </UnitTest>
+    <UnitTest name="UsersStillGoThroughTheWholeCrud" storage="/judge/cases/complex-evolve/acceptance/bin/debug/net10.0/acceptance.dll" id="18fa3931-9795-8707-bae1-35e99ca6362a">
+      <Execution id="aa1f11f6-4038-476d-874b-c04467a73210" />
+      <TestMethod codeBase="/judge/cases/complex-evolve/acceptance/bin/Debug/net10.0/Acceptance.dll" adapterTypeName="executor://mstestadapter/v4" className="Benchmarks.ComplexEvolve.RegressionTests" name="UsersStillGoThroughTheWholeCrud" />
+    </UnitTest>
+    <UnitTest name="AnonymousCallersAreRejected" storage="/judge/cases/complex-evolve/acceptance/bin/debug/net10.0/acceptance.dll" id="13170a98-fca2-8c0a-8417-647cf851d1f7">
+      <Execution id="32bb931c-3874-42a1-bea6-fcfed515104c" />
+      <TestMethod codeBase="/judge/cases/complex-evolve/acceptance/bin/Debug/net10.0/Acceptance.dll" adapterTypeName="executor://mstestadapter/v4" className="Benchmarks.ComplexEvolve.TeamSecurityTests" name="AnonymousCallersAreRejected" />
+    </UnitTest>
+    <UnitTest name="WritingTeamsRequiresManageTeams" storage="/judge/cases/complex-evolve/acceptance/bin/debug/net10.0/acceptance.dll" id="1c28834d-d605-8eee-89e0-1e3382d46073">
+      <Execution id="b43814b2-47d5-4358-ac4b-17d3089c7dd0" />
+      <TestMethod codeBase="/judge/cases/complex-evolve/acceptance/bin/Debug/net10.0/Acceptance.dll" adapterTypeName="executor://mstestadapter/v4" className="Benchmarks.ComplexEvolve.TeamSecurityTests" name="WritingTeamsRequiresManageTeams" />
+    </UnitTest>
+    <UnitTest name="MembersAreExistingUsers" storage="/judge/cases/complex-evolve/acceptance/bin/debug/net10.0/acceptance.dll" id="1ad084f8-5d03-8f10-b34b-0dc2511e5cb3">
+      <Execution id="2e1d22ea-efdd-498d-896a-dee12d15af5e" />
+      <TestMethod codeBase="/judge/cases/complex-evolve/acceptance/bin/Debug/net10.0/Acceptance.dll" adapterTypeName="executor://mstestadapter/v4" className="Benchmarks.ComplexEvolve.TeamTests" name="MembersAreExistingUsers" />
+    </UnitTest>
+    <UnitTest name="TeamNameIsUnique" storage="/judge/cases/complex-evolve/acceptance/bin/debug/net10.0/acceptance.dll" id="10d1894c-a677-85d4-9d3d-caada7a00bfe">
+      <Execution id="91817e17-34d3-4506-b3ec-6c8081a492f5" />
+      <TestMethod codeBase="/judge/cases/complex-evolve/acceptance/bin/Debug/net10.0/Acceptance.dll" adapterTypeName="executor://mstestadapter/v4" className="Benchmarks.ComplexEvolve.TeamTests" name="TeamNameIsUnique" />
+    </UnitTest>
+    <UnitTest name="TeamGoesThroughTheWholeCrudWithItsMembers" storage="/judge/cases/complex-evolve/acceptance/bin/debug/net10.0/acceptance.dll" id="122fe326-55d2-8b49-970e-69a43eb233c5">
+      <Execution id="021ff28b-7724-4a3e-8afb-c8232ad58e57" />
+      <TestMethod codeBase="/judge/cases/complex-evolve/acceptance/bin/Debug/net10.0/Acceptance.dll" adapterTypeName="executor://mstestadapter/v4" className="Benchmarks.ComplexEvolve.TeamTests" name="TeamGoesThroughTheWholeCrudWithItsMembers" />
+    </UnitTest>
+    <UnitTest name="WritingUsersStillRequiresManageUsers" storage="/judge/cases/complex-evolve/acceptance/bin/debug/net10.0/acceptance.dll" id="1cc36ce3-0c52-8c46-9bc7-dd86788e665a">
+      <Execution id="c2f2f4cd-4753-4d83-bfac-ad728176f77f" />
+      <TestMethod codeBase="/judge/cases/complex-evolve/acceptance/bin/Debug/net10.0/Acceptance.dll" adapterTypeName="executor://mstestadapter/v4" className="Benchmarks.ComplexEvolve.RegressionTests" name="WritingUsersStillRequiresManageUsers" />
+    </UnitTest>
+    <UnitTest name="AnyAuthenticatedUserReadsTeams" storage="/judge/cases/complex-evolve/acceptance/bin/debug/net10.0/acceptance.dll" id="182dce30-32f9-869d-ba4a-5813e7c1f71d">
+      <Execution id="53d9fb6e-fbd0-464e-be36-3b07aa1b739b" />
+      <TestMethod codeBase="/judge/cases/complex-evolve/acceptance/bin/Debug/net10.0/Acceptance.dll" adapterTypeName="executor://mstestadapter/v4" className="Benchmarks.ComplexEvolve.TeamSecurityTests" name="AnyAuthenticatedUserReadsTeams" />
+    </UnitTest>
+    <UnitTest name="UpdateSynchronizesTheMembers" storage="/judge/cases/complex-evolve/acceptance/bin/debug/net10.0/acceptance.dll" id="1410facd-52aa-8d64-98d0-0c9aa788f4b3">
+      <Execution id="23318259-6537-49c1-80b0-41795e1cbba6" />
+      <TestMethod codeBase="/judge/cases/complex-evolve/acceptance/bin/Debug/net10.0/Acceptance.dll" adapterTypeName="executor://mstestadapter/v4" className="Benchmarks.ComplexEvolve.TeamTests" name="UpdateSynchronizesTheMembers" />
+    </UnitTest>
+    <UnitTest name="ATeamWithMembersCannotBeDeleted" storage="/judge/cases/complex-evolve/acceptance/bin/debug/net10.0/acceptance.dll" id="11e294c3-8bac-869e-b51a-27e7e7df4890">
+      <Execution id="97fa1a5e-6604-4878-96f2-0fa700041422" />
+      <TestMethod codeBase="/judge/cases/complex-evolve/acceptance/bin/Debug/net10.0/Acceptance.dll" adapterTypeName="executor://mstestadapter/v4" className="Benchmarks.ComplexEvolve.TeamTests" name="ATeamWithMembersCannotBeDeleted" />
+    </UnitTest>
+    <UnitTest name="UnknownTeamIsNotFound" storage="/judge/cases/complex-evolve/acceptance/bin/debug/net10.0/acceptance.dll" id="19a52e59-14f9-84f0-8c3e-f488fc744b3b">
+      <Execution id="19242ea0-8d52-4879-bea1-985d94f3dfd4" />
+      <TestMethod codeBase="/judge/cases/complex-evolve/acceptance/bin/Debug/net10.0/Acceptance.dll" adapterTypeName="executor://mstestadapter/v4" className="Benchmarks.ComplexEvolve.TeamTests" name="UnknownTeamIsNotFound" />
+    </UnitTest>
+    <UnitTest name="InvalidTeamsAreRejected" storage="/judge/cases/complex-evolve/acceptance/bin/debug/net10.0/acceptance.dll" id="1e8458ec-0c9f-8a03-a378-dc8f4a3eadc7">
+      <Execution id="7220cf35-3577-481c-80d3-2a8d87d109c0" />
+      <TestMethod codeBase="/judge/cases/complex-evolve/acceptance/bin/Debug/net10.0/Acceptance.dll" adapterTypeName="executor://mstestadapter/v4" className="Benchmarks.ComplexEvolve.TeamTests" name="InvalidTeamsAreRejected" />
+    </UnitTest>
+    <UnitTest name="InvitesStillAnswer" storage="/judge/cases/complex-evolve/acceptance/bin/debug/net10.0/acceptance.dll" id="138084b3-04c9-8b8f-b7c5-548ea9c35561">
+      <Execution id="5c94a92c-7c88-45ba-ba77-64c7fc76f420" />
+      <TestMethod codeBase="/judge/cases/complex-evolve/acceptance/bin/Debug/net10.0/Acceptance.dll" adapterTypeName="executor://mstestadapter/v4" className="Benchmarks.ComplexEvolve.RegressionTests" name="InvitesStillAnswer" />
+    </UnitTest>
+  </TestDefinitions>
+  <TestEntries>
+    <TestEntry testId="19a52e59-14f9-84f0-8c3e-f488fc744b3b" executionId="19242ea0-8d52-4879-bea1-985d94f3dfd4" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="1410facd-52aa-8d64-98d0-0c9aa788f4b3" executionId="23318259-6537-49c1-80b0-41795e1cbba6" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="18fa3931-9795-8707-bae1-35e99ca6362a" executionId="aa1f11f6-4038-476d-874b-c04467a73210" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="182dce30-32f9-869d-ba4a-5813e7c1f71d" executionId="53d9fb6e-fbd0-464e-be36-3b07aa1b739b" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="1cc36ce3-0c52-8c46-9bc7-dd86788e665a" executionId="c2f2f4cd-4753-4d83-bfac-ad728176f77f" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="13170a98-fca2-8c0a-8417-647cf851d1f7" executionId="32bb931c-3874-42a1-bea6-fcfed515104c" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="10d1894c-a677-85d4-9d3d-caada7a00bfe" executionId="91817e17-34d3-4506-b3ec-6c8081a492f5" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="1e8458ec-0c9f-8a03-a378-dc8f4a3eadc7" executionId="7220cf35-3577-481c-80d3-2a8d87d109c0" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="1ad084f8-5d03-8f10-b34b-0dc2511e5cb3" executionId="2e1d22ea-efdd-498d-896a-dee12d15af5e" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="1eeba514-f162-8d17-97ba-afe8cd427db4" executionId="4de72dc3-05cc-4da3-9f4c-8af85fee719f" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="138084b3-04c9-8b8f-b7c5-548ea9c35561" executionId="5c94a92c-7c88-45ba-ba77-64c7fc76f420" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="122fe326-55d2-8b49-970e-69a43eb233c5" executionId="021ff28b-7724-4a3e-8afb-c8232ad58e57" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="11e294c3-8bac-869e-b51a-27e7e7df4890" executionId="97fa1a5e-6604-4878-96f2-0fa700041422" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="1c28834d-d605-8eee-89e0-1e3382d46073" executionId="b43814b2-47d5-4358-ac4b-17d3089c7dd0" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+  </TestEntries>
+  <TestLists>
+    <TestList name="Results Not in a List" id="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestList name="All Loaded Results" id="19431567-8539-422a-85d7-44ee4e166bda" />
+  </TestLists>
+  <ResultSummary outcome="Completed">
+    <Counters total="14" executed="14" passed="14" failed="0" error="0" timeout="0" aborted="0" inconclusive="0" passedButRunAborted="0" notRunnable="0" notExecuted="0" disconnected="0" warning="0" completed="0" inProgress="0" pending="0" />
+  </ResultSummary>
+</TestRun>

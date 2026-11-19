@@ -1,0 +1,10 @@
+162	0	src/Warehouse.Tests/WarehouseApiTests.cs
+124	0	src/Warehouse/Api/WarehouseEndpoints.cs
+43	0	src/Warehouse/Contracts/ProductContracts.cs
+30	0	src/Warehouse/Contracts/SupplierContracts.cs
+15	0	src/Warehouse/Domain/Product.cs
+7	0	src/Warehouse/Domain/ProductStatus.cs
+9	0	src/Warehouse/Domain/Supplier.cs
+34	0	src/Warehouse/Infrastructure/WarehouseDbContext.cs
+21	0	src/Warehouse/Program.cs
+5	0	src/Warehouse/appsettings.json

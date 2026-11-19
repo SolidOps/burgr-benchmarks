@@ -1,0 +1,2850 @@
+diff --git a/specs/ticketing.yaml b/specs/ticketing.yaml
+new file mode 100644
+index 0000000..63472b3
+--- /dev/null
++++ b/specs/ticketing.yaml
+@@ -0,0 +1,109 @@
++burgr-model-version: 1.0.0
++
++aggregate_roots:
++  venue:
++    properties:
++      name:
++        is_unique: true
++        field_size: 100
++      address: address
++      capacity: int
++      shows: ->show[]
++    rules:
++      before_remove:
++        - refuse_if_shows
++    api:
++      query:
++      get:
++      add:
++        mandatory_right: ManageVenues
++      update:
++        mandatory_right: ManageVenues
++      remove:
++        mandatory_right: ManageVenues
++  show:
++    properties:
++      title:
++        field_size: 200
++      starts_at: datetime
++      status: $show_status
++      venue: venue
++      ticket_tiers: ~>ticket_tier[]
++      is_sold_out: =bool
++    dependencies:
++      venue: read
++    rules:
++      before_add:
++        - check_capacity
++      before_update:
++        - check_capacity
++    api:
++      query:
++      get:
++      add:
++        mandatory_right: ManageShows
++      update:
++        mandatory_right: ManageShows
++      remove:
++        mandatory_right: ManageShows
++  booking:
++    properties:
++      show: show
++      tier:
++        field_size: 50
++      customer_email:
++        field_size: 200
++      quantity: int
++      total_price: decimal
++    api:
++      query:
++        mandatory_right: ManageShows
++      get:
++        mandatory_right: ManageShows
++
++entities:
++  ticket_tier:
++    properties:
++      name:
++        field_size: 50
++      price: decimal
++      quota: int
++      sold: =int
++
++value_objects:
++  address:
++    properties:
++      street:
++        field_size: 100
++      city:
++        field_size: 50
++      postal_code:
++        field_size: 10
++
++enums:
++  show_status:
++    values:
++      Draft: 0
++      OnSale: 1
++      Cancelled: 2
++
++services:
++  box_office:
++    dependencies:
++      show:
++      booking:
++    methods:
++      book:
++        result: booking
++        inputs:
++          request: book_request
++        api_description:
++          force_post: true
++
++transients:
++  book_request:
++    properties:
++      show_id: guid
++      tier:
++      customer_email:
++      quantity: int
+diff --git a/src/Ticketing.Api/Framework/HttpResults.f.cs b/src/Ticketing.Api/Framework/HttpResults.f.cs
+new file mode 100644
+index 0000000..8e38ecc
+--- /dev/null
++++ b/src/Ticketing.Api/Framework/HttpResults.f.cs
+@@ -0,0 +1,45 @@
++using Acme.Ticketing.Application;
++using Acme.Ticketing.Domain;
++
++namespace Acme.Ticketing.Api;
++
++/// <summary>Turns the outcome of a use case into an HTTP response.</summary>
++public static class HttpResults
++{
++    /// <summary>200 with the value, or the response of the error.</summary>
++    public static IResult ToHttpResult<T>(this Result<T> result)
++    {
++        return result.IsSuccess ? TypedResults.Ok(result.Value) : result.Error!.ToHttpResult();
++    }
++
++    /// <summary>201 with the value at <paramref name="location"/>, or the response of the error.</summary>
++    public static IResult ToCreatedHttpResult<T>(this Result<T> result, Func<T, string> location)
++    {
++        return result.IsSuccess ? TypedResults.Created(location(result.Value), result.Value) : result.Error!.ToHttpResult();
++    }
++
++    /// <summary>204, or the response of the error.</summary>
++    public static IResult ToHttpResult(this Result result)
++    {
++        return result.IsSuccess ? TypedResults.NoContent() : result.Error!.ToHttpResult();
++    }
++
++    /// <summary>404, 400 with the validation errors, 409 or 403, as a problem details body.</summary>
++    public static IResult ToHttpResult(this Error error)
++    {
++        return error.Kind switch
++        {
++            ErrorKind.Invalid => TypedResults.ValidationProblem(error.Errors ?? new Dictionary<string, string[]>()),
++            ErrorKind.NotFound => TypedResults.Problem(error.Detail, statusCode: StatusCodes.Status404NotFound),
++            ErrorKind.Conflict => TypedResults.Problem(error.Detail, statusCode: StatusCodes.Status409Conflict),
++            ErrorKind.Forbidden => TypedResults.Problem(error.Detail, statusCode: StatusCodes.Status403Forbidden),
++            _ => throw new ArgumentOutOfRangeException(nameof(error), error.Kind, null),
++        };
++    }
++
++    /// <summary>The page request of the query string: page (from 1), pageSize, orderBy, descending.</summary>
++    public static PageRequest ToPageRequest(int? page, int? pageSize, string? orderBy, bool? descending)
++    {
++        return new PageRequest(page ?? 1, pageSize ?? PageRequest.DefaultPageSize, orderBy, descending ?? false);
++    }
++}
+diff --git a/src/Ticketing.Api/Framework/Program.f.cs b/src/Ticketing.Api/Framework/Program.f.cs
+new file mode 100644
+index 0000000..6a69d49
+--- /dev/null
++++ b/src/Ticketing.Api/Framework/Program.f.cs
+@@ -0,0 +1,5 @@
++/// <summary>
++/// The Program class of the hand-written Program.cs, made public for
++/// WebApplicationFactory&lt;Program&gt; in the tests.
++/// </summary>
++public partial class Program;
+diff --git a/src/Ticketing.Api/Framework/Security.f.cs b/src/Ticketing.Api/Framework/Security.f.cs
+new file mode 100644
+index 0000000..1b4e6fe
+--- /dev/null
++++ b/src/Ticketing.Api/Framework/Security.f.cs
+@@ -0,0 +1,86 @@
++using System.Security.Claims;
++using Acme.Ticketing.Application;
++using Microsoft.AspNetCore.Authorization;
++using Microsoft.Extensions.Options;
++
++namespace Acme.Ticketing.Api;
++
++/// <summary>
++/// Authorization of the Ticketing endpoints. An endpoint requires an authenticated user, unless
++/// the model says is_anonymous; a mandatory_right requires that right too (see
++/// <see cref="ICurrentUser"/>). Authentication itself is configured in Program.cs.
++/// </summary>
++public static class Security
++{
++    /// <summary>Authorization by right, <see cref="ICurrentUser"/> and the validation of the request bodies.</summary>
++    public static IServiceCollection AddTicketingApi(this IServiceCollection services)
++    {
++        services.AddAuthorization();
++        services.AddSingleton<IAuthorizationPolicyProvider, RightPolicyProvider>();
++        services.AddHttpContextAccessor();
++        services.AddScoped<ICurrentUser, HttpCurrentUser>();
++        return services;
++    }
++
++    /// <summary>An authenticated user, holding <paramref name="right"/> when it is not empty.</summary>
++    public static TBuilder RequireRight<TBuilder>(this TBuilder builder, string right) where TBuilder : IEndpointConventionBuilder
++    {
++        return string.IsNullOrEmpty(right)
++            ? builder.RequireAuthorization()
++            : builder.RequireAuthorization(RightPolicyProvider.PolicyPrefix + right);
++    }
++
++    /// <summary>Answers 400 with the errors of an <see cref="IValidatable"/> argument, before the handler runs.</summary>
++    public static TBuilder ValidateBody<TBuilder>(this TBuilder builder) where TBuilder : IEndpointConventionBuilder
++    {
++        return builder.AddEndpointFilter(async (context, next) =>
++        {
++            foreach (var argument in context.Arguments)
++            {
++                if (argument is IValidatable validatable && validatable.Validate() is { Count: > 0 } errors)
++                {
++                    return TypedResults.ValidationProblem(errors);
++                }
++            }
++            return await next(context);
++        });
++    }
++}
++
++/// <summary>Builds the policy "right:X" on demand: an authenticated user holding X or every right.</summary>
++public sealed class RightPolicyProvider(IOptions<AuthorizationOptions> options) : DefaultAuthorizationPolicyProvider(options)
++{
++    public const string PolicyPrefix = "right:";
++
++    public override Task<AuthorizationPolicy?> GetPolicyAsync(string policyName)
++    {
++        if (!policyName.StartsWith(PolicyPrefix, StringComparison.Ordinal))
++        {
++            return base.GetPolicyAsync(policyName);
++        }
++
++        var right = policyName[PolicyPrefix.Length..];
++        var policy = new AuthorizationPolicyBuilder()
++            .RequireAuthenticatedUser()
++            .RequireAssertion(context => HttpCurrentUser.HasRight(context.User, right))
++            .Build();
++        return Task.FromResult<AuthorizationPolicy?>(policy);
++    }
++}
++
++/// <summary><see cref="ICurrentUser"/> read from the claims of the current request.</summary>
++public sealed class HttpCurrentUser(IHttpContextAccessor httpContextAccessor) : ICurrentUser
++{
++    private ClaimsPrincipal? User => httpContextAccessor.HttpContext?.User;
++
++    public bool IsAuthenticated => User?.Identity?.IsAuthenticated == true;
++
++    public string? Name => IsAuthenticated ? User!.Identity!.Name : null;
++
++    public bool HasRight(string right) => IsAuthenticated && HasRight(User!, right);
++
++    public static bool HasRight(ClaimsPrincipal user, string right)
++    {
++        return user.HasClaim(ICurrentUser.RightClaimType, right) || user.HasClaim(ICurrentUser.RightClaimType, ICurrentUser.AllRights);
++    }
++}
+diff --git a/src/Ticketing.Api/Program.cs b/src/Ticketing.Api/Program.cs
+new file mode 100644
+index 0000000..a99090f
+--- /dev/null
++++ b/src/Ticketing.Api/Program.cs
+@@ -0,0 +1,60 @@
++using System.Text;
++using Acme.Ticketing.Api;
++using Acme.Ticketing.Application;
++using Acme.Ticketing.Infrastructure;
++using Microsoft.AspNetCore.Authentication.JwtBearer;
++using Microsoft.EntityFrameworkCore;
++using Microsoft.Extensions.Options;
++using Microsoft.IdentityModel.Tokens;
++
++var builder = WebApplication.CreateBuilder(args);
++
++builder.Services
++    .AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
++    .AddJwtBearer();
++builder.Services.AddOptions<JwtBearerOptions>(JwtBearerDefaults.AuthenticationScheme)
++    .Configure<IConfiguration>((options, configuration) =>
++    {
++        options.MapInboundClaims = false;
++        options.TokenValidationParameters = new TokenValidationParameters
++        {
++            ValidateIssuerSigningKey = true,
++            IssuerSigningKey = new SymmetricSecurityKey(SigningKey(configuration["Jwt:Key"])),
++            ValidateLifetime = true,
++            ValidateIssuer = false,
++            ValidateAudience = false,
++            ValidAlgorithms = [SecurityAlgorithms.HmacSha256],
++            NameClaimType = "name",
++        };
++    });
++
++builder.Services.AddTicketingApi();
++builder.Services.AddTicketingApplication();
++builder.Services.AddTicketingInfrastructure(options =>
++    options.UseSqlite(builder.Configuration.GetConnectionString("Ticketing")));
++
++var app = builder.Build();
++
++using (var scope = app.Services.CreateScope())
++{
++    scope.ServiceProvider.GetRequiredService<TicketingDbContext>().Database.EnsureCreated();
++}
++
++app.UseAuthentication();
++app.UseAuthorization();
++app.MapTicketingEndpoints();
++app.Run();
++
++// the UTF-8 bytes of the key, right-padded with spaces to 32 bytes
++static byte[] SigningKey(string? key)
++{
++    var bytes = Encoding.UTF8.GetBytes(key ?? throw new InvalidOperationException("Jwt:Key is not configured"));
++    if (bytes.Length >= 32)
++    {
++        return bytes;
++    }
++    var padded = new byte[32];
++    Array.Fill(padded, (byte)' ');
++    bytes.CopyTo(padded, 0);
++    return padded;
++}
+diff --git a/src/Ticketing.Api/TicketingEndpoints.g.cs b/src/Ticketing.Api/TicketingEndpoints.g.cs
+new file mode 100644
+index 0000000..d207b6f
+--- /dev/null
++++ b/src/Ticketing.Api/TicketingEndpoints.g.cs
+@@ -0,0 +1,139 @@
++#nullable enable
++using System.Threading;
++using Microsoft.AspNetCore.Builder;
++using Microsoft.AspNetCore.Http;
++using Microsoft.AspNetCore.Mvc;
++using Microsoft.AspNetCore.Routing;
++using Acme.Ticketing.Application;
++namespace Acme.Ticketing.Api;
++public static partial class TicketingEndpoints
++{
++    public static IEndpointRouteBuilder MapTicketingEndpoints(this IEndpointRouteBuilder app)
++    {
++        // Object [AG][R]
++        MapVenueEndpoints(app.MapGroup("/venues").WithTags("Venues"));
++
++        MapShowEndpoints(app.MapGroup("/shows").WithTags("Shows"));
++
++        MapBookingEndpoints(app.MapGroup("/bookings").WithTags("Bookings"));
++
++        // Service 
++        MapBoxOfficeEndpoints(app.MapGroup("/box-office").WithTags("BoxOffice"));
++
++        return app;
++    }
++    // Object [AG][R]
++    private static void MapVenueEndpoints(RouteGroupBuilder group)
++    {
++
++        group.MapGet("/", async (int? page, int? pageSize, string? orderBy, bool? descending, VenueService service, CancellationToken cancellationToken) =>
++            (await service.QueryAsync(HttpResults.ToPageRequest(page, pageSize, orderBy, descending), cancellationToken)).ToHttpResult())
++
++            .RequireRight("")
++
++            ;
++
++        group.MapGet("/{id}", async (Guid id, VenueService service, CancellationToken cancellationToken) =>
++            (await service.GetAsync(id, cancellationToken)).ToHttpResult())
++
++            .RequireRight("")
++
++            ;
++
++        group.MapPost("/", async (VenueInput input, VenueService service, CancellationToken cancellationToken) =>
++            (await service.AddAsync(input, cancellationToken)).ToCreatedHttpResult(dto => $"/venues/{dto.Id}"))
++
++            .RequireRight("ManageVenues")
++
++            ;
++
++        group.MapPut("/{id}", async (Guid id, VenueInput input, VenueService service, CancellationToken cancellationToken) =>
++            (await service.UpdateAsync(id, input, cancellationToken)).ToHttpResult())
++
++            .RequireRight("ManageVenues")
++
++            ;
++
++        group.MapDelete("/{id}", async (Guid id, VenueService service, CancellationToken cancellationToken) =>
++            (await service.RemoveAsync(id, cancellationToken)).ToHttpResult())
++
++            .RequireRight("ManageVenues")
++
++            ;
++
++    }
++
++    private static void MapShowEndpoints(RouteGroupBuilder group)
++    {
++
++        group.MapGet("/", async (int? page, int? pageSize, string? orderBy, bool? descending, ShowService service, CancellationToken cancellationToken) =>
++            (await service.QueryAsync(HttpResults.ToPageRequest(page, pageSize, orderBy, descending), cancellationToken)).ToHttpResult())
++
++            .RequireRight("")
++
++            ;
++
++        group.MapGet("/{id}", async (Guid id, ShowService service, CancellationToken cancellationToken) =>
++            (await service.GetAsync(id, cancellationToken)).ToHttpResult())
++
++            .RequireRight("")
++
++            ;
++
++        group.MapPost("/", async (ShowInput input, ShowService service, CancellationToken cancellationToken) =>
++            (await service.AddAsync(input, cancellationToken)).ToCreatedHttpResult(dto => $"/shows/{dto.Id}"))
++
++            .RequireRight("ManageShows")
++
++            ;
++
++        group.MapPut("/{id}", async (Guid id, ShowInput input, ShowService service, CancellationToken cancellationToken) =>
++            (await service.UpdateAsync(id, input, cancellationToken)).ToHttpResult())
++
++            .RequireRight("ManageShows")
++
++            ;
++
++        group.MapDelete("/{id}", async (Guid id, ShowService service, CancellationToken cancellationToken) =>
++            (await service.RemoveAsync(id, cancellationToken)).ToHttpResult())
++
++            .RequireRight("ManageShows")
++
++            ;
++
++    }
++
++    private static void MapBookingEndpoints(RouteGroupBuilder group)
++    {
++
++        group.MapGet("/", async (int? page, int? pageSize, string? orderBy, bool? descending, BookingService service, CancellationToken cancellationToken) =>
++            (await service.QueryAsync(HttpResults.ToPageRequest(page, pageSize, orderBy, descending), cancellationToken)).ToHttpResult())
++
++            .RequireRight("ManageShows")
++
++            ;
++
++        group.MapGet("/{id}", async (Guid id, BookingService service, CancellationToken cancellationToken) =>
++            (await service.GetAsync(id, cancellationToken)).ToHttpResult())
++
++            .RequireRight("ManageShows")
++
++            ;
++
++    }
++
++    // Service 
++    private static void MapBoxOfficeEndpoints(RouteGroupBuilder group)
++    {
++
++        group.MapPost("/book", async ([FromBody] Acme.Ticketing.Application.BookRequestDto request, IBoxOfficeService service, CancellationToken cancellationToken) =>
++            (await service.BookAsync(request, cancellationToken)).ToHttpResult())
++            .ValidateBody()
++
++            .RequireRight("")
++
++            ;
++
++    }
++
++}
+\ No newline at end of file
+diff --git a/src/Ticketing.Api/appsettings.json b/src/Ticketing.Api/appsettings.json
+new file mode 100644
+index 0000000..5fead3b
+--- /dev/null
++++ b/src/Ticketing.Api/appsettings.json
+@@ -0,0 +1,5 @@
++{
++  "ConnectionStrings": { "Ticketing": "Data Source=ticketing.db" },
++  "Jwt": { "Key": "change-me-in-production" },
++  "Logging": { "LogLevel": { "Default": "Information", "Microsoft.AspNetCore": "Warning" } }
++}
+diff --git a/src/Ticketing.Application/BookRequestDto.cs b/src/Ticketing.Application/BookRequestDto.cs
+new file mode 100644
+index 0000000..9232c60
+--- /dev/null
++++ b/src/Ticketing.Application/BookRequestDto.cs
+@@ -0,0 +1,16 @@
++namespace Acme.Ticketing.Application;
++
++public sealed partial class BookRequestDto
++{
++    partial void OnValidating(Dictionary<string, string[]> errors)
++    {
++        if (Quantity < 1 || Quantity > 10)
++        {
++            errors["Quantity"] = ["Quantity must be between 1 and 10"];
++        }
++        if (CustomerEmail is not null && !CustomerEmail.Contains('@'))
++        {
++            errors["CustomerEmail"] = ["CustomerEmail must contain @"];
++        }
++    }
++}
+diff --git a/src/Ticketing.Application/BoxOfficeService.cs b/src/Ticketing.Application/BoxOfficeService.cs
+new file mode 100644
+index 0000000..9746af7
+--- /dev/null
++++ b/src/Ticketing.Application/BoxOfficeService.cs
+@@ -0,0 +1,48 @@
++using Acme.Ticketing.Domain;
++
++namespace Acme.Ticketing.Application;
++
++public partial class BoxOfficeService
++{
++    public async Task<Result<BookingDto>> BookAsync(BookRequestDto request, CancellationToken cancellationToken = default)
++    {
++        var show = await ShowRepository.FindAsync(request.ShowId, cancellationToken);
++        if (show is null)
++        {
++            return Error.NotFound();
++        }
++        if (show.Status != ShowStatus.OnSale)
++        {
++            return Error.Conflict("The show is not on sale");
++        }
++        if (show.StartsAt <= DateTime.UtcNow)
++        {
++            return Error.Conflict("The show has already started");
++        }
++        var tier = show.TicketTiers.FirstOrDefault(t => t.Name == request.Tier);
++        if (tier is null)
++        {
++            return Error.Invalid(new Dictionary<string, string[]> { ["Tier"] = ["Tier not found"] });
++        }
++        if (tier.Remaining < request.Quantity)
++        {
++            return Error.Conflict("Not enough tickets left");
++        }
++
++        tier.Sell(request.Quantity);
++        var booking = new Booking
++        {
++            ShowId = show.Id,
++            Tier = tier.Name,
++            CustomerEmail = request.CustomerEmail,
++            Quantity = request.Quantity,
++            TotalPrice = tier.Price * request.Quantity,
++        };
++        BookingRepository.Add(booking);
++        if (await UnitOfWork.SaveChangesAsync(cancellationToken) is { } error)
++        {
++            return error;
++        }
++        return BookingDto.From(booking);
++    }
++}
+diff --git a/src/Ticketing.Application/Framework/Events.f.cs b/src/Ticketing.Application/Framework/Events.f.cs
+new file mode 100644
+index 0000000..7e833ec
+--- /dev/null
++++ b/src/Ticketing.Application/Framework/Events.f.cs
+@@ -0,0 +1,63 @@
++using System.Reflection;
++using Microsoft.Extensions.DependencyInjection;
++
++namespace Acme.Ticketing.Application;
++
++/// <summary>An event of the Ticketing module, handled in process by every <see cref="IEventHandler{TEvent}"/> of it.</summary>
++public interface IEvent
++{
++    /// <summary>What happened: <see cref="EventContext.Add"/>, <see cref="EventContext.Update"/>, <see cref="EventContext.Remove"/>, or a context of your own.</summary>
++    string Context { get; }
++}
++
++/// <summary>The contexts of the events published by the generated use cases, once the change is saved.</summary>
++public static class EventContext
++{
++    public const string Add = "add";
++    public const string Update = "update";
++    public const string Remove = "remove";
++}
++
++/// <summary>
++/// Handles <typeparamref name="TEvent"/>. Every class of the application assembly
++/// implementing it is registered by AddTicketingApplication(); a failing handler fails the
++/// request, but the change that raised the event is already saved.
++/// </summary>
++public interface IEventHandler<in TEvent> where TEvent : IEvent
++{
++    Task HandleAsync(TEvent @event, CancellationToken cancellationToken = default);
++}
++
++public interface IEventPublisher
++{
++    /// <summary>Runs the handlers of <paramref name="event"/>, one after the other, now.</summary>
++    Task PublishAsync<TEvent>(TEvent @event, CancellationToken cancellationToken = default) where TEvent : IEvent;
++}
++
++public sealed class EventPublisher(IServiceProvider serviceProvider) : IEventPublisher
++{
++    public async Task PublishAsync<TEvent>(TEvent @event, CancellationToken cancellationToken = default) where TEvent : IEvent
++    {
++        foreach (var handler in serviceProvider.GetServices<IEventHandler<TEvent>>())
++        {
++            await handler.HandleAsync(@event, cancellationToken);
++        }
++    }
++}
++
++public static class EventRegistration
++{
++    /// <summary><see cref="IEventPublisher"/>, and every concrete <see cref="IEventHandler{TEvent}"/> of <paramref name="assembly"/>.</summary>
++    public static IServiceCollection AddEventHandlers(this IServiceCollection services, Assembly assembly)
++    {
++        services.AddScoped<IEventPublisher, EventPublisher>();
++        foreach (var type in assembly.GetTypes().Where(t => t is { IsClass: true, IsAbstract: false }))
++        {
++            foreach (var handled in type.GetInterfaces().Where(i => i.IsGenericType && i.GetGenericTypeDefinition() == typeof(IEventHandler<>)))
++            {
++                services.AddScoped(handled, type);
++            }
++        }
++        return services;
++    }
++}
+diff --git a/src/Ticketing.Application/Framework/Paging.f.cs b/src/Ticketing.Application/Framework/Paging.f.cs
+new file mode 100644
+index 0000000..6c99d80
+--- /dev/null
++++ b/src/Ticketing.Application/Framework/Paging.f.cs
+@@ -0,0 +1,25 @@
++using Acme.Ticketing.Domain;
++
++namespace Acme.Ticketing.Application;
++
++public static class Paging
++{
++    /// <summary>The errors of a page request, by query parameter; empty when valid.</summary>
++    public static Dictionary<string, string[]> Validate(PageRequest request, IReadOnlyCollection<string> sortableProperties)
++    {
++        var errors = new Dictionary<string, string[]>();
++        if (request.Page < 1)
++        {
++            errors["page"] = ["page starts at 1"];
++        }
++        if (request.PageSize < 1 || request.PageSize > PageRequest.MaximumPageSize)
++        {
++            errors["pageSize"] = [$"pageSize is between 1 and {PageRequest.MaximumPageSize}"];
++        }
++        if (request.OrderBy is not null && !sortableProperties.Contains(request.OrderBy))
++        {
++            errors["orderBy"] = [$"orderBy is one of: {string.Join(", ", sortableProperties)}"];
++        }
++        return errors;
++    }
++}
+diff --git a/src/Ticketing.Application/Framework/Result.f.cs b/src/Ticketing.Application/Framework/Result.f.cs
+new file mode 100644
+index 0000000..de3e527
+--- /dev/null
++++ b/src/Ticketing.Application/Framework/Result.f.cs
+@@ -0,0 +1,63 @@
++namespace Acme.Ticketing.Application;
++
++public enum ErrorKind
++{
++    NotFound,
++    Invalid,
++    Conflict,
++    Forbidden,
++}
++
++/// <summary>
++/// Why a use case failed. The API turns it into a status code: 404, 400 with the
++/// validation errors by property path, 409, 403.
++/// </summary>
++public sealed record Error(ErrorKind Kind, IReadOnlyDictionary<string, string[]>? Errors = null, string? Detail = null)
++{
++    public static Error NotFound(string? detail = null) => new(ErrorKind.NotFound, Detail: detail);
++
++    public static Error Invalid(IReadOnlyDictionary<string, string[]> errors) => new(ErrorKind.Invalid, errors);
++
++    public static Error Conflict(string? detail = null) => new(ErrorKind.Conflict, Detail: detail);
++
++    public static Error Forbidden(string? detail = null) => new(ErrorKind.Forbidden, Detail: detail);
++}
++
++/// <summary>The outcome of a use case without a value: success, or an <see cref="Application.Error"/>.</summary>
++public class Result
++{
++    protected Result(Error? error)
++    {
++        Error = error;
++    }
++
++    public Error? Error { get; }
++
++    public bool IsSuccess => Error is null;
++
++    public static Result Success() => new(null);
++
++    public static implicit operator Result(Error error) => new(error);
++}
++
++/// <summary>The outcome of a use case: a value, or an <see cref="Application.Error"/>. Both convert implicitly.</summary>
++public sealed class Result<T> : Result
++{
++    private readonly T? value;
++
++    private Result(T value) : base(null)
++    {
++        this.value = value;
++    }
++
++    private Result(Error error) : base(error)
++    {
++    }
++
++    /// <summary>The value; throws when the use case failed.</summary>
++    public T Value => IsSuccess ? value! : throw new InvalidOperationException($"No value: the use case failed ({Error!.Kind})");
++
++    public static implicit operator Result<T>(T value) => new(value);
++
++    public static implicit operator Result<T>(Error error) => new(error);
++}
+diff --git a/src/Ticketing.Application/Framework/Security.f.cs b/src/Ticketing.Application/Framework/Security.f.cs
+new file mode 100644
+index 0000000..9035b44
+--- /dev/null
++++ b/src/Ticketing.Application/Framework/Security.f.cs
+@@ -0,0 +1,27 @@
++namespace Acme.Ticketing.Application;
++
++/// <summary>
++/// The caller of a use case. A right is a claim of type <see cref="RightClaimType"/>; the
++/// right <see cref="AllRights"/> grants every right. Implemented by the API layer.
++/// </summary>
++public interface ICurrentUser
++{
++    public const string RightClaimType = "right";
++    public const string AllRights = "*";
++
++    bool IsAuthenticated { get; }
++
++    /// <summary>The name of the authenticated user; null when anonymous.</summary>
++    string? Name { get; }
++
++    bool HasRight(string right);
++}
++
++/// <summary>
++/// A request body that validates itself: the API answers 400 with its errors, by property
++/// path, before calling the service.
++/// </summary>
++public interface IValidatable
++{
++    Dictionary<string, string[]> Validate();
++}
+diff --git a/src/Ticketing.Application/Framework/UnitOfWork.f.cs b/src/Ticketing.Application/Framework/UnitOfWork.f.cs
+new file mode 100644
+index 0000000..3e0ecff
+--- /dev/null
++++ b/src/Ticketing.Application/Framework/UnitOfWork.f.cs
+@@ -0,0 +1,16 @@
++using Acme.Ticketing.Domain;
++
++namespace Acme.Ticketing.Application;
++
++/// <summary>
++/// Saves the changes made to the aggregates loaded by the repositories of a request, in one
++/// transaction. Implemented by the infrastructure layer.
++/// </summary>
++public interface IUnitOfWork
++{
++    /// <summary>Whether an aggregate root or an entity of type <typeparamref name="T"/> has this Id.</summary>
++    Task<bool> ExistsAsync<T>(Guid id, CancellationToken cancellationToken = default) where T : Entity;
++
++    /// <summary>Null when saved; a conflict when a unique index or a foreign key is violated.</summary>
++    Task<Error?> SaveChangesAsync(CancellationToken cancellationToken = default);
++}
+diff --git a/src/Ticketing.Application/ShowService.cs b/src/Ticketing.Application/ShowService.cs
+new file mode 100644
+index 0000000..d458ceb
+--- /dev/null
++++ b/src/Ticketing.Application/ShowService.cs
+@@ -0,0 +1,24 @@
++namespace Acme.Ticketing.Application;
++
++public partial class ShowService
++{
++    // the quotas of the tiers add up to at most the capacity of the venue
++    private async partial Task<Error?> CheckCapacityAsync(Domain.Show aggregate, CancellationToken cancellationToken)
++    {
++        var venue = await VenueRepository.FindAsync(aggregate.VenueId, cancellationToken);
++        if (venue is null)
++        {
++            return Error.Invalid(new Dictionary<string, string[]> { ["VenueId"] = ["Venue not found"] });
++        }
++
++        var total = aggregate.TicketTiers.Sum(t => (long)t.Quota);
++        if (total > venue.Capacity)
++        {
++            return Error.Invalid(new Dictionary<string, string[]>
++            {
++                ["TicketTiers"] = [$"The quotas ({total}) exceed the capacity of the venue ({venue.Capacity})"],
++            });
++        }
++        return null;
++    }
++}
+diff --git a/src/Ticketing.Application/TicketingApplicationRegistration.g.cs b/src/Ticketing.Application/TicketingApplicationRegistration.g.cs
+new file mode 100644
+index 0000000..4e9274c
+--- /dev/null
++++ b/src/Ticketing.Application/TicketingApplicationRegistration.g.cs
+@@ -0,0 +1,31 @@
++#nullable enable
++using Microsoft.Extensions.DependencyInjection;
++namespace Acme.Ticketing.Application;
++public static partial class TicketingApplicationRegistration
++{
++    /// <summary>The application services of the Ticketing module: one per aggregate root with an API, those of the model, the factories and the event handlers.</summary>
++    public static IServiceCollection AddTicketingApplication(this IServiceCollection services)
++    {
++        // Object [AG][R]
++        services.AddScoped<VenueService>();
++
++        services.AddScoped<ShowService>();
++
++        services.AddScoped<BookingService>();
++
++        // Service 
++        services.AddScoped<IBoxOfficeService, BoxOfficeService>();
++
++        // Object [AG][EN]
++        services.AddScoped<IVenueFactory, VenueFactory>();
++
++        services.AddScoped<IShowFactory, ShowFactory>();
++
++        services.AddScoped<ITicketTierFactory, TicketTierFactory>();
++
++        services.AddScoped<IBookingFactory, BookingFactory>();
++
++        services.AddEventHandlers(typeof(TicketingApplicationRegistration).Assembly);
++        return services;
++    }
++}
+\ No newline at end of file
+diff --git a/src/Ticketing.Application/TicketingContracts.g.cs b/src/Ticketing.Application/TicketingContracts.g.cs
+new file mode 100644
+index 0000000..8321b08
+--- /dev/null
++++ b/src/Ticketing.Application/TicketingContracts.g.cs
+@@ -0,0 +1,512 @@
++#nullable enable
++using System;
++using System.Collections.Generic;
++using System.Linq;
++namespace Acme.Ticketing.Application;
++// Object [AG][EN]
++public sealed partial class VenueDto
++{
++    public Guid Id { get; set; }
++    // Property [S][NO][CA][NAR][PUO]
++    public System.String Name { get; set; } = string.Empty;
++
++    public System.Int32 Capacity { get; set; } = default(System.Int32);
++
++    // Property [M][NO][NAR][VO][PUO]
++    public Domain.Address Address { get; set; } = null!;
++
++    // Property [M][LNA][AG][EN][PUO]
++    public List<ShowDto> Shows { get; set; } = [];
++
++    public static VenueDto From(Domain.Venue entity) => new()
++    {
++        Id = entity.Id,
++        // Property [S][NO][CA][NAR][PUO]
++        Name = entity.Name,
++
++        Capacity = entity.Capacity,
++
++        // Property [M][NO][NAR][VO][PUO]
++        Address = entity.Address,
++
++        // Property [M][LNA][AG][EN][PUO]
++        Shows = entity.Shows.Select(ShowDto.From).ToList(),
++
++    };
++}
++public sealed partial class ShowDto
++{
++    public Guid Id { get; set; }
++    // Property [S][NO][CA][NAR][PUO]
++    public System.String Title { get; set; } = string.Empty;
++
++    public System.DateTime StartsAt { get; set; } = default(System.DateTime);
++
++    public System.Boolean IsSoldOut { get; set; } = default(System.Boolean);
++
++    // Property [E][NO][CA][NAR][PUO]
++    public Domain.ShowStatus Status { get; set; }
++
++    // Property [M][NO][NAR][AG][EN][PUO]
++    public Guid VenueId { get; set; }
++
++    // Property [M][LNA][AG][EN][PUO]
++    public List<TicketTierDto> TicketTiers { get; set; } = [];
++
++    public static ShowDto From(Domain.Show entity) => new()
++    {
++        Id = entity.Id,
++        // Property [S][NO][CA][NAR][PUO]
++        Title = entity.Title,
++
++        StartsAt = entity.StartsAt,
++
++        IsSoldOut = entity.IsSoldOut,
++
++        // Property [E][NO][CA][NAR][PUO]
++        Status = entity.Status,
++
++        // Property [M][NO][NAR][AG][EN][PUO]
++        VenueId = entity.VenueId,
++
++        // Property [M][LNA][AG][EN][PUO]
++        TicketTiers = entity.TicketTiers.Select(TicketTierDto.From).ToList(),
++
++    };
++}
++public sealed partial class TicketTierDto
++{
++    public Guid Id { get; set; }
++    // Property [S][NO][CA][NAR][PUO]
++    public System.String Name { get; set; } = string.Empty;
++
++    public System.Decimal Price { get; set; } = default(System.Decimal);
++
++    public System.Int32 Quota { get; set; } = default(System.Int32);
++
++    public System.Int32 Sold { get; set; } = default(System.Int32);
++
++    public static TicketTierDto From(Domain.TicketTier entity) => new()
++    {
++        Id = entity.Id,
++        // Property [S][NO][CA][NAR][PUO]
++        Name = entity.Name,
++
++        Price = entity.Price,
++
++        Quota = entity.Quota,
++
++        Sold = entity.Sold,
++
++    };
++}
++public sealed partial class BookingDto
++{
++    public Guid Id { get; set; }
++    // Property [S][NO][CA][NAR][PUO]
++    public System.String Tier { get; set; } = string.Empty;
++
++    public System.String CustomerEmail { get; set; } = string.Empty;
++
++    public System.Int32 Quantity { get; set; } = default(System.Int32);
++
++    public System.Decimal TotalPrice { get; set; } = default(System.Decimal);
++
++    // Property [M][NO][NAR][AG][EN][PUO]
++    public Guid ShowId { get; set; }
++
++    public static BookingDto From(Domain.Booking entity) => new()
++    {
++        Id = entity.Id,
++        // Property [S][NO][CA][NAR][PUO]
++        Tier = entity.Tier,
++
++        CustomerEmail = entity.CustomerEmail,
++
++        Quantity = entity.Quantity,
++
++        TotalPrice = entity.TotalPrice,
++
++        // Property [M][NO][NAR][AG][EN][PUO]
++        ShowId = entity.ShowId,
++
++    };
++}
++// Object [AG][R]
++public sealed partial class VenueDto
++{
++    /// <summary>The values accepted by the orderBy parameter of the query.</summary>
++    public static readonly IReadOnlyCollection<string> SortableProperties =
++    [
++        "Id",
++        // Property [S][NO][NAR][PUO]
++        "Name",
++
++        "Capacity",
++
++    ];
++}
++public sealed partial class VenueInput
++{
++    // Property [S][NO][NAR][PUO][NRO]
++    public System.String Name { get; set; } = string.Empty;
++
++    public System.Int32 Capacity { get; set; } = default(System.Int32);
++
++    // Property [M][NO][NAR][VO][PUO][NRO]
++    public Domain.Address? Address { get; set; }
++
++    /// <summary>Required values, maximum lengths, enum values, value objects and synchronized children, then <see cref="OnValidating"/>.</summary>
++    public Dictionary<string, string[]> Validate()
++    {
++        var errors = new Dictionary<string, string[]>();
++        // Property [S][NO][NAR][PUO][NRO]
++        // VALIDATION RULE - NULLABLE_PROPERTY
++        if (string.IsNullOrWhiteSpace(Name))
++        {
++            errors["Name"] = ["Name is required"];
++        }
++
++        // Property [S][NO][NAR][PUO][NRO]
++        // VALIDATION RULE - PROPERTY_HAS_MAX_SIZE
++        if (Name?.Length > 100)
++        {
++            errors["Name"] = ["Name is longer than 100 characters"];
++        }
++
++        // Property [M][NO][NAR][VO][PUO][NRO][NN]
++        if (Address is null)
++        {
++            errors["Address"] = ["Address is required"];
++        }
++        else
++        {
++            AddressValidation.Validate(Address, "Address", errors);
++        }
++
++        OnValidating(errors);
++        return errors;
++    }
++    partial void OnValidating(Dictionary<string, string[]> errors);
++    public void ApplyTo(Domain.Venue entity)
++    {
++        // Property [S][NO][NAR][PUO][NRO]
++        entity.Name = Name;
++
++        entity.Capacity = Capacity;
++
++        // Property [M][NO][NAR][VO][PUO][NRO]
++        entity.Address = Address!;
++
++    }
++}
++public sealed partial class ShowDto
++{
++    /// <summary>The values accepted by the orderBy parameter of the query.</summary>
++    public static readonly IReadOnlyCollection<string> SortableProperties =
++    [
++        "Id",
++        // Property [S][NO][NAR][PUO]
++        "Title",
++
++        "StartsAt",
++
++        // Property [E][NO][NAR][PUO]
++        "Status",
++
++        // Property [M][NO][NAR][AG][EN][PUO]
++        "VenueId",
++
++    ];
++}
++public sealed partial class ShowInput
++{
++    // Property [S][NO][NAR][PUO][NRO]
++    public System.String Title { get; set; } = string.Empty;
++
++    public System.DateTime StartsAt { get; set; } = default(System.DateTime);
++
++    // Property [E][NO][NAR][PUO][NRO]
++    public Domain.ShowStatus Status { get; set; }
++
++    // Property [M][NO][NAR][AG][EN][PUO][NRO]
++    public Guid VenueId { get; set; }
++
++    // Property [M][LNA][SY][EN][PUO][NRO]
++    /// <summary>The whole list: a child without Id is added, a child missing from the list is removed.</summary>
++    public List<TicketTierInput> TicketTiers { get; set; } = [];
++
++    /// <summary>Required values, maximum lengths, enum values, value objects and synchronized children, then <see cref="OnValidating"/>.</summary>
++    public Dictionary<string, string[]> Validate()
++    {
++        var errors = new Dictionary<string, string[]>();
++        // Property [S][NO][NAR][PUO][NRO]
++        // VALIDATION RULE - NULLABLE_PROPERTY
++        if (string.IsNullOrWhiteSpace(Title))
++        {
++            errors["Title"] = ["Title is required"];
++        }
++
++        // Property [S][NO][NAR][PUO][NRO]
++        // VALIDATION RULE - PROPERTY_HAS_MAX_SIZE
++        if (Title?.Length > 200)
++        {
++            errors["Title"] = ["Title is longer than 200 characters"];
++        }
++
++        // Property [E][NO][NAR][PUO][NRO][NN]
++        if (!Enum.IsDefined(Status))
++        {
++            errors["Status"] = ["Status is not a valid value"];
++        }
++
++        // Property [M][LNA][SY][EN][PUO][NRO]
++        for (var i = 0; i < TicketTiers.Count; i++)
++        {
++            foreach (var (key, messages) in TicketTiers[i].Validate())
++            {
++                errors[$"TicketTiers[{i}].{key}"] = messages;
++            }
++        }
++
++        OnValidating(errors);
++        return errors;
++    }
++    partial void OnValidating(Dictionary<string, string[]> errors);
++    public void ApplyTo(Domain.Show entity)
++    {
++        // Property [S][NO][NAR][PUO][NRO]
++        entity.Title = Title;
++
++        entity.StartsAt = StartsAt;
++
++        // Property [E][NO][NAR][PUO][NRO]
++        entity.Status = Status;
++
++        // Property [M][NO][NAR][AG][EN][PUO][NRO]
++        entity.VenueId = VenueId;
++
++        // Property [M][LNA][SY][EN][PUO][NRO]
++        entity.TicketTiers.RemoveAll(child => !TicketTiers.Exists(input => Equals(input.Id, child.Id)));
++        foreach (var childInput in TicketTiers)
++        {
++            var child = childInput.Id is { } childId ? entity.TicketTiers.Find(c => c.Id.Equals(childId)) : null;
++            if (child is null)
++            {
++                child = new Domain.TicketTier();
++                entity.TicketTiers.Add(child);
++            }
++            childInput.ApplyTo(child);
++        }
++
++    }
++}
++public sealed partial class BookingDto
++{
++    /// <summary>The values accepted by the orderBy parameter of the query.</summary>
++    public static readonly IReadOnlyCollection<string> SortableProperties =
++    [
++        "Id",
++        // Property [S][NO][NAR][PUO]
++        "Tier",
++
++        "CustomerEmail",
++
++        "Quantity",
++
++        "TotalPrice",
++
++        // Property [M][NO][NAR][AG][EN][PUO]
++        "ShowId",
++
++    ];
++}
++public sealed partial class BookingInput
++{
++    // Property [S][NO][NAR][PUO][NRO]
++    public System.String Tier { get; set; } = string.Empty;
++
++    public System.String CustomerEmail { get; set; } = string.Empty;
++
++    public System.Int32 Quantity { get; set; } = default(System.Int32);
++
++    public System.Decimal TotalPrice { get; set; } = default(System.Decimal);
++
++    // Property [M][NO][NAR][AG][EN][PUO][NRO]
++    public Guid ShowId { get; set; }
++
++    /// <summary>Required values, maximum lengths, enum values, value objects and synchronized children, then <see cref="OnValidating"/>.</summary>
++    public Dictionary<string, string[]> Validate()
++    {
++        var errors = new Dictionary<string, string[]>();
++        // Property [S][NO][NAR][PUO][NRO]
++        // VALIDATION RULE - NULLABLE_PROPERTY
++        if (string.IsNullOrWhiteSpace(Tier))
++        {
++            errors["Tier"] = ["Tier is required"];
++        }
++
++        // VALIDATION RULE - NULLABLE_PROPERTY
++        if (string.IsNullOrWhiteSpace(CustomerEmail))
++        {
++            errors["CustomerEmail"] = ["CustomerEmail is required"];
++        }
++
++        // Property [S][NO][NAR][PUO][NRO]
++        // VALIDATION RULE - PROPERTY_HAS_MAX_SIZE
++        if (Tier?.Length > 50)
++        {
++            errors["Tier"] = ["Tier is longer than 50 characters"];
++        }
++
++        // VALIDATION RULE - PROPERTY_HAS_MAX_SIZE
++        if (CustomerEmail?.Length > 200)
++        {
++            errors["CustomerEmail"] = ["CustomerEmail is longer than 200 characters"];
++        }
++
++        OnValidating(errors);
++        return errors;
++    }
++    partial void OnValidating(Dictionary<string, string[]> errors);
++    public void ApplyTo(Domain.Booking entity)
++    {
++        // Property [S][NO][NAR][PUO][NRO]
++        entity.Tier = Tier;
++
++        entity.CustomerEmail = CustomerEmail;
++
++        entity.Quantity = Quantity;
++
++        entity.TotalPrice = TotalPrice;
++
++        // Property [M][NO][NAR][AG][EN][PUO][NRO]
++        entity.ShowId = ShowId;
++
++    }
++}
++// Object [EN]
++// a child of a synchronized navigation; its references to aggregate roots are set by the navigation
++public sealed partial class TicketTierInput
++{
++    /// <summary>The child to update; null for a new child.</summary>
++    public Guid? Id { get; set; }
++    // Property [S][NO][NAR][PUO][NRO]
++    public System.String Name { get; set; } = string.Empty;
++
++    public System.Decimal Price { get; set; } = default(System.Decimal);
++
++    public System.Int32 Quota { get; set; } = default(System.Int32);
++
++    /// <summary>Required values, maximum lengths, enum values and value objects, then <see cref="OnValidating"/>.</summary>
++    public Dictionary<string, string[]> Validate()
++    {
++        var errors = new Dictionary<string, string[]>();
++        // Property [S][NO][NAR][PUO][NRO]
++        // VALIDATION RULE - NULLABLE_PROPERTY
++        if (string.IsNullOrWhiteSpace(Name))
++        {
++            errors["Name"] = ["Name is required"];
++        }
++
++        // Property [S][NO][NAR][PUO][NRO]
++        // VALIDATION RULE - PROPERTY_HAS_MAX_SIZE
++        if (Name?.Length > 50)
++        {
++            errors["Name"] = ["Name is longer than 50 characters"];
++        }
++
++        OnValidating(errors);
++        return errors;
++    }
++    partial void OnValidating(Dictionary<string, string[]> errors);
++    public void ApplyTo(Domain.TicketTier entity)
++    {
++        // Property [S][NO][NAR][PUO][NRO]
++        entity.Name = Name;
++
++        entity.Price = Price;
++
++        entity.Quota = Quota;
++
++    }
++}
++// Object [TR]
++public sealed partial class BookRequestDto : IValidatable
++{
++    // Property [S][NP][NAR][PUO]
++    public System.Guid ShowId { get; set; } = default(System.Guid);
++
++    public System.String Tier { get; set; } = string.Empty;
++
++    public System.String CustomerEmail { get; set; } = string.Empty;
++
++    public System.Int32 Quantity { get; set; } = default(System.Int32);
++
++    /// <summary>Required values, enum values and value objects, then <see cref="OnValidating"/>.</summary>
++    public Dictionary<string, string[]> Validate()
++    {
++        var errors = new Dictionary<string, string[]>();
++        // Property [S][NP][NAR][PUO]
++        // VALIDATION RULE - NULLABLE_PROPERTY
++        if (string.IsNullOrWhiteSpace(Tier))
++        {
++            errors["Tier"] = ["Tier is required"];
++        }
++
++        // VALIDATION RULE - NULLABLE_PROPERTY
++        if (string.IsNullOrWhiteSpace(CustomerEmail))
++        {
++            errors["CustomerEmail"] = ["CustomerEmail is required"];
++        }
++
++        OnValidating(errors);
++        return errors;
++    }
++    partial void OnValidating(Dictionary<string, string[]> errors);
++}
++// Object [VO]
++internal static partial class AddressValidation
++{
++    public static void Validate(Domain.Address value, string path, Dictionary<string, string[]> errors)
++    {
++        // Property [S][NO][NAR]
++        // VALIDATION RULE - NULLABLE_PROPERTY
++        if (string.IsNullOrWhiteSpace(value.Street))
++        {
++            errors[path + ".Street"] = ["Street is required"];
++        }
++
++        // VALIDATION RULE - NULLABLE_PROPERTY
++        if (string.IsNullOrWhiteSpace(value.City))
++        {
++            errors[path + ".City"] = ["City is required"];
++        }
++
++        // VALIDATION RULE - NULLABLE_PROPERTY
++        if (string.IsNullOrWhiteSpace(value.PostalCode))
++        {
++            errors[path + ".PostalCode"] = ["PostalCode is required"];
++        }
++
++        // Property [S][NO][NAR]
++        // VALIDATION RULE - PROPERTY_HAS_MAX_SIZE
++        if (value.Street?.Length > 100)
++        {
++            errors[path + ".Street"] = ["Street is longer than 100 characters"];
++        }
++
++        // VALIDATION RULE - PROPERTY_HAS_MAX_SIZE
++        if (value.City?.Length > 50)
++        {
++            errors[path + ".City"] = ["City is longer than 50 characters"];
++        }
++
++        // VALIDATION RULE - PROPERTY_HAS_MAX_SIZE
++        if (value.PostalCode?.Length > 10)
++        {
++            errors[path + ".PostalCode"] = ["PostalCode is longer than 10 characters"];
++        }
++
++    }
++}
+\ No newline at end of file
+diff --git a/src/Ticketing.Application/TicketingDomainServices.g.cs b/src/Ticketing.Application/TicketingDomainServices.g.cs
+new file mode 100644
+index 0000000..231e8eb
+--- /dev/null
++++ b/src/Ticketing.Application/TicketingDomainServices.g.cs
+@@ -0,0 +1,34 @@
++#nullable enable
++using System;
++using System.Collections.Generic;
++using System.Threading;
++using System.Threading.Tasks;
++namespace Acme.Ticketing.Application;
++// Service 
++public partial interface IBoxOfficeService
++{
++
++    Task<Result<BookingDto>> BookAsync(Acme.Ticketing.Application.BookRequestDto request, CancellationToken cancellationToken = default);
++
++}
++// the methods of IBoxOfficeService are written by hand in another part of this class
++public partial class BoxOfficeService(
++    // Dependency [AG]
++    Domain.IShowRepository ShowRepository,
++
++    Domain.IBookingRepository BookingRepository,
++
++    IUnitOfWork unitOfWork,
++    ICurrentUser currentUser,
++    IServiceProvider serviceProvider) : IBoxOfficeService
++{
++    // Dependency [AG]
++    protected Domain.IShowRepository ShowRepository { get; } = ShowRepository;
++
++    protected Domain.IBookingRepository BookingRepository { get; } = BookingRepository;
++
++    protected IUnitOfWork UnitOfWork { get; } = unitOfWork;
++    protected ICurrentUser CurrentUser { get; } = currentUser;
++    /// <summary>The services this class needs besides the repositories of its model dependencies.</summary>
++    protected IServiceProvider Services { get; } = serviceProvider;
++}
+\ No newline at end of file
+diff --git a/src/Ticketing.Application/TicketingEvents.g.cs b/src/Ticketing.Application/TicketingEvents.g.cs
+new file mode 100644
+index 0000000..5fe1502
+--- /dev/null
++++ b/src/Ticketing.Application/TicketingEvents.g.cs
+@@ -0,0 +1,2 @@
++#nullable enable
++namespace Acme.Ticketing.Application;
+\ No newline at end of file
+diff --git a/src/Ticketing.Application/TicketingFactories.g.cs b/src/Ticketing.Application/TicketingFactories.g.cs
+new file mode 100644
+index 0000000..13bd067
+--- /dev/null
++++ b/src/Ticketing.Application/TicketingFactories.g.cs
+@@ -0,0 +1,75 @@
++#nullable enable
++using System;
++using System.Collections.Generic;
++using System.Threading;
++using System.Threading.Tasks;
++namespace Acme.Ticketing.Application;
++// Object [AG][EN]
++/// <summary>The factories of Venue declared by the model; a new object is not saved by its factory.</summary>
++public partial interface IVenueFactory
++{
++
++}
++// the methods of IVenueFactory are written by hand in another part of this class
++public partial class VenueFactory(
++
++    IUnitOfWork unitOfWork,
++    IServiceProvider serviceProvider) : IVenueFactory
++{
++
++    protected IUnitOfWork UnitOfWork { get; } = unitOfWork;
++    /// <summary>The services this class needs besides the repositories of its model dependencies.</summary>
++    protected IServiceProvider Services { get; } = serviceProvider;
++}
++/// <summary>The factories of Show declared by the model; a new object is not saved by its factory.</summary>
++public partial interface IShowFactory
++{
++
++}
++// the methods of IShowFactory are written by hand in another part of this class
++public partial class ShowFactory(
++    // Dependency [AG]
++    Domain.IVenueRepository VenueRepository,
++
++    IUnitOfWork unitOfWork,
++    IServiceProvider serviceProvider) : IShowFactory
++{
++    // Dependency [AG]
++    protected Domain.IVenueRepository VenueRepository { get; } = VenueRepository;
++
++    protected IUnitOfWork UnitOfWork { get; } = unitOfWork;
++    /// <summary>The services this class needs besides the repositories of its model dependencies.</summary>
++    protected IServiceProvider Services { get; } = serviceProvider;
++}
++/// <summary>The factories of TicketTier declared by the model; a new object is not saved by its factory.</summary>
++public partial interface ITicketTierFactory
++{
++
++}
++// the methods of ITicketTierFactory are written by hand in another part of this class
++public partial class TicketTierFactory(
++
++    IUnitOfWork unitOfWork,
++    IServiceProvider serviceProvider) : ITicketTierFactory
++{
++
++    protected IUnitOfWork UnitOfWork { get; } = unitOfWork;
++    /// <summary>The services this class needs besides the repositories of its model dependencies.</summary>
++    protected IServiceProvider Services { get; } = serviceProvider;
++}
++/// <summary>The factories of Booking declared by the model; a new object is not saved by its factory.</summary>
++public partial interface IBookingFactory
++{
++
++}
++// the methods of IBookingFactory are written by hand in another part of this class
++public partial class BookingFactory(
++
++    IUnitOfWork unitOfWork,
++    IServiceProvider serviceProvider) : IBookingFactory
++{
++
++    protected IUnitOfWork UnitOfWork { get; } = unitOfWork;
++    /// <summary>The services this class needs besides the repositories of its model dependencies.</summary>
++    protected IServiceProvider Services { get; } = serviceProvider;
++}
+\ No newline at end of file
+diff --git a/src/Ticketing.Application/TicketingRights.g.cs b/src/Ticketing.Application/TicketingRights.g.cs
+new file mode 100644
+index 0000000..aa9b1cb
+--- /dev/null
++++ b/src/Ticketing.Application/TicketingRights.g.cs
+@@ -0,0 +1,11 @@
++#nullable enable
++namespace Acme.Ticketing.Application;
++/// <summary>The rights of the Ticketing module, as named by the mandatory_right of its model.</summary>
++public static partial class TicketingRights
++{
++    // Right [NW]
++    public const string ManageShows = "ManageShows";
++
++    public const string ManageVenues = "ManageVenues";
++
++}
+\ No newline at end of file
+diff --git a/src/Ticketing.Application/TicketingServices.g.cs b/src/Ticketing.Application/TicketingServices.g.cs
+new file mode 100644
+index 0000000..9644c9a
+--- /dev/null
++++ b/src/Ticketing.Application/TicketingServices.g.cs
+@@ -0,0 +1,284 @@
++#nullable enable
++using System;
++using System.Collections.Generic;
++using System.Threading;
++using System.Threading.Tasks;
++using Acme.Ticketing.Domain;
++namespace Acme.Ticketing.Application;
++// Object [AG][R]
++public partial class VenueService(
++    Domain.IVenueRepository repository,
++
++    IUnitOfWork unitOfWork,
++    IEventPublisher events,
++    ICurrentUser currentUser,
++    IServiceProvider serviceProvider)
++{
++    protected Domain.IVenueRepository Repository { get; } = repository;
++
++    protected IUnitOfWork UnitOfWork { get; } = unitOfWork;
++    protected IEventPublisher Events { get; } = events;
++    protected ICurrentUser CurrentUser { get; } = currentUser;
++    /// <summary>The services the rules need besides the repositories of the model dependencies.</summary>
++    protected IServiceProvider Services { get; } = serviceProvider;
++
++    public async Task<Result<Page<VenueDto>>> QueryAsync(PageRequest request, CancellationToken cancellationToken = default)
++    {
++        var errors = Paging.Validate(request, VenueDto.SortableProperties);
++        if (errors.Count > 0)
++        {
++            return Error.Invalid(errors);
++        }
++        var page = await Repository.QueryAsync(request, cancellationToken);
++        return page.Map(VenueDto.From);
++    }
++
++    public async Task<Result<VenueDto>> GetAsync(Guid id, CancellationToken cancellationToken = default)
++    {
++        var aggregate = await Repository.FindAsync(id, cancellationToken);
++        return aggregate is null ? Error.NotFound() : VenueDto.From(aggregate);
++    }
++
++    public async Task<Result<VenueDto>> AddAsync(VenueInput input, CancellationToken cancellationToken = default)
++    {
++        var errors = await ValidateAsync(input, cancellationToken);
++        if (errors.Count > 0)
++        {
++            return Error.Invalid(errors);
++        }
++        var aggregate = new Domain.Venue();
++        input.ApplyTo(aggregate);
++
++        Repository.Add(aggregate);
++        if (await UnitOfWork.SaveChangesAsync(cancellationToken) is { } error)
++        {
++            return error;
++        }
++
++        return VenueDto.From(aggregate);
++    }
++
++    public async Task<Result<VenueDto>> UpdateAsync(Guid id, VenueInput input, CancellationToken cancellationToken = default)
++    {
++        var aggregate = await Repository.FindAsync(id, cancellationToken);
++        if (aggregate is null)
++        {
++            return Error.NotFound();
++        }
++        var errors = await ValidateAsync(input, cancellationToken);
++        if (errors.Count > 0)
++        {
++            return Error.Invalid(errors);
++        }
++        input.ApplyTo(aggregate);
++
++        if (await UnitOfWork.SaveChangesAsync(cancellationToken) is { } error)
++        {
++            return error;
++        }
++
++        return VenueDto.From(aggregate);
++    }
++
++    public async Task<Result> RemoveAsync(Guid id, CancellationToken cancellationToken = default)
++    {
++        var aggregate = await Repository.FindAsync(id, cancellationToken);
++        if (aggregate is null)
++        {
++            return Error.NotFound();
++        }
++        // Rule [BR]
++        if (await RefuseIfShowsAsync(aggregate, cancellationToken) is { } RefuseIfShowsError)
++        {
++            return RefuseIfShowsError;
++        }
++
++        Repository.Remove(aggregate);
++        if (await UnitOfWork.SaveChangesAsync(cancellationToken) is { } error)
++        {
++            return error;
++        }
++
++        return Result.Success();
++    }
++
++    // Rule 
++    /// <summary>The rule RefuseIfShows of the model, written by hand: null to go on, or the error that stops the use case.</summary>
++    private partial Task<Error?> RefuseIfShowsAsync(Domain.Venue aggregate, CancellationToken cancellationToken);
++
++    // the input's own rules, then the existence of the aggregates and entities it references
++    private async Task<Dictionary<string, string[]>> ValidateAsync(VenueInput input, CancellationToken cancellationToken)
++    {
++        var errors = input.Validate();
++
++        return errors;
++    }
++}
++public partial class ShowService(
++    Domain.IShowRepository repository,
++    // Dependency [AG]
++    Domain.IVenueRepository VenueRepository,
++
++    IUnitOfWork unitOfWork,
++    IEventPublisher events,
++    ICurrentUser currentUser,
++    IServiceProvider serviceProvider)
++{
++    protected Domain.IShowRepository Repository { get; } = repository;
++    // Dependency [AG]
++    protected Domain.IVenueRepository VenueRepository { get; } = VenueRepository;
++
++    protected IUnitOfWork UnitOfWork { get; } = unitOfWork;
++    protected IEventPublisher Events { get; } = events;
++    protected ICurrentUser CurrentUser { get; } = currentUser;
++    /// <summary>The services the rules need besides the repositories of the model dependencies.</summary>
++    protected IServiceProvider Services { get; } = serviceProvider;
++
++    public async Task<Result<Page<ShowDto>>> QueryAsync(PageRequest request, CancellationToken cancellationToken = default)
++    {
++        var errors = Paging.Validate(request, ShowDto.SortableProperties);
++        if (errors.Count > 0)
++        {
++            return Error.Invalid(errors);
++        }
++        var page = await Repository.QueryAsync(request, cancellationToken);
++        return page.Map(ShowDto.From);
++    }
++
++    public async Task<Result<ShowDto>> GetAsync(Guid id, CancellationToken cancellationToken = default)
++    {
++        var aggregate = await Repository.FindAsync(id, cancellationToken);
++        return aggregate is null ? Error.NotFound() : ShowDto.From(aggregate);
++    }
++
++    public async Task<Result<ShowDto>> AddAsync(ShowInput input, CancellationToken cancellationToken = default)
++    {
++        var errors = await ValidateAsync(input, cancellationToken);
++        if (errors.Count > 0)
++        {
++            return Error.Invalid(errors);
++        }
++        var aggregate = new Domain.Show();
++        input.ApplyTo(aggregate);
++        // Rule [BA]
++        if (await CheckCapacityAsync(aggregate, cancellationToken) is { } CheckCapacityError)
++        {
++            return CheckCapacityError;
++        }
++
++        Repository.Add(aggregate);
++        if (await UnitOfWork.SaveChangesAsync(cancellationToken) is { } error)
++        {
++            return error;
++        }
++
++        return ShowDto.From(aggregate);
++    }
++
++    public async Task<Result<ShowDto>> UpdateAsync(Guid id, ShowInput input, CancellationToken cancellationToken = default)
++    {
++        var aggregate = await Repository.FindAsync(id, cancellationToken);
++        if (aggregate is null)
++        {
++            return Error.NotFound();
++        }
++        var errors = await ValidateAsync(input, cancellationToken);
++        if (errors.Count > 0)
++        {
++            return Error.Invalid(errors);
++        }
++        input.ApplyTo(aggregate);
++        // Rule [BU]
++        if (await CheckCapacityAsync(aggregate, cancellationToken) is { } CheckCapacityError)
++        {
++            return CheckCapacityError;
++        }
++
++        if (await UnitOfWork.SaveChangesAsync(cancellationToken) is { } error)
++        {
++            return error;
++        }
++
++        return ShowDto.From(aggregate);
++    }
++
++    public async Task<Result> RemoveAsync(Guid id, CancellationToken cancellationToken = default)
++    {
++        var aggregate = await Repository.FindAsync(id, cancellationToken);
++        if (aggregate is null)
++        {
++            return Error.NotFound();
++        }
++
++        Repository.Remove(aggregate);
++        if (await UnitOfWork.SaveChangesAsync(cancellationToken) is { } error)
++        {
++            return error;
++        }
++
++        return Result.Success();
++    }
++
++    // Rule 
++    /// <summary>The rule CheckCapacity of the model, written by hand: null to go on, or the error that stops the use case.</summary>
++    private partial Task<Error?> CheckCapacityAsync(Domain.Show aggregate, CancellationToken cancellationToken);
++
++    // the input's own rules, then the existence of the aggregates and entities it references
++    private async Task<Dictionary<string, string[]>> ValidateAsync(ShowInput input, CancellationToken cancellationToken)
++    {
++        var errors = input.Validate();
++        // Property [M][NO][NAR][AG][EN][PUO][NRO][NN]
++        if (!await UnitOfWork.ExistsAsync<Domain.Venue>(input.VenueId, cancellationToken))
++        {
++            errors["VenueId"] = ["Venue not found"];
++        }
++
++        return errors;
++    }
++}
++public partial class BookingService(
++    Domain.IBookingRepository repository,
++
++    IUnitOfWork unitOfWork,
++    IEventPublisher events,
++    ICurrentUser currentUser,
++    IServiceProvider serviceProvider)
++{
++    protected Domain.IBookingRepository Repository { get; } = repository;
++
++    protected IUnitOfWork UnitOfWork { get; } = unitOfWork;
++    protected IEventPublisher Events { get; } = events;
++    protected ICurrentUser CurrentUser { get; } = currentUser;
++    /// <summary>The services the rules need besides the repositories of the model dependencies.</summary>
++    protected IServiceProvider Services { get; } = serviceProvider;
++
++    public async Task<Result<Page<BookingDto>>> QueryAsync(PageRequest request, CancellationToken cancellationToken = default)
++    {
++        var errors = Paging.Validate(request, BookingDto.SortableProperties);
++        if (errors.Count > 0)
++        {
++            return Error.Invalid(errors);
++        }
++        var page = await Repository.QueryAsync(request, cancellationToken);
++        return page.Map(BookingDto.From);
++    }
++
++    public async Task<Result<BookingDto>> GetAsync(Guid id, CancellationToken cancellationToken = default)
++    {
++        var aggregate = await Repository.FindAsync(id, cancellationToken);
++        return aggregate is null ? Error.NotFound() : BookingDto.From(aggregate);
++    }
++
++    // the input's own rules, then the existence of the aggregates and entities it references
++    private async Task<Dictionary<string, string[]>> ValidateAsync(BookingInput input, CancellationToken cancellationToken)
++    {
++        var errors = input.Validate();
++        // Property [M][NO][NAR][AG][EN][PUO][NRO][NN]
++        if (!await UnitOfWork.ExistsAsync<Domain.Show>(input.ShowId, cancellationToken))
++        {
++            errors["ShowId"] = ["Show not found"];
++        }
++
++        return errors;
++    }
++}
+\ No newline at end of file
+diff --git a/src/Ticketing.Application/VenueService.cs b/src/Ticketing.Application/VenueService.cs
+new file mode 100644
+index 0000000..af53418
+--- /dev/null
++++ b/src/Ticketing.Application/VenueService.cs
+@@ -0,0 +1,8 @@
++namespace Acme.Ticketing.Application;
++
++public partial class VenueService
++{
++    // a venue that still has shows cannot be deleted
++    private partial Task<Error?> RefuseIfShowsAsync(Domain.Venue aggregate, CancellationToken cancellationToken) =>
++        Task.FromResult<Error?>(aggregate.Shows.Count > 0 ? Error.Conflict("The venue still has shows") : null);
++}
+diff --git a/src/Ticketing.Diagrams/TicketingClasses.g.puml b/src/Ticketing.Diagrams/TicketingClasses.g.puml
+new file mode 100644
+index 0000000..92be0ad
+--- /dev/null
++++ b/src/Ticketing.Diagrams/TicketingClasses.g.puml
+@@ -0,0 +1,83 @@
++@startuml
++hide empty members
++' Object [AG]
++class Venue <<aggregate root>>
++class Show <<aggregate root>>
++class Booking <<aggregate root>>
++' Object [EN]
++class TicketTier <<entity>>
++' Object [VO]
++class Address <<value object>>
++' Object [AG][EN][VO]
++class Venue {
++    ' Property [S][NO][CA][NAR][PUO]
++    +name: string[100]
++
++    +capacity: number
++
++    ' Rule 
++    +RefuseIfShows()
++
++}
++' Property [M][NO][NAR][VO][NN]
++Venue *-- "1" Address : address
++' Property [M][LNA][AG][EN]
++Venue o-- "*" Show : shows
++class Address {
++    ' Property [S][NO][CA][NAR][PUO]
++    +street: string[100]
++
++    +city: string[50]
++
++    +postalCode: string[10]
++
++}
++class Show {
++    ' Property [S][NO][CA][NAR][PUO]
++    +title: string[200]
++
++    +startsAt: string
++
++    +isSoldOut: boolean
++
++    ' Rule 
++    +CheckCapacity()
++
++}
++' Property [E][NO][CA][NAR][PUO]
++Show --> ShowStatus : status
++' Property [M][NO][NAR][AG][EN][NN]
++Show --> "1" Venue : venue
++' Property [M][LNA][AG][EN]
++Show o-- "*" TicketTier : ticketTiers
++class TicketTier {
++    ' Property [S][NO][CA][NAR][PUO]
++    +name: string[50]
++
++    +price: number
++
++    +quota: number
++
++    +sold: number
++
++}
++class Booking {
++    ' Property [S][NO][CA][NAR][PUO]
++    +tier: string[50]
++
++    +customerEmail: string[200]
++
++    +quantity: number
++
++    +totalPrice: number
++
++}
++' Property [M][NO][NAR][AG][EN][NN]
++Booking --> "1" Show : show
++' Enum 
++enum ShowStatus {
++    Draft = 0,
++OnSale = 1,
++Cancelled = 2
++}
++@enduml
+\ No newline at end of file
+diff --git a/src/Ticketing.Domain/Framework/Entity.f.cs b/src/Ticketing.Domain/Framework/Entity.f.cs
+new file mode 100644
+index 0000000..df37919
+--- /dev/null
++++ b/src/Ticketing.Domain/Framework/Entity.f.cs
+@@ -0,0 +1,20 @@
++namespace Acme.Ticketing.Domain;
++
++/// <summary>
++/// An object of the Ticketing module with an identity: two entities are the same when their
++/// Id is. Entities of the model derive from it; they are persisted in their own table and
++/// reached through the navigations of their aggregate.
++/// </summary>
++public abstract class Entity
++{
++    public Guid Id { get; set; }
++}
++
++/// <summary>
++/// The root of an aggregate: the only kind of entity loaded and saved through a repository
++/// (<see cref="IRepository{T}"/>) and exposed by the API. Deleting it deletes the entities
++/// referencing it; an aggregate root referenced by another one cannot be deleted.
++/// </summary>
++public abstract class AggregateRoot : Entity
++{
++}
+diff --git a/src/Ticketing.Domain/Framework/Repository.f.cs b/src/Ticketing.Domain/Framework/Repository.f.cs
+new file mode 100644
+index 0000000..e40e107
+--- /dev/null
++++ b/src/Ticketing.Domain/Framework/Repository.f.cs
+@@ -0,0 +1,32 @@
++namespace Acme.Ticketing.Domain;
++
++/// <summary>
++/// Loads and stores the aggregate roots of type <typeparamref name="T"/>. Changes are saved by
++/// the unit of work of the application layer, not by the repository.
++/// </summary>
++public interface IRepository<T> where T : AggregateRoot
++{
++    /// <summary>The aggregate root with its list navigations, tracked for changes; null when unknown.</summary>
++    Task<T?> FindAsync(Guid id, CancellationToken cancellationToken = default);
++
++    /// <summary>One page of aggregate roots, without their navigations, not tracked.</summary>
++    Task<Page<T>> QueryAsync(PageRequest request, CancellationToken cancellationToken = default);
++
++    void Add(T aggregate);
++
++    void Remove(T aggregate);
++}
++
++/// <param name="Page">From 1.</param>
++/// <param name="PageSize">From 1 to <see cref="MaximumPageSize"/>.</param>
++/// <param name="OrderBy">A property name (PascalCase); by Id when null.</param>
++public sealed record PageRequest(int Page = 1, int PageSize = PageRequest.DefaultPageSize, string? OrderBy = null, bool Descending = false)
++{
++    public const int DefaultPageSize = 50;
++    public const int MaximumPageSize = 200;
++}
++
++public sealed record Page<T>(IReadOnlyList<T> Items, int PageNumber, int PageSize, int TotalCount)
++{
++    public Page<TResult> Map<TResult>(Func<T, TResult> map) => new(Items.Select(map).ToList(), PageNumber, PageSize, TotalCount);
++}
+diff --git a/src/Ticketing.Domain/Show.cs b/src/Ticketing.Domain/Show.cs
+new file mode 100644
+index 0000000..6460770
+--- /dev/null
++++ b/src/Ticketing.Domain/Show.cs
+@@ -0,0 +1,7 @@
++namespace Acme.Ticketing.Domain;
++
++public partial class Show
++{
++    private partial bool CalculateIsSoldOut() =>
++        TicketTiers.Count > 0 && TicketTiers.All(t => t.Sold >= t.Quota);
++}
+diff --git a/src/Ticketing.Domain/TicketTier.cs b/src/Ticketing.Domain/TicketTier.cs
+new file mode 100644
+index 0000000..00db0af
+--- /dev/null
++++ b/src/Ticketing.Domain/TicketTier.cs
+@@ -0,0 +1,13 @@
++namespace Acme.Ticketing.Domain;
++
++public partial class TicketTier
++{
++    /// <summary>Persisted count; not part of the API input, only bookings change it.</summary>
++    public int SoldCount { get; private set; }
++
++    private partial int CalculateSold() => SoldCount;
++
++    public int Remaining => Quota - SoldCount;
++
++    public void Sell(int quantity) => SoldCount += quantity;
++}
+diff --git a/src/Ticketing.Domain/TicketingModel.g.cs b/src/Ticketing.Domain/TicketingModel.g.cs
+new file mode 100644
+index 0000000..5489176
+--- /dev/null
++++ b/src/Ticketing.Domain/TicketingModel.g.cs
+@@ -0,0 +1,103 @@
++#nullable enable
++using System;
++using System.Collections.Generic;
++namespace Acme.Ticketing.Domain;
++// Enum 
++public enum ShowStatus
++{
++    Draft = 0,
++OnSale = 1,
++Cancelled = 2
++}
++// Object [AG]
++public partial class Venue : AggregateRoot
++{
++}
++public partial class Show : AggregateRoot
++{
++}
++public partial class Booking : AggregateRoot
++{
++}
++// Object [EN]
++public partial class TicketTier : Entity
++{
++}
++// Object [AG][EN]
++public partial class Venue
++{
++    // Property [S][NO][NAR]
++    public System.String Name { get; set; } = string.Empty;
++
++    public System.Int32 Capacity { get; set; } = default(System.Int32);
++
++    // Property [M][NO][NAR][VO]
++    public Address Address { get; set; } = null!;
++
++    // Property [M][LNA][AG][EN]
++    public List<Show> Shows { get; set; } = [];
++
++}
++public partial class Show
++{
++    // Property [S][NO][NAR]
++    public System.String Title { get; set; } = string.Empty;
++
++    public System.DateTime StartsAt { get; set; } = default(System.DateTime);
++
++    // Property [E][NO][NAR]
++    public ShowStatus Status { get; set; }
++
++    // Property [M][NO][NAR][AG][EN]
++    public Guid VenueId { get; set; }
++    public Venue? Venue { get; set; }
++
++    // Property [M][LNA][AG][EN]
++    public List<TicketTier> TicketTiers { get; set; } = [];
++
++    // Property [S][CA][NAR]
++    public System.Boolean IsSoldOut => CalculateIsSoldOut();
++    private partial System.Boolean CalculateIsSoldOut();
++
++}
++public partial class TicketTier
++{
++    // Property [S][NO][NAR]
++    public System.String Name { get; set; } = string.Empty;
++
++    public System.Decimal Price { get; set; } = default(System.Decimal);
++
++    public System.Int32 Quota { get; set; } = default(System.Int32);
++
++    // Property [S][CA][NAR]
++    public System.Int32 Sold => CalculateSold();
++    private partial System.Int32 CalculateSold();
++
++}
++public partial class Booking
++{
++    // Property [S][NO][NAR]
++    public System.String Tier { get; set; } = string.Empty;
++
++    public System.String CustomerEmail { get; set; } = string.Empty;
++
++    public System.Int32 Quantity { get; set; } = default(System.Int32);
++
++    public System.Decimal TotalPrice { get; set; } = default(System.Decimal);
++
++    // Property [M][NO][NAR][AG][EN]
++    public Guid ShowId { get; set; }
++    public Show? Show { get; set; }
++
++}
++// Object [VO]
++public sealed partial record Address
++{
++    // Property [S][NO][NAR]
++    public System.String Street { get; init; } = string.Empty;
++
++    public System.String City { get; init; } = string.Empty;
++
++    public System.String PostalCode { get; init; } = string.Empty;
++
++}
+\ No newline at end of file
+diff --git a/src/Ticketing.Domain/TicketingRepositories.g.cs b/src/Ticketing.Domain/TicketingRepositories.g.cs
+new file mode 100644
+index 0000000..3577c3c
+--- /dev/null
++++ b/src/Ticketing.Domain/TicketingRepositories.g.cs
+@@ -0,0 +1,12 @@
++#nullable enable
++namespace Acme.Ticketing.Domain;
++// Object [AG]
++public partial interface IVenueRepository : IRepository<Venue>
++{
++}
++public partial interface IShowRepository : IRepository<Show>
++{
++}
++public partial interface IBookingRepository : IRepository<Booking>
++{
++}
+\ No newline at end of file
+diff --git a/src/Ticketing.Infrastructure/Framework/EfRepository.f.cs b/src/Ticketing.Infrastructure/Framework/EfRepository.f.cs
+new file mode 100644
+index 0000000..bae27e0
+--- /dev/null
++++ b/src/Ticketing.Infrastructure/Framework/EfRepository.f.cs
+@@ -0,0 +1,42 @@
++using Acme.Ticketing.Domain;
++using Microsoft.EntityFrameworkCore;
++
++namespace Acme.Ticketing.Infrastructure;
++
++/// <summary>
++/// <see cref="IRepository{T}"/> on the Ticketing DbContext. The repository of each aggregate
++/// root derives from it; override <see cref="WithDetails"/> to load more than the list
++/// navigations.
++/// </summary>
++public abstract class EfRepository<T>(TicketingDbContext db) : IRepository<T> where T : AggregateRoot
++{
++    protected TicketingDbContext Db { get; } = db;
++
++    /// <summary>The navigations loaded by <see cref="FindAsync"/>.</summary>
++    protected virtual IQueryable<T> WithDetails(IQueryable<T> query) => query;
++
++    public Task<T?> FindAsync(Guid id, CancellationToken cancellationToken = default)
++    {
++        return WithDetails(Db.Set<T>()).FirstOrDefaultAsync(x => x.Id == id, cancellationToken);
++    }
++
++    public async Task<Page<T>> QueryAsync(PageRequest request, CancellationToken cancellationToken = default)
++    {
++        IQueryable<T> query = Db.Set<T>().AsNoTracking();
++        var totalCount = await query.CountAsync(cancellationToken);
++        query = request.OrderBy is null
++            ? query.OrderBy(x => x.Id)
++            : request.Descending
++                ? query.OrderByDescending(x => EF.Property<object>(x, request.OrderBy))
++                : query.OrderBy(x => EF.Property<object>(x, request.OrderBy));
++        var items = await query
++            .Skip((request.Page - 1) * request.PageSize)
++            .Take(request.PageSize)
++            .ToListAsync(cancellationToken);
++        return new Page<T>(items, request.Page, request.PageSize, totalCount);
++    }
++
++    public void Add(T aggregate) => Db.Set<T>().Add(aggregate);
++
++    public void Remove(T aggregate) => Db.Set<T>().Remove(aggregate);
++}
+diff --git a/src/Ticketing.Infrastructure/Framework/ModelConventions.f.cs b/src/Ticketing.Infrastructure/Framework/ModelConventions.f.cs
+new file mode 100644
+index 0000000..173ff39
+--- /dev/null
++++ b/src/Ticketing.Infrastructure/Framework/ModelConventions.f.cs
+@@ -0,0 +1,43 @@
++using System.Text.Json;
++using Acme.Ticketing.Domain;
++using Microsoft.EntityFrameworkCore;
++using Microsoft.EntityFrameworkCore.ChangeTracking;
++using Microsoft.EntityFrameworkCore.Metadata.Builders;
++
++namespace Acme.Ticketing.Infrastructure;
++
++/// <summary>Mapping rules shared by every object of the Ticketing module, applied by its DbContext.</summary>
++public static class ModelConventions
++{
++    private static readonly JsonSerializerOptions JsonOptions = new(JsonSerializerDefaults.Web);
++
++    /// <summary>
++    /// A value object is stored as JSON in the row of its owner, nested value objects and
++    /// collections included, and compared by value.
++    /// </summary>
++    public static PropertyBuilder<T> HasJsonConversion<T>(this PropertyBuilder<T> property)
++    {
++        property.HasConversion(
++            value => JsonSerializer.Serialize(value, JsonOptions),
++            json => JsonSerializer.Deserialize<T>(json, JsonOptions)!,
++            new ValueComparer<T>(
++                (left, right) => JsonSerializer.Serialize(left, JsonOptions) == JsonSerializer.Serialize(right, JsonOptions),
++                value => JsonSerializer.Serialize(value, JsonOptions).GetHashCode(),
++                value => JsonSerializer.Deserialize<T>(JsonSerializer.Serialize(value, JsonOptions), JsonOptions)!));
++        return property;
++    }
++
++    /// <summary>
++    /// An entity referencing an aggregate root is deleted with it; any other reference
++    /// prevents the deletion of what it references (a conflict for the API).
++    /// </summary>
++    public static void ApplyDeleteRules(this ModelBuilder modelBuilder)
++    {
++        foreach (var foreignKey in modelBuilder.Model.GetEntityTypes().SelectMany(e => e.GetForeignKeys()))
++        {
++            var dependentIsEntity = !typeof(AggregateRoot).IsAssignableFrom(foreignKey.DeclaringEntityType.ClrType);
++            var principalIsAggregate = typeof(AggregateRoot).IsAssignableFrom(foreignKey.PrincipalEntityType.ClrType);
++            foreignKey.DeleteBehavior = dependentIsEntity && principalIsAggregate ? DeleteBehavior.Cascade : DeleteBehavior.Restrict;
++        }
++    }
++}
+diff --git a/src/Ticketing.Infrastructure/Framework/UnitOfWork.f.cs b/src/Ticketing.Infrastructure/Framework/UnitOfWork.f.cs
+new file mode 100644
+index 0000000..b20ab66
+--- /dev/null
++++ b/src/Ticketing.Infrastructure/Framework/UnitOfWork.f.cs
+@@ -0,0 +1,27 @@
++using Acme.Ticketing.Application;
++using Acme.Ticketing.Domain;
++using Microsoft.EntityFrameworkCore;
++
++namespace Acme.Ticketing.Infrastructure;
++
++/// <summary><see cref="IUnitOfWork"/> on the Ticketing DbContext: one SaveChanges per request.</summary>
++public sealed class UnitOfWork(TicketingDbContext db) : IUnitOfWork
++{
++    public Task<bool> ExistsAsync<T>(Guid id, CancellationToken cancellationToken = default) where T : Entity
++    {
++        return db.Set<T>().AnyAsync(x => x.Id == id, cancellationToken);
++    }
++
++    public async Task<Error?> SaveChangesAsync(CancellationToken cancellationToken = default)
++    {
++        try
++        {
++            await db.SaveChangesAsync(cancellationToken);
++            return null;
++        }
++        catch (DbUpdateException)
++        {
++            return Error.Conflict("A unique index or a foreign key is violated");
++        }
++    }
++}
+diff --git a/src/Ticketing.Infrastructure/TicketingDbContext.g.cs b/src/Ticketing.Infrastructure/TicketingDbContext.g.cs
+new file mode 100644
+index 0000000..139890f
+--- /dev/null
++++ b/src/Ticketing.Infrastructure/TicketingDbContext.g.cs
+@@ -0,0 +1,83 @@
++#nullable enable
++using Microsoft.EntityFrameworkCore;
++namespace Acme.Ticketing.Infrastructure;
++public partial class TicketingDbContext(DbContextOptions<TicketingDbContext> options) : DbContext(options)
++{
++    // Object [AG][EN]
++    public DbSet<Domain.Venue> Venues => Set<Domain.Venue>();
++
++    public DbSet<Domain.Show> Shows => Set<Domain.Show>();
++
++    public DbSet<Domain.TicketTier> TicketTiers => Set<Domain.TicketTier>();
++
++    public DbSet<Domain.Booking> Bookings => Set<Domain.Booking>();
++
++    protected override void OnModelCreating(ModelBuilder modelBuilder)
++    {
++        // Object [AG][EN]
++        modelBuilder.Entity<Domain.Venue>(builder =>
++        {
++            builder.HasKey(x => x.Id);
++            // Property [S][NO][NAR]
++            // VALIDATION RULE - PROPERTY_HAS_MAX_SIZE
++            builder.Property(x => x.Name).HasMaxLength(100);
++
++            // Property [S][NO][NAR]
++            // VALIDATION RULE - PROPERTY_IS_UNIQUE
++            builder.HasIndex(x => x.Name).IsUnique();
++
++            // Property [M][NO][NAR][VO]
++            builder.Property(x => x.Address).HasJsonConversion();
++
++        });
++
++        modelBuilder.Entity<Domain.Show>(builder =>
++        {
++            builder.HasKey(x => x.Id);
++            // Property [S][NO][NAR]
++            // VALIDATION RULE - PROPERTY_HAS_MAX_SIZE
++            builder.Property(x => x.Title).HasMaxLength(200);
++
++            // Property [S][NO][NAR]
++
++            // Property [E][NO][NAR]
++            builder.Property(x => x.Status).HasConversion<string>();
++
++            // Property [S][CA][NAR]
++            builder.Ignore(x => x.IsSoldOut);
++
++        });
++
++        modelBuilder.Entity<Domain.TicketTier>(builder =>
++        {
++            builder.HasKey(x => x.Id);
++            // Property [S][NO][NAR]
++            // VALIDATION RULE - PROPERTY_HAS_MAX_SIZE
++            builder.Property(x => x.Name).HasMaxLength(50);
++
++            // Property [S][NO][NAR]
++
++            // Property [S][CA][NAR]
++            builder.Ignore(x => x.Sold);
++
++        });
++
++        modelBuilder.Entity<Domain.Booking>(builder =>
++        {
++            builder.HasKey(x => x.Id);
++            // Property [S][NO][NAR]
++            // VALIDATION RULE - PROPERTY_HAS_MAX_SIZE
++            builder.Property(x => x.Tier).HasMaxLength(50);
++
++            // VALIDATION RULE - PROPERTY_HAS_MAX_SIZE
++            builder.Property(x => x.CustomerEmail).HasMaxLength(200);
++
++            // Property [S][NO][NAR]
++
++        });
++
++        OnModelCreatingPartial(modelBuilder);
++        modelBuilder.ApplyDeleteRules();
++    }
++    partial void OnModelCreatingPartial(ModelBuilder modelBuilder);
++}
+\ No newline at end of file
+diff --git a/src/Ticketing.Infrastructure/TicketingInfrastructureRegistration.g.cs b/src/Ticketing.Infrastructure/TicketingInfrastructureRegistration.g.cs
+new file mode 100644
+index 0000000..30fd621
+--- /dev/null
++++ b/src/Ticketing.Infrastructure/TicketingInfrastructureRegistration.g.cs
+@@ -0,0 +1,22 @@
++#nullable enable
++using System;
++using Microsoft.EntityFrameworkCore;
++using Microsoft.Extensions.DependencyInjection;
++namespace Acme.Ticketing.Infrastructure;
++public static partial class TicketingInfrastructureRegistration
++{
++    /// <summary>The Ticketing DbContext on the database chosen by <paramref name="configureDatabase"/>, its unit of work and repositories.</summary>
++    public static IServiceCollection AddTicketingInfrastructure(this IServiceCollection services, Action<DbContextOptionsBuilder> configureDatabase)
++    {
++        services.AddDbContext<TicketingDbContext>(configureDatabase);
++        services.AddScoped<Application.IUnitOfWork, UnitOfWork>();
++        // Object [AG]
++        services.AddScoped<Domain.IVenueRepository, VenueRepository>();
++
++        services.AddScoped<Domain.IShowRepository, ShowRepository>();
++
++        services.AddScoped<Domain.IBookingRepository, BookingRepository>();
++
++        return services;
++    }
++}
+\ No newline at end of file
+diff --git a/src/Ticketing.Infrastructure/TicketingRepositories.g.cs b/src/Ticketing.Infrastructure/TicketingRepositories.g.cs
+new file mode 100644
+index 0000000..c1981db
+--- /dev/null
++++ b/src/Ticketing.Infrastructure/TicketingRepositories.g.cs
+@@ -0,0 +1,36 @@
++#nullable enable
++using System.Linq;
++using Microsoft.EntityFrameworkCore;
++namespace Acme.Ticketing.Infrastructure;
++// Object [AG]
++public partial class VenueRepository(TicketingDbContext db) : EfRepository<Domain.Venue>(db), Domain.IVenueRepository
++{
++    protected override IQueryable<Domain.Venue> WithDetails(IQueryable<Domain.Venue> query)
++    {
++        return query
++            // Property [M][LNA][AG][EN]
++            .Include(x => x.Shows)
++
++            ;
++    }
++}
++public partial class ShowRepository(TicketingDbContext db) : EfRepository<Domain.Show>(db), Domain.IShowRepository
++{
++    protected override IQueryable<Domain.Show> WithDetails(IQueryable<Domain.Show> query)
++    {
++        return query
++            // Property [M][LNA][AG][EN]
++            .Include(x => x.TicketTiers)
++
++            ;
++    }
++}
++public partial class BookingRepository(TicketingDbContext db) : EfRepository<Domain.Booking>(db), Domain.IBookingRepository
++{
++    protected override IQueryable<Domain.Booking> WithDetails(IQueryable<Domain.Booking> query)
++    {
++        return query
++
++            ;
++    }
++}
+\ No newline at end of file
+diff --git a/src/Ticketing.Tests/BoxOfficeTests.cs b/src/Ticketing.Tests/BoxOfficeTests.cs
+new file mode 100644
+index 0000000..a1e5583
+--- /dev/null
++++ b/src/Ticketing.Tests/BoxOfficeTests.cs
+@@ -0,0 +1,189 @@
++using System.Net;
++using System.Net.Http.Json;
++using System.Text.Json;
++using System.Text.Json.Nodes;
++
++namespace Acme.Ticketing.Tests;
++
++[TestClass]
++public class BoxOfficeTests : ApiTestBase
++{
++    private static JsonObject Address() => new() { ["street"] = "1 Main", ["city"] = "Paris", ["postalCode"] = "75001" };
++
++    private async Task<JsonNode> CreateVenue(string name = "Hall", int capacity = 100) =>
++        (await PostAsync<JsonNode>("/venues", new { name, address = Address(), capacity }))!;
++
++    private async Task<JsonNode> CreateShow(Guid venueId, int status = 1, DateTime? startsAt = null, int quota = 10, decimal price = 12.5m) =>
++        (await PostAsync<JsonNode>("/shows", new
++        {
++            title = "Concert",
++            startsAt = startsAt ?? DateTime.UtcNow.AddDays(10),
++            status,
++            venueId,
++            ticketTiers = new[] { new { name = "Gold", price, quota } },
++        }))!;
++
++    private static Guid Id(JsonNode n) => n["id"]!.GetValue<Guid>();
++
++    private Task<HttpResponseMessage> Book(Guid showId, string tier = "Gold", int quantity = 2, string email = "a@b.c") =>
++        Client.PostAsJsonAsync("/box-office/book", new { showId, tier, customerEmail = email, quantity });
++
++    [TestMethod]
++    public async Task Book_Succeeds_And_UpdatesSold()
++    {
++        var venue = await CreateVenue();
++        var show = await CreateShow(Id(venue));
++        var response = await Book(Id(show), quantity: 3);
++        Assert.AreEqual(HttpStatusCode.OK, response.StatusCode, await response.Content.ReadAsStringAsync());
++        var booking = (await response.Content.ReadFromJsonAsync<JsonNode>())!;
++        Assert.AreEqual(37.5m, booking["totalPrice"]!.GetValue<decimal>());
++        Assert.AreEqual("Gold", booking["tier"]!.GetValue<string>());
++
++        var got = (await Client.GetFromJsonAsync<JsonNode>($"/shows/{Id(show)}"))!;
++        Assert.AreEqual(3, got["ticketTiers"]![0]!["sold"]!.GetValue<int>());
++        Assert.IsFalse(got["isSoldOut"]!.GetValue<bool>());
++
++        var bookings = (await Client.GetFromJsonAsync<JsonNode>("/bookings"))!;
++        Assert.AreEqual(1, bookings["totalCount"]!.GetValue<int>());
++        Assert.AreEqual(HttpStatusCode.OK, (await Client.GetAsync($"/bookings/{Id(booking)}")).StatusCode);
++    }
++
++    [TestMethod]
++    public async Task Book_Refusals()
++    {
++        var venue = await CreateVenue();
++        var show = await CreateShow(Id(venue), quota: 5);
++        await AssertInvalidAsync(await Book(Id(show), quantity: 0), "Quantity");
++        await AssertInvalidAsync(await Book(Id(show), quantity: 11), "Quantity");
++        await AssertInvalidAsync(await Book(Id(show), email: "nope"), "CustomerEmail");
++        Assert.AreEqual(HttpStatusCode.NotFound, (await Book(Guid.NewGuid())).StatusCode);
++        Assert.AreEqual(HttpStatusCode.BadRequest, (await Book(Id(show), tier: "Silver")).StatusCode);
++        Assert.AreEqual(HttpStatusCode.Conflict, (await Book(Id(show), quantity: 6)).StatusCode);
++        Assert.AreEqual(HttpStatusCode.OK, (await Book(Id(show), quantity: 5)).StatusCode);
++        Assert.AreEqual(HttpStatusCode.Conflict, (await Book(Id(show), quantity: 1)).StatusCode);
++
++        var got = (await Client.GetFromJsonAsync<JsonNode>($"/shows/{Id(show)}"))!;
++        Assert.IsTrue(got["isSoldOut"]!.GetValue<bool>());
++
++        var draft = await CreateShow(Id(venue), status: 0);
++        Assert.AreEqual(HttpStatusCode.Conflict, (await Book(Id(draft))).StatusCode);
++        var past = await CreateShow(Id(venue), startsAt: DateTime.UtcNow.AddDays(-1));
++        Assert.AreEqual(HttpStatusCode.Conflict, (await Book(Id(past))).StatusCode);
++    }
++
++    [TestMethod]
++    public async Task Show_Tiers_Sync_IgnoresSold_And_Capacity()
++    {
++        var venue = await CreateVenue(capacity: 20);
++        var show = await CreateShow(Id(venue), quota: 10);
++        await Book(Id(show), quantity: 2);
++        var tierId = show["ticketTiers"]![0]!["id"]!.GetValue<Guid>();
++
++        object Body(object[] tiers) => new { title = "T", startsAt = DateTime.UtcNow.AddDays(3), status = 1, venueId = Id(venue), ticketTiers = tiers };
++
++        var ok = await Client.PutAsJsonAsync($"/shows/{Id(show)}", Body([
++            new { id = tierId, name = "Gold", price = 1m, quota = 12, sold = 0 },
++            new { name = "Bronze", price = 1m, quota = 8 }]));
++        Assert.AreEqual(HttpStatusCode.OK, ok.StatusCode, await ok.Content.ReadAsStringAsync());
++        var updated = (await ok.Content.ReadFromJsonAsync<JsonNode>())!;
++        Assert.AreEqual(2, updated["ticketTiers"]!.AsArray().Count);
++        Assert.AreEqual(2, updated["ticketTiers"]![0]!["sold"]!.GetValue<int>());
++
++        var tooMany = await Client.PutAsJsonAsync($"/shows/{Id(show)}", Body([new { id = tierId, name = "Gold", price = 1m, quota = 21 }]));
++        await AssertInvalidAsync(tooMany, "TicketTiers");
++
++        var removed = await Client.PutAsJsonAsync($"/shows/{Id(show)}", Body([new { id = tierId, name = "Gold", price = 1m, quota = 5 }]));
++        Assert.AreEqual(1, (await removed.Content.ReadFromJsonAsync<JsonNode>())!["ticketTiers"]!.AsArray().Count);
++    }
++
++    [TestMethod]
++    public async Task Deletions_And_Validation()
++    {
++        var venue = await CreateVenue();
++        var dup = await Client.PostAsJsonAsync("/venues", new { name = "Hall", address = Address(), capacity = 1 });
++        Assert.AreEqual(HttpStatusCode.Conflict, dup.StatusCode);
++        var longName = await Client.PostAsJsonAsync("/venues", new { name = new string('x', 101), address = Address(), capacity = 1 });
++        await AssertInvalidAsync(longName, "Name");
++
++        var show = await CreateShow(Id(venue));
++        var unknownVenue = await Client.PostAsJsonAsync("/shows", new { title = "x", startsAt = DateTime.UtcNow, status = 0, venueId = Guid.NewGuid(), ticketTiers = Array.Empty<object>() });
++        await AssertInvalidAsync(unknownVenue, "VenueId");
++        var badStatus = await Client.PostAsJsonAsync("/shows", new { title = "x", startsAt = DateTime.UtcNow, status = 9, venueId = Id(venue), ticketTiers = Array.Empty<object>() });
++        Assert.AreEqual(HttpStatusCode.BadRequest, badStatus.StatusCode);
++
++        var withShows = (await Client.GetFromJsonAsync<JsonNode>($"/venues/{Id(venue)}"))!;
++        Assert.AreEqual(1, withShows["shows"]!.AsArray().Count);
++        Assert.AreEqual("Paris", withShows["address"]!["city"]!.GetValue<string>());
++
++        Assert.AreEqual(HttpStatusCode.Conflict, (await Client.DeleteAsync($"/venues/{Id(venue)}")).StatusCode);
++        await Book(Id(show));
++        Assert.AreEqual(HttpStatusCode.Conflict, (await Client.DeleteAsync($"/shows/{Id(show)}")).StatusCode);
++
++        var other = await CreateShow(Id(venue));
++        Assert.AreEqual(HttpStatusCode.NoContent, (await Client.DeleteAsync($"/shows/{Id(other)}")).StatusCode);
++        Assert.AreEqual(HttpStatusCode.NotFound, (await Client.GetAsync($"/shows/{Id(other)}")).StatusCode);
++    }
++
++    [TestMethod]
++    public async Task Paging_And_Rights()
++    {
++        await CreateVenue("B");
++        await CreateVenue("A");
++        var page = (await Client.GetFromJsonAsync<JsonNode>("/venues?orderBy=Name&pageSize=1&descending=false"))!;
++        Assert.AreEqual("A", page["items"]![0]!["name"]!.GetValue<string>());
++        Assert.AreEqual(2, page["totalCount"]!.GetValue<int>());
++        Assert.AreEqual(HttpStatusCode.BadRequest, (await Client.GetAsync("/venues?pageSize=0")).StatusCode);
++        Assert.AreEqual(HttpStatusCode.BadRequest, (await Client.GetAsync("/venues?page=0")).StatusCode);
++        Assert.AreEqual(HttpStatusCode.BadRequest, (await Client.GetAsync("/venues?orderBy=Nope")).StatusCode);
++
++        AuthenticateAs();
++        Assert.AreEqual(HttpStatusCode.OK, (await Client.GetAsync("/venues")).StatusCode);
++        Assert.AreEqual(HttpStatusCode.Forbidden, (await Client.PostAsJsonAsync("/venues", new { name = "Z", address = Address(), capacity = 1 })).StatusCode);
++        Assert.AreEqual(HttpStatusCode.Forbidden, (await Client.GetAsync("/bookings")).StatusCode);
++        AuthenticateAs("ManageShows");
++        Assert.AreEqual(HttpStatusCode.OK, (await Client.GetAsync("/bookings")).StatusCode);
++        Unauthenticate();
++        Assert.AreEqual(HttpStatusCode.Unauthorized, (await Client.GetAsync("/shows")).StatusCode);
++    }
++}
++
++[TestClass]
++public class JwtTests : ApiTestBase
++{
++    protected override bool UseTestAuthentication => false;
++
++    protected override void ConfigureWebHost(Microsoft.AspNetCore.Hosting.IWebHostBuilder builder) =>
++        builder.UseSetting("Jwt:Key", "short-key");
++
++    private static string Token(string key, DateTime expires, params string[] rights)
++    {
++        var bytes = System.Text.Encoding.UTF8.GetBytes(key.PadRight(32));
++        var descriptor = new Microsoft.IdentityModel.Tokens.SecurityTokenDescriptor
++        {
++            Claims = new Dictionary<string, object> { ["right"] = rights },
++            NotBefore = expires.AddHours(-2),
++            Expires = expires,
++            SigningCredentials = new(new Microsoft.IdentityModel.Tokens.SymmetricSecurityKey(bytes), Microsoft.IdentityModel.Tokens.SecurityAlgorithms.HmacSha256),
++        };
++        return new Microsoft.IdentityModel.JsonWebTokens.JsonWebTokenHandler().CreateToken(descriptor);
++    }
++
++    private async Task<HttpStatusCode> Get(string uri, string? token)
++    {
++        var request = new HttpRequestMessage(HttpMethod.Get, uri);
++        if (token is not null) request.Headers.Authorization = new("Bearer", token);
++        return (await Client.SendAsync(request)).StatusCode;
++    }
++
++    [TestMethod]
++    public async Task Tokens()
++    {
++        Assert.AreEqual(HttpStatusCode.Unauthorized, await Get("/venues", null));
++        Assert.AreEqual(HttpStatusCode.Unauthorized, await Get("/venues", Token("other", DateTime.UtcNow.AddHours(1))));
++        Assert.AreEqual(HttpStatusCode.Unauthorized, await Get("/venues", Token("short-key", DateTime.UtcNow.AddHours(-1))));
++        Assert.AreEqual(HttpStatusCode.OK, await Get("/venues", Token("short-key", DateTime.UtcNow.AddHours(1))));
++        Assert.AreEqual(HttpStatusCode.Forbidden, await Get("/bookings", Token("short-key", DateTime.UtcNow.AddHours(1))));
++        Assert.AreEqual(HttpStatusCode.OK, await Get("/bookings", Token("short-key", DateTime.UtcNow.AddHours(1), "ManageShows")));
++        Assert.AreEqual(HttpStatusCode.OK, await Get("/bookings", Token("short-key", DateTime.UtcNow.AddHours(1), "*")));
++    }
++}
+diff --git a/src/Ticketing.Tests/Framework/ApiTestBase.f.cs b/src/Ticketing.Tests/Framework/ApiTestBase.f.cs
+new file mode 100644
+index 0000000..1289b98
+--- /dev/null
++++ b/src/Ticketing.Tests/Framework/ApiTestBase.f.cs
+@@ -0,0 +1,124 @@
++using System.Net;
++using System.Net.Http.Json;
++using System.Security.Claims;
++using System.Text.Encodings.Web;
++using Acme.Ticketing.Application;
++using Microsoft.AspNetCore.Authentication;
++using Microsoft.AspNetCore.Mvc;
++using Microsoft.AspNetCore.Mvc.Testing;
++using Microsoft.AspNetCore.TestHost;
++using Microsoft.Extensions.DependencyInjection;
++using Microsoft.Extensions.Logging;
++using Microsoft.Extensions.Options;
++
++namespace Acme.Ticketing.Tests;
++
++/// <summary>
++/// Runs the API of Program.cs in memory, on a SQLite database of its own per test. Program.cs
++/// must read the connection string "Ticketing" and use SQLite for it.
++/// The client is authenticated as a test user holding every right; <see cref="AuthenticateAs"/>
++/// changes its rights, <see cref="Unauthenticate"/> makes it anonymous. Override
++/// <see cref="UseTestAuthentication"/> to test the authentication of Program.cs instead, and
++/// <see cref="ConfigureWebHost"/> to replace services.
++/// </summary>
++public abstract class ApiTestBase
++{
++    private const string TestScheme = "Test";
++    private const string UserHeader = "X-Test-User";
++    private const string RightsHeader = "X-Test-Rights";
++    private string databasePath = null!;
++
++    /// <summary>An Id no aggregate root or entity has.</summary>
++    protected static readonly Guid UnknownId = default;
++
++    protected WebApplicationFactory<Program> Factory { get; private set; } = null!;
++
++    protected HttpClient Client { get; private set; } = null!;
++
++    protected virtual bool UseTestAuthentication => true;
++
++    [TestInitialize]
++    public void StartApi()
++    {
++        databasePath = Path.Combine(Path.GetTempPath(), $"ticketing-{Guid.NewGuid():N}.db");
++        Factory = new WebApplicationFactory<Program>().WithWebHostBuilder(builder =>
++        {
++            builder.UseSetting("ConnectionStrings:Ticketing", $"Data Source={databasePath};Pooling=False");
++            if (UseTestAuthentication)
++            {
++                builder.ConfigureTestServices(services => services
++                    .AddAuthentication(TestScheme)
++                    .AddScheme<AuthenticationSchemeOptions, TestAuthenticationHandler>(TestScheme, null));
++            }
++            ConfigureWebHost(builder);
++        });
++        Client = Factory.CreateClient();
++        AuthenticateAs(ICurrentUser.AllRights);
++    }
++
++    [TestCleanup]
++    public void StopApi()
++    {
++        Client.Dispose();
++        Factory.Dispose();
++        File.Delete(databasePath);
++    }
++
++    protected virtual void ConfigureWebHost(Microsoft.AspNetCore.Hosting.IWebHostBuilder builder)
++    {
++    }
++
++    /// <summary>The next requests come from a test user holding <paramref name="rights"/> only.</summary>
++    protected void AuthenticateAs(params string[] rights)
++    {
++        Unauthenticate();
++        Client.DefaultRequestHeaders.Add(UserHeader, "test-user");
++        if (rights.Length > 0)
++        {
++            Client.DefaultRequestHeaders.Add(RightsHeader, string.Join(",", rights));
++        }
++    }
++
++    /// <summary>The next requests are anonymous.</summary>
++    protected void Unauthenticate()
++    {
++        Client.DefaultRequestHeaders.Remove(UserHeader);
++        Client.DefaultRequestHeaders.Remove(RightsHeader);
++    }
++
++    /// <summary>POSTs <paramref name="body"/>, asserts 201 and returns the created value.</summary>
++    protected async Task<T> PostAsync<T>(string uri, object body)
++    {
++        var response = await Client.PostAsJsonAsync(uri, body);
++        Assert.AreEqual(HttpStatusCode.Created, response.StatusCode, await response.Content.ReadAsStringAsync());
++        return (await response.Content.ReadFromJsonAsync<T>())!;
++    }
++
++    /// <summary>Asserts a 400 whose validation errors name <paramref name="property"/>.</summary>
++    protected static async Task AssertInvalidAsync(HttpResponseMessage response, string property)
++    {
++        Assert.AreEqual(HttpStatusCode.BadRequest, response.StatusCode);
++        var problem = await response.Content.ReadFromJsonAsync<ValidationProblemDetails>();
++        Assert.IsTrue(problem!.Errors.ContainsKey(property), $"no error for {property}: {string.Join(", ", problem.Errors.Keys)}");
++    }
++
++    // authenticated as the user header says, with one right claim per right of the rights header
++    private sealed class TestAuthenticationHandler(IOptionsMonitor<AuthenticationSchemeOptions> options, ILoggerFactory logger, UrlEncoder encoder)
++        : AuthenticationHandler<AuthenticationSchemeOptions>(options, logger, encoder)
++    {
++        protected override Task<AuthenticateResult> HandleAuthenticateAsync()
++        {
++            if (!Request.Headers.TryGetValue(UserHeader, out var user))
++            {
++                return Task.FromResult(AuthenticateResult.NoResult());
++            }
++
++            var claims = Request.Headers[RightsHeader].ToString()
++                .Split(',', StringSplitOptions.RemoveEmptyEntries)
++                .Select(right => new Claim(ICurrentUser.RightClaimType, right))
++                .Prepend(new Claim(ClaimTypes.Name, user.ToString()));
++            var principal = new ClaimsPrincipal(new ClaimsIdentity(claims, TestScheme));
++            return Task.FromResult(AuthenticateResult.Success(new AuthenticationTicket(principal, TestScheme)));
++        }
++    }
++}
+diff --git a/src/Ticketing.Tests/TicketingApiTests.g.cs b/src/Ticketing.Tests/TicketingApiTests.g.cs
+new file mode 100644
+index 0000000..05bf8ee
+--- /dev/null
++++ b/src/Ticketing.Tests/TicketingApiTests.g.cs
+@@ -0,0 +1,77 @@
++#nullable enable
++using System.Net;
++using System.Threading.Tasks;
++namespace Acme.Ticketing.Tests;
++// the endpoints of every aggregate root answer, and refuse an anonymous caller unless is_anonymous
++[TestClass]
++public partial class TicketingApiTests : ApiTestBase
++{
++    // Object [AG][R]
++
++    [TestMethod]
++    public async Task VenueQueryAnswers()
++    {
++        var response = await Client.GetAsync("/venues?orderBy=Id&descending=true");
++        Assert.AreEqual(HttpStatusCode.OK, response.StatusCode, await response.Content.ReadAsStringAsync());
++    }
++
++    [TestMethod]
++    public async Task VenueQueryRefusesAnAnonymousCaller()
++    {
++        Unauthenticate();
++        var response = await Client.GetAsync("/venues");
++        Assert.AreEqual(HttpStatusCode.Unauthorized, response.StatusCode);
++    }
++
++    [TestMethod]
++    public async Task UnknownVenueIsNotFound()
++    {
++        var response = await Client.GetAsync($"/venues/{UnknownId}");
++        Assert.AreEqual(HttpStatusCode.NotFound, response.StatusCode, await response.Content.ReadAsStringAsync());
++    }
++
++    [TestMethod]
++    public async Task ShowQueryAnswers()
++    {
++        var response = await Client.GetAsync("/shows?orderBy=Id&descending=true");
++        Assert.AreEqual(HttpStatusCode.OK, response.StatusCode, await response.Content.ReadAsStringAsync());
++    }
++
++    [TestMethod]
++    public async Task ShowQueryRefusesAnAnonymousCaller()
++    {
++        Unauthenticate();
++        var response = await Client.GetAsync("/shows");
++        Assert.AreEqual(HttpStatusCode.Unauthorized, response.StatusCode);
++    }
++
++    [TestMethod]
++    public async Task UnknownShowIsNotFound()
++    {
++        var response = await Client.GetAsync($"/shows/{UnknownId}");
++        Assert.AreEqual(HttpStatusCode.NotFound, response.StatusCode, await response.Content.ReadAsStringAsync());
++    }
++
++    [TestMethod]
++    public async Task BookingQueryAnswers()
++    {
++        var response = await Client.GetAsync("/bookings?orderBy=Id&descending=true");
++        Assert.AreEqual(HttpStatusCode.OK, response.StatusCode, await response.Content.ReadAsStringAsync());
++    }
++
++    [TestMethod]
++    public async Task BookingQueryRefusesAnAnonymousCaller()
++    {
++        Unauthenticate();
++        var response = await Client.GetAsync("/bookings");
++        Assert.AreEqual(HttpStatusCode.Unauthorized, response.StatusCode);
++    }
++
++    [TestMethod]
++    public async Task UnknownBookingIsNotFound()
++    {
++        var response = await Client.GetAsync($"/bookings/{UnknownId}");
++        Assert.AreEqual(HttpStatusCode.NotFound, response.StatusCode, await response.Content.ReadAsStringAsync());
++    }
++
++}
+\ No newline at end of file

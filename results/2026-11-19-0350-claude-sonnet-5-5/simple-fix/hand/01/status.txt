@@ -1,0 +1,2 @@
+M  src/Library.Tests/LibraryApiTests.cs
+M  src/Library/Domain/Book.cs

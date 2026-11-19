@@ -1,0 +1,182 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TestRun id="f4e951a2-8544-438b-bf3d-50bec7770a78" name="@61464d509201 2026-11-19 03:57:23" xmlns="http://microsoft.com/schemas/VisualStudio/TeamTest/2010">
+  <Times creation="2026-11-19T03:57:23.5400118+00:00" queuing="2026-11-19T03:57:23.5400119+00:00" start="2026-11-19T03:57:22.4155916+00:00" finish="2026-11-19T03:57:23.9426031+00:00" />
+  <TestSettings name="default" id="5b7e5f42-7baf-4e3b-9395-c20bd89edb3f">
+    <Deployment runDeploymentRoot="_61464d509201_2026-11-19_03_57_23" />
+  </TestSettings>
+  <Results>
+    <UnitTestResult executionId="c72e3526-3786-4b4b-921a-37cce07f93d2" testId="1e4d8ba3-ebfc-842a-bceb-58cbcae86902" testName="InvalidBookingsAreRejected" computerName="61464d509201" duration="00:00:00.0195708" startTime="2026-11-19T03:57:23.8464350+00:00" endTime="2026-11-19T03:57:23.8661489+00:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="c72e3526-3786-4b4b-921a-37cce07f93d2" />
+    <UnitTestResult executionId="b1329c8f-ed1e-41d4-a622-72f64d840a64" testId="134d8c49-399a-8f02-b347-3fee2f89a61a" testName="ShowsAreOrderedOnRequest" computerName="61464d509201" duration="00:00:00.0280631" startTime="2026-11-19T03:57:23.5061175+00:00" endTime="2026-11-19T03:57:23.5342363+00:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="b1329c8f-ed1e-41d4-a622-72f64d840a64" />
+    <UnitTestResult executionId="f0052614-8cfe-4f22-bc63-ece5e944dea5" testId="1057a540-fb82-8950-b064-5dd84d5f44a3" testName="ATierCannotBeOverbooked" computerName="61464d509201" duration="00:00:00.0192113" startTime="2026-11-19T03:57:23.7761033+00:00" endTime="2026-11-19T03:57:23.7953713+00:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="f0052614-8cfe-4f22-bc63-ece5e944dea5" />
+    <UnitTestResult executionId="4203503e-fea9-4b56-ac8f-b4f3b43dc730" testId="17aceb2e-164b-86ad-9cb0-03dccecdfb92" testName="AnyAuthenticatedUserReadsVenuesAndShows" computerName="61464d509201" duration="00:00:00.4509203" startTime="2026-11-19T03:57:22.8188898+00:00" endTime="2026-11-19T03:57:23.2698791+00:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="4203503e-fea9-4b56-ac8f-b4f3b43dc730" />
+    <UnitTestResult executionId="fed05cd9-ea86-4549-af85-7cc3129bf2a9" testId="1ff4be26-b471-8d30-b915-d76d79ae5bca" testName="UnknownShowIsNotFound" computerName="61464d509201" duration="00:00:00.0112854" startTime="2026-11-19T03:57:23.7013699+00:00" endTime="2026-11-19T03:57:23.7127497+00:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="fed05cd9-ea86-4549-af85-7cc3129bf2a9" />
+    <UnitTestResult executionId="c8ec77d2-4645-4dc1-8492-ddf6ec40a34a" testId="1438501d-96ab-8197-b1a4-354161c906e7" testName="VenueNameIsUnique" computerName="61464d509201" duration="00:00:00.0176188" startTime="2026-11-19T03:57:23.5378964+00:00" endTime="2026-11-19T03:57:23.5555652+00:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="c8ec77d2-4645-4dc1-8492-ddf6ec40a34a" />
+    <UnitTestResult executionId="9296d894-ea7a-42d2-93fb-fb2ce29b3d3d" testId="1b644453-a2aa-87a3-90f5-3616b5104070" testName="WritingVenuesRequiresManageVenues" computerName="61464d509201" duration="00:00:00.0142405" startTime="2026-11-19T03:57:23.2699220+00:00" endTime="2026-11-19T03:57:23.2842241+00:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="9296d894-ea7a-42d2-93fb-fb2ce29b3d3d" />
+    <UnitTestResult executionId="cc577b04-ccbb-4cd5-8653-7731f2d14234" testId="137f3f2a-7f4e-8707-a39f-d5c79acdcce9" testName="ShowIsSoldOutWhenEveryTierIs" computerName="61464d509201" duration="00:00:00.0241449" startTime="2026-11-19T03:57:23.7518542+00:00" endTime="2026-11-19T03:57:23.7760559+00:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="cc577b04-ccbb-4cd5-8653-7731f2d14234" />
+    <UnitTestResult executionId="a71a66e6-94d8-41c3-b679-274a030c2f8a" testId="1bbbcad5-a7c2-8f51-b39f-fd2e1e489a33" testName="WritingShowsRequiresManageShows" computerName="61464d509201" duration="00:00:00.0531246" startTime="2026-11-19T03:57:23.2842600+00:00" endTime="2026-11-19T03:57:23.3374536+00:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="a71a66e6-94d8-41c3-b679-274a030c2f8a" />
+    <UnitTestResult executionId="394b3f32-9150-4465-820b-2b093678e41c" testId="198b164f-06ee-833c-b115-e16326d67b86" testName="AVenueWithShowsCannotBeDeleted" computerName="61464d509201" duration="00:00:00.0142900" startTime="2026-11-19T03:57:23.5556116+00:00" endTime="2026-11-19T03:57:23.5699628+00:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="394b3f32-9150-4465-820b-2b093678e41c" />
+    <UnitTestResult executionId="439a0dec-089a-40de-99be-22c01effbba4" testId="1794aefa-4e52-83a6-a3c5-8028718c8da4" testName="UpdatingAShowKeepsTheTicketsSold" computerName="61464d509201" duration="00:00:00.0258953" startTime="2026-11-19T03:57:23.7954059+00:00" endTime="2026-11-19T03:57:23.8213748+00:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="439a0dec-089a-40de-99be-22c01effbba4" />
+    <UnitTestResult executionId="6b48a431-ffdc-4f51-8410-3388ff2f93e5" testId="171437f3-6bdf-8d20-9578-47181bad511d" testName="VenueGoesThroughTheWholeCrudWithItsAddress" computerName="61464d509201" duration="00:00:00.0391322" startTime="2026-11-19T03:57:23.4307338+00:00" endTime="2026-11-19T03:57:23.4700532+00:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="6b48a431-ffdc-4f51-8410-3388ff2f93e5" />
+    <UnitTestResult executionId="8791c8dd-4f79-4797-af29-cf262b868f7f" testId="15b0a1bc-544e-8769-8712-5a848c5264e9" testName="ATokenSignedWithAnotherKeyIsRejected" computerName="61464d509201" duration="00:00:00.0358969" startTime="2026-11-19T03:57:22.7821083+00:00" endTime="2026-11-19T03:57:22.8184034+00:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="8791c8dd-4f79-4797-af29-cf262b868f7f" />
+    <UnitTestResult executionId="d5806735-7b64-4d5e-95cc-4d6abce21b0d" testId="11377a9f-b291-846d-8273-510d49fd2a33" testName="BookingTakesTicketsFromTheTier" computerName="61464d509201" duration="00:00:00.0389089" startTime="2026-11-19T03:57:23.7127917+00:00" endTime="2026-11-19T03:57:23.7518164+00:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="d5806735-7b64-4d5e-95cc-4d6abce21b0d" />
+    <UnitTestResult executionId="b4234738-23da-44cf-ba29-087727d5c773" testId="13a41cb9-005b-88e8-89b0-6356314f2336" testName="InvalidPagesAreRejected" computerName="61464d509201" duration="00:00:00.0062716" startTime="2026-11-19T03:57:23.4930686+00:00" endTime="2026-11-19T03:57:23.4993923+00:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="b4234738-23da-44cf-ba29-087727d5c773" />
+    <UnitTestResult executionId="5f516d35-e730-4650-873c-5f60ecc399c4" testId="1ddf0513-49e9-8a8b-b3b4-af2064998623" testName="AnonymousCallersAreRejected" computerName="61464d509201" duration="00:00:00.0704240" startTime="2026-11-19T03:57:22.6950790+00:00" endTime="2026-11-19T03:57:22.7789103+00:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="5f516d35-e730-4650-873c-5f60ecc399c4" />
+    <UnitTestResult executionId="25cbe640-ae0b-45d7-95f1-5c5a9bc1dd86" testId="17102371-8a75-8c4a-8984-e41d38726b5b" testName="InvalidShowsAreRejected" computerName="61464d509201" duration="00:00:00.0140384" startTime="2026-11-19T03:57:23.6596901+00:00" endTime="2026-11-19T03:57:23.6737995+00:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="25cbe640-ae0b-45d7-95f1-5c5a9bc1dd86" />
+    <UnitTestResult executionId="1d4c75df-68a5-4743-9362-5f8ecf5916a5" testId="1d570b13-efcf-8aa3-8163-9a2a9df84084" testName="VenueIsReadWithItsShows" computerName="61464d509201" duration="00:00:00.0211921" startTime="2026-11-19T03:57:23.5699996+00:00" endTime="2026-11-19T03:57:23.5912596+00:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="1d4c75df-68a5-4743-9362-5f8ecf5916a5" />
+    <UnitTestResult executionId="3cf81dc1-c58e-4e8f-975c-8239361fa74f" testId="1aa3a0fe-33b3-8f8a-916b-8db55e11251b" testName="InvalidVenuesAreRejected" computerName="61464d509201" duration="00:00:00.0035091" startTime="2026-11-19T03:57:23.5343149+00:00" endTime="2026-11-19T03:57:23.5378732+00:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="3cf81dc1-c58e-4e8f-975c-8239361fa74f" />
+    <UnitTestResult executionId="b2d2bb8c-c361-47a5-803b-04ec4d5009d2" testId="16ea2816-0976-8013-887c-9d67bf289465" testName="VenuesArePaged" computerName="61464d509201" duration="00:00:00.0228554" startTime="2026-11-19T03:57:23.4700977+00:00" endTime="2026-11-19T03:57:23.4930294+00:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="b2d2bb8c-c361-47a5-803b-04ec4d5009d2" />
+    <UnitTestResult executionId="20891c7f-8fa1-4dcf-8130-7a9bd9a6bef7" testId="1fa394a1-0b8d-8d2d-aa97-3d8ad9fd70b9" testName="ReadingBookingsRequiresManageShows" computerName="61464d509201" duration="00:00:00.0922637" startTime="2026-11-19T03:57:23.3375057+00:00" endTime="2026-11-19T03:57:23.4306915+00:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="20891c7f-8fa1-4dcf-8130-7a9bd9a6bef7" />
+    <UnitTestResult executionId="9bd9161a-4c38-4b6b-9a02-091cbd573e61" testId="1cd0287e-fbe1-8e3b-b65e-ab5ca4b93e16" testName="ShowWithoutBookingIsDeletedWithItsTiers" computerName="61464d509201" duration="00:00:00.0269665" startTime="2026-11-19T03:57:23.6742943+00:00" endTime="2026-11-19T03:57:23.7013296+00:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="9bd9161a-4c38-4b6b-9a02-091cbd573e61" />
+    <UnitTestResult executionId="87a74a22-7b2a-4758-8b38-47255f1fde77" testId="18102f45-4d1b-8970-acef-7f8899c911d9" testName="ShowIsCreatedWithItsTiers" computerName="61464d509201" duration="00:00:00.0163131" startTime="2026-11-19T03:57:23.5912937+00:00" endTime="2026-11-19T03:57:23.6077252+00:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="87a74a22-7b2a-4758-8b38-47255f1fde77" />
+    <UnitTestResult executionId="491e858e-6af8-473e-aeb1-00db55e9fd57" testId="1110991b-d150-8c44-abcd-2de07306c261" testName="OnlyAShowOnSaleInTheFutureCanBeBooked" computerName="61464d509201" duration="00:00:00.0249289" startTime="2026-11-19T03:57:23.8214125+00:00" endTime="2026-11-19T03:57:23.8463988+00:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="491e858e-6af8-473e-aeb1-00db55e9fd57" />
+    <UnitTestResult executionId="52889a64-c9f6-4b23-a0f6-464b26cf908c" testId="17d3f785-76e7-887b-9fb2-81221a65dc5e" testName="TiersCannotOfferMoreThanTheVenueHolds" computerName="61464d509201" duration="00:00:00.0192433" startTime="2026-11-19T03:57:23.6403189+00:00" endTime="2026-11-19T03:57:23.6596421+00:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="52889a64-c9f6-4b23-a0f6-464b26cf908c" />
+    <UnitTestResult executionId="aabff15f-1fa7-429c-9966-51002aaee5e8" testId="1a38ab71-0da8-8078-8871-dba0468d7e50" testName="AShowWithBookingsCannotBeDeleted" computerName="61464d509201" duration="00:00:00.0239731" startTime="2026-11-19T03:57:23.8661972+00:00" endTime="2026-11-19T03:57:23.8914144+00:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="aabff15f-1fa7-429c-9966-51002aaee5e8" />
+    <UnitTestResult executionId="54c6ae37-8f28-40d1-9166-0a769c3bb877" testId="10b61e7e-2095-8093-b860-065e4d3bfce6" testName="UpdateSynchronizesTheTiers" computerName="61464d509201" duration="00:00:00.0324686" startTime="2026-11-19T03:57:23.6077571+00:00" endTime="2026-11-19T03:57:23.6402807+00:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="54c6ae37-8f28-40d1-9166-0a769c3bb877" />
+  </Results>
+  <TestDefinitions>
+    <UnitTest name="ShowIsSoldOutWhenEveryTierIs" storage="/judge/cases/complex-create/acceptance/bin/debug/net10.0/acceptance.dll" id="137f3f2a-7f4e-8707-a39f-d5c79acdcce9">
+      <Execution id="cc577b04-ccbb-4cd5-8653-7731f2d14234" />
+      <TestMethod codeBase="/judge/cases/complex-create/acceptance/bin/Debug/net10.0/Acceptance.dll" adapterTypeName="executor://mstestadapter/v4" className="Benchmarks.ComplexCreate.BoxOfficeTests" name="ShowIsSoldOutWhenEveryTierIs" />
+    </UnitTest>
+    <UnitTest name="UnknownShowIsNotFound" storage="/judge/cases/complex-create/acceptance/bin/debug/net10.0/acceptance.dll" id="1ff4be26-b471-8d30-b915-d76d79ae5bca">
+      <Execution id="fed05cd9-ea86-4549-af85-7cc3129bf2a9" />
+      <TestMethod codeBase="/judge/cases/complex-create/acceptance/bin/Debug/net10.0/Acceptance.dll" adapterTypeName="executor://mstestadapter/v4" className="Benchmarks.ComplexCreate.ShowTests" name="UnknownShowIsNotFound" />
+    </UnitTest>
+    <UnitTest name="BookingTakesTicketsFromTheTier" storage="/judge/cases/complex-create/acceptance/bin/debug/net10.0/acceptance.dll" id="11377a9f-b291-846d-8273-510d49fd2a33">
+      <Execution id="d5806735-7b64-4d5e-95cc-4d6abce21b0d" />
+      <TestMethod codeBase="/judge/cases/complex-create/acceptance/bin/Debug/net10.0/Acceptance.dll" adapterTypeName="executor://mstestadapter/v4" className="Benchmarks.ComplexCreate.BoxOfficeTests" name="BookingTakesTicketsFromTheTier" />
+    </UnitTest>
+    <UnitTest name="AnonymousCallersAreRejected" storage="/judge/cases/complex-create/acceptance/bin/debug/net10.0/acceptance.dll" id="1ddf0513-49e9-8a8b-b3b4-af2064998623">
+      <Execution id="5f516d35-e730-4650-873c-5f60ecc399c4" />
+      <TestMethod codeBase="/judge/cases/complex-create/acceptance/bin/Debug/net10.0/Acceptance.dll" adapterTypeName="executor://mstestadapter/v4" className="Benchmarks.ComplexCreate.SecurityTests" name="AnonymousCallersAreRejected" />
+    </UnitTest>
+    <UnitTest name="ReadingBookingsRequiresManageShows" storage="/judge/cases/complex-create/acceptance/bin/debug/net10.0/acceptance.dll" id="1fa394a1-0b8d-8d2d-aa97-3d8ad9fd70b9">
+      <Execution id="20891c7f-8fa1-4dcf-8130-7a9bd9a6bef7" />
+      <TestMethod codeBase="/judge/cases/complex-create/acceptance/bin/Debug/net10.0/Acceptance.dll" adapterTypeName="executor://mstestadapter/v4" className="Benchmarks.ComplexCreate.SecurityTests" name="ReadingBookingsRequiresManageShows" />
+    </UnitTest>
+    <UnitTest name="ATierCannotBeOverbooked" storage="/judge/cases/complex-create/acceptance/bin/debug/net10.0/acceptance.dll" id="1057a540-fb82-8950-b064-5dd84d5f44a3">
+      <Execution id="f0052614-8cfe-4f22-bc63-ece5e944dea5" />
+      <TestMethod codeBase="/judge/cases/complex-create/acceptance/bin/Debug/net10.0/Acceptance.dll" adapterTypeName="executor://mstestadapter/v4" className="Benchmarks.ComplexCreate.BoxOfficeTests" name="ATierCannotBeOverbooked" />
+    </UnitTest>
+    <UnitTest name="ShowWithoutBookingIsDeletedWithItsTiers" storage="/judge/cases/complex-create/acceptance/bin/debug/net10.0/acceptance.dll" id="1cd0287e-fbe1-8e3b-b65e-ab5ca4b93e16">
+      <Execution id="9bd9161a-4c38-4b6b-9a02-091cbd573e61" />
+      <TestMethod codeBase="/judge/cases/complex-create/acceptance/bin/Debug/net10.0/Acceptance.dll" adapterTypeName="executor://mstestadapter/v4" className="Benchmarks.ComplexCreate.ShowTests" name="ShowWithoutBookingIsDeletedWithItsTiers" />
+    </UnitTest>
+    <UnitTest name="UpdatingAShowKeepsTheTicketsSold" storage="/judge/cases/complex-create/acceptance/bin/debug/net10.0/acceptance.dll" id="1794aefa-4e52-83a6-a3c5-8028718c8da4">
+      <Execution id="439a0dec-089a-40de-99be-22c01effbba4" />
+      <TestMethod codeBase="/judge/cases/complex-create/acceptance/bin/Debug/net10.0/Acceptance.dll" adapterTypeName="executor://mstestadapter/v4" className="Benchmarks.ComplexCreate.BoxOfficeTests" name="UpdatingAShowKeepsTheTicketsSold" />
+    </UnitTest>
+    <UnitTest name="AShowWithBookingsCannotBeDeleted" storage="/judge/cases/complex-create/acceptance/bin/debug/net10.0/acceptance.dll" id="1a38ab71-0da8-8078-8871-dba0468d7e50">
+      <Execution id="aabff15f-1fa7-429c-9966-51002aaee5e8" />
+      <TestMethod codeBase="/judge/cases/complex-create/acceptance/bin/Debug/net10.0/Acceptance.dll" adapterTypeName="executor://mstestadapter/v4" className="Benchmarks.ComplexCreate.BoxOfficeTests" name="AShowWithBookingsCannotBeDeleted" />
+    </UnitTest>
+    <UnitTest name="TiersCannotOfferMoreThanTheVenueHolds" storage="/judge/cases/complex-create/acceptance/bin/debug/net10.0/acceptance.dll" id="17d3f785-76e7-887b-9fb2-81221a65dc5e">
+      <Execution id="52889a64-c9f6-4b23-a0f6-464b26cf908c" />
+      <TestMethod codeBase="/judge/cases/complex-create/acceptance/bin/Debug/net10.0/Acceptance.dll" adapterTypeName="executor://mstestadapter/v4" className="Benchmarks.ComplexCreate.ShowTests" name="TiersCannotOfferMoreThanTheVenueHolds" />
+    </UnitTest>
+    <UnitTest name="VenueGoesThroughTheWholeCrudWithItsAddress" storage="/judge/cases/complex-create/acceptance/bin/debug/net10.0/acceptance.dll" id="171437f3-6bdf-8d20-9578-47181bad511d">
+      <Execution id="6b48a431-ffdc-4f51-8410-3388ff2f93e5" />
+      <TestMethod codeBase="/judge/cases/complex-create/acceptance/bin/Debug/net10.0/Acceptance.dll" adapterTypeName="executor://mstestadapter/v4" className="Benchmarks.ComplexCreate.VenueTests" name="VenueGoesThroughTheWholeCrudWithItsAddress" />
+    </UnitTest>
+    <UnitTest name="ShowsAreOrderedOnRequest" storage="/judge/cases/complex-create/acceptance/bin/debug/net10.0/acceptance.dll" id="134d8c49-399a-8f02-b347-3fee2f89a61a">
+      <Execution id="b1329c8f-ed1e-41d4-a622-72f64d840a64" />
+      <TestMethod codeBase="/judge/cases/complex-create/acceptance/bin/Debug/net10.0/Acceptance.dll" adapterTypeName="executor://mstestadapter/v4" className="Benchmarks.ComplexCreate.VenueTests" name="ShowsAreOrderedOnRequest" />
+    </UnitTest>
+    <UnitTest name="AnyAuthenticatedUserReadsVenuesAndShows" storage="/judge/cases/complex-create/acceptance/bin/debug/net10.0/acceptance.dll" id="17aceb2e-164b-86ad-9cb0-03dccecdfb92">
+      <Execution id="4203503e-fea9-4b56-ac8f-b4f3b43dc730" />
+      <TestMethod codeBase="/judge/cases/complex-create/acceptance/bin/Debug/net10.0/Acceptance.dll" adapterTypeName="executor://mstestadapter/v4" className="Benchmarks.ComplexCreate.SecurityTests" name="AnyAuthenticatedUserReadsVenuesAndShows" />
+    </UnitTest>
+    <UnitTest name="VenueNameIsUnique" storage="/judge/cases/complex-create/acceptance/bin/debug/net10.0/acceptance.dll" id="1438501d-96ab-8197-b1a4-354161c906e7">
+      <Execution id="c8ec77d2-4645-4dc1-8492-ddf6ec40a34a" />
+      <TestMethod codeBase="/judge/cases/complex-create/acceptance/bin/Debug/net10.0/Acceptance.dll" adapterTypeName="executor://mstestadapter/v4" className="Benchmarks.ComplexCreate.VenueTests" name="VenueNameIsUnique" />
+    </UnitTest>
+    <UnitTest name="AVenueWithShowsCannotBeDeleted" storage="/judge/cases/complex-create/acceptance/bin/debug/net10.0/acceptance.dll" id="198b164f-06ee-833c-b115-e16326d67b86">
+      <Execution id="394b3f32-9150-4465-820b-2b093678e41c" />
+      <TestMethod codeBase="/judge/cases/complex-create/acceptance/bin/Debug/net10.0/Acceptance.dll" adapterTypeName="executor://mstestadapter/v4" className="Benchmarks.ComplexCreate.VenueTests" name="AVenueWithShowsCannotBeDeleted" />
+    </UnitTest>
+    <UnitTest name="ShowIsCreatedWithItsTiers" storage="/judge/cases/complex-create/acceptance/bin/debug/net10.0/acceptance.dll" id="18102f45-4d1b-8970-acef-7f8899c911d9">
+      <Execution id="87a74a22-7b2a-4758-8b38-47255f1fde77" />
+      <TestMethod codeBase="/judge/cases/complex-create/acceptance/bin/Debug/net10.0/Acceptance.dll" adapterTypeName="executor://mstestadapter/v4" className="Benchmarks.ComplexCreate.ShowTests" name="ShowIsCreatedWithItsTiers" />
+    </UnitTest>
+    <UnitTest name="VenuesArePaged" storage="/judge/cases/complex-create/acceptance/bin/debug/net10.0/acceptance.dll" id="16ea2816-0976-8013-887c-9d67bf289465">
+      <Execution id="b2d2bb8c-c361-47a5-803b-04ec4d5009d2" />
+      <TestMethod codeBase="/judge/cases/complex-create/acceptance/bin/Debug/net10.0/Acceptance.dll" adapterTypeName="executor://mstestadapter/v4" className="Benchmarks.ComplexCreate.VenueTests" name="VenuesArePaged" />
+    </UnitTest>
+    <UnitTest name="InvalidPagesAreRejected" storage="/judge/cases/complex-create/acceptance/bin/debug/net10.0/acceptance.dll" id="13a41cb9-005b-88e8-89b0-6356314f2336">
+      <Execution id="b4234738-23da-44cf-ba29-087727d5c773" />
+      <TestMethod codeBase="/judge/cases/complex-create/acceptance/bin/Debug/net10.0/Acceptance.dll" adapterTypeName="executor://mstestadapter/v4" className="Benchmarks.ComplexCreate.VenueTests" name="InvalidPagesAreRejected" />
+    </UnitTest>
+    <UnitTest name="VenueIsReadWithItsShows" storage="/judge/cases/complex-create/acceptance/bin/debug/net10.0/acceptance.dll" id="1d570b13-efcf-8aa3-8163-9a2a9df84084">
+      <Execution id="1d4c75df-68a5-4743-9362-5f8ecf5916a5" />
+      <TestMethod codeBase="/judge/cases/complex-create/acceptance/bin/Debug/net10.0/Acceptance.dll" adapterTypeName="executor://mstestadapter/v4" className="Benchmarks.ComplexCreate.VenueTests" name="VenueIsReadWithItsShows" />
+    </UnitTest>
+    <UnitTest name="InvalidVenuesAreRejected" storage="/judge/cases/complex-create/acceptance/bin/debug/net10.0/acceptance.dll" id="1aa3a0fe-33b3-8f8a-916b-8db55e11251b">
+      <Execution id="3cf81dc1-c58e-4e8f-975c-8239361fa74f" />
+      <TestMethod codeBase="/judge/cases/complex-create/acceptance/bin/Debug/net10.0/Acceptance.dll" adapterTypeName="executor://mstestadapter/v4" className="Benchmarks.ComplexCreate.VenueTests" name="InvalidVenuesAreRejected" />
+    </UnitTest>
+    <UnitTest name="InvalidShowsAreRejected" storage="/judge/cases/complex-create/acceptance/bin/debug/net10.0/acceptance.dll" id="17102371-8a75-8c4a-8984-e41d38726b5b">
+      <Execution id="25cbe640-ae0b-45d7-95f1-5c5a9bc1dd86" />
+      <TestMethod codeBase="/judge/cases/complex-create/acceptance/bin/Debug/net10.0/Acceptance.dll" adapterTypeName="executor://mstestadapter/v4" className="Benchmarks.ComplexCreate.ShowTests" name="InvalidShowsAreRejected" />
+    </UnitTest>
+    <UnitTest name="UpdateSynchronizesTheTiers" storage="/judge/cases/complex-create/acceptance/bin/debug/net10.0/acceptance.dll" id="10b61e7e-2095-8093-b860-065e4d3bfce6">
+      <Execution id="54c6ae37-8f28-40d1-9166-0a769c3bb877" />
+      <TestMethod codeBase="/judge/cases/complex-create/acceptance/bin/Debug/net10.0/Acceptance.dll" adapterTypeName="executor://mstestadapter/v4" className="Benchmarks.ComplexCreate.ShowTests" name="UpdateSynchronizesTheTiers" />
+    </UnitTest>
+    <UnitTest name="InvalidBookingsAreRejected" storage="/judge/cases/complex-create/acceptance/bin/debug/net10.0/acceptance.dll" id="1e4d8ba3-ebfc-842a-bceb-58cbcae86902">
+      <Execution id="c72e3526-3786-4b4b-921a-37cce07f93d2" />
+      <TestMethod codeBase="/judge/cases/complex-create/acceptance/bin/Debug/net10.0/Acceptance.dll" adapterTypeName="executor://mstestadapter/v4" className="Benchmarks.ComplexCreate.BoxOfficeTests" name="InvalidBookingsAreRejected" />
+    </UnitTest>
+    <UnitTest name="ATokenSignedWithAnotherKeyIsRejected" storage="/judge/cases/complex-create/acceptance/bin/debug/net10.0/acceptance.dll" id="15b0a1bc-544e-8769-8712-5a848c5264e9">
+      <Execution id="8791c8dd-4f79-4797-af29-cf262b868f7f" />
+      <TestMethod codeBase="/judge/cases/complex-create/acceptance/bin/Debug/net10.0/Acceptance.dll" adapterTypeName="executor://mstestadapter/v4" className="Benchmarks.ComplexCreate.SecurityTests" name="ATokenSignedWithAnotherKeyIsRejected" />
+    </UnitTest>
+    <UnitTest name="OnlyAShowOnSaleInTheFutureCanBeBooked" storage="/judge/cases/complex-create/acceptance/bin/debug/net10.0/acceptance.dll" id="1110991b-d150-8c44-abcd-2de07306c261">
+      <Execution id="491e858e-6af8-473e-aeb1-00db55e9fd57" />
+      <TestMethod codeBase="/judge/cases/complex-create/acceptance/bin/Debug/net10.0/Acceptance.dll" adapterTypeName="executor://mstestadapter/v4" className="Benchmarks.ComplexCreate.BoxOfficeTests" name="OnlyAShowOnSaleInTheFutureCanBeBooked" />
+    </UnitTest>
+    <UnitTest name="WritingShowsRequiresManageShows" storage="/judge/cases/complex-create/acceptance/bin/debug/net10.0/acceptance.dll" id="1bbbcad5-a7c2-8f51-b39f-fd2e1e489a33">
+      <Execution id="a71a66e6-94d8-41c3-b679-274a030c2f8a" />
+      <TestMethod codeBase="/judge/cases/complex-create/acceptance/bin/Debug/net10.0/Acceptance.dll" adapterTypeName="executor://mstestadapter/v4" className="Benchmarks.ComplexCreate.SecurityTests" name="WritingShowsRequiresManageShows" />
+    </UnitTest>
+    <UnitTest name="WritingVenuesRequiresManageVenues" storage="/judge/cases/complex-create/acceptance/bin/debug/net10.0/acceptance.dll" id="1b644453-a2aa-87a3-90f5-3616b5104070">
+      <Execution id="9296d894-ea7a-42d2-93fb-fb2ce29b3d3d" />
+      <TestMethod codeBase="/judge/cases/complex-create/acceptance/bin/Debug/net10.0/Acceptance.dll" adapterTypeName="executor://mstestadapter/v4" className="Benchmarks.ComplexCreate.SecurityTests" name="WritingVenuesRequiresManageVenues" />
+    </UnitTest>
+  </TestDefinitions>
+  <TestEntries>
+    <TestEntry testId="1e4d8ba3-ebfc-842a-bceb-58cbcae86902" executionId="c72e3526-3786-4b4b-921a-37cce07f93d2" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="134d8c49-399a-8f02-b347-3fee2f89a61a" executionId="b1329c8f-ed1e-41d4-a622-72f64d840a64" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="1057a540-fb82-8950-b064-5dd84d5f44a3" executionId="f0052614-8cfe-4f22-bc63-ece5e944dea5" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="17aceb2e-164b-86ad-9cb0-03dccecdfb92" executionId="4203503e-fea9-4b56-ac8f-b4f3b43dc730" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="1ff4be26-b471-8d30-b915-d76d79ae5bca" executionId="fed05cd9-ea86-4549-af85-7cc3129bf2a9" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="1438501d-96ab-8197-b1a4-354161c906e7" executionId="c8ec77d2-4645-4dc1-8492-ddf6ec40a34a" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="1b644453-a2aa-87a3-90f5-3616b5104070" executionId="9296d894-ea7a-42d2-93fb-fb2ce29b3d3d" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="137f3f2a-7f4e-8707-a39f-d5c79acdcce9" executionId="cc577b04-ccbb-4cd5-8653-7731f2d14234" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="1bbbcad5-a7c2-8f51-b39f-fd2e1e489a33" executionId="a71a66e6-94d8-41c3-b679-274a030c2f8a" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="198b164f-06ee-833c-b115-e16326d67b86" executionId="394b3f32-9150-4465-820b-2b093678e41c" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="1794aefa-4e52-83a6-a3c5-8028718c8da4" executionId="439a0dec-089a-40de-99be-22c01effbba4" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="171437f3-6bdf-8d20-9578-47181bad511d" executionId="6b48a431-ffdc-4f51-8410-3388ff2f93e5" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="15b0a1bc-544e-8769-8712-5a848c5264e9" executionId="8791c8dd-4f79-4797-af29-cf262b868f7f" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="11377a9f-b291-846d-8273-510d49fd2a33" executionId="d5806735-7b64-4d5e-95cc-4d6abce21b0d" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="13a41cb9-005b-88e8-89b0-6356314f2336" executionId="b4234738-23da-44cf-ba29-087727d5c773" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="1ddf0513-49e9-8a8b-b3b4-af2064998623" executionId="5f516d35-e730-4650-873c-5f60ecc399c4" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="17102371-8a75-8c4a-8984-e41d38726b5b" executionId="25cbe640-ae0b-45d7-95f1-5c5a9bc1dd86" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="1d570b13-efcf-8aa3-8163-9a2a9df84084" executionId="1d4c75df-68a5-4743-9362-5f8ecf5916a5" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="1aa3a0fe-33b3-8f8a-916b-8db55e11251b" executionId="3cf81dc1-c58e-4e8f-975c-8239361fa74f" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="16ea2816-0976-8013-887c-9d67bf289465" executionId="b2d2bb8c-c361-47a5-803b-04ec4d5009d2" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="1fa394a1-0b8d-8d2d-aa97-3d8ad9fd70b9" executionId="20891c7f-8fa1-4dcf-8130-7a9bd9a6bef7" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="1cd0287e-fbe1-8e3b-b65e-ab5ca4b93e16" executionId="9bd9161a-4c38-4b6b-9a02-091cbd573e61" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="18102f45-4d1b-8970-acef-7f8899c911d9" executionId="87a74a22-7b2a-4758-8b38-47255f1fde77" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="1110991b-d150-8c44-abcd-2de07306c261" executionId="491e858e-6af8-473e-aeb1-00db55e9fd57" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="17d3f785-76e7-887b-9fb2-81221a65dc5e" executionId="52889a64-c9f6-4b23-a0f6-464b26cf908c" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="1a38ab71-0da8-8078-8871-dba0468d7e50" executionId="aabff15f-1fa7-429c-9966-51002aaee5e8" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="10b61e7e-2095-8093-b860-065e4d3bfce6" executionId="54c6ae37-8f28-40d1-9166-0a769c3bb877" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+  </TestEntries>
+  <TestLists>
+    <TestList name="Results Not in a List" id="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestList name="All Loaded Results" id="19431567-8539-422a-85d7-44ee4e166bda" />
+  </TestLists>
+  <ResultSummary outcome="Completed">
+    <Counters total="27" executed="27" passed="27" failed="0" error="0" timeout="0" aborted="0" inconclusive="0" passedButRunAborted="0" notRunnable="0" notExecuted="0" disconnected="0" warning="0" completed="0" inProgress="0" pending="0" />
+  </ResultSummary>
+</TestRun>

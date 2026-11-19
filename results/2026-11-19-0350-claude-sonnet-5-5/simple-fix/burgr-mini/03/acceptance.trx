@@ -1,0 +1,56 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TestRun id="3409bb84-7a02-4743-bc40-c8afb4731a48" name="@82847de148e1 2026-11-19 09:14:07" xmlns="http://microsoft.com/schemas/VisualStudio/TeamTest/2010">
+  <Times creation="2026-11-19T09:14:07.6521631+00:00" queuing="2026-11-19T09:14:07.6521631+00:00" start="2026-11-19T09:14:06.5698532+00:00" finish="2026-11-19T09:14:07.6569430+00:00" />
+  <TestSettings name="default" id="ec2998b9-960e-4e4e-bb27-60f828fe135e">
+    <Deployment runDeploymentRoot="_82847de148e1_2026-11-19_09_14_07" />
+  </TestSettings>
+  <Results>
+    <UnitTestResult executionId="69820607-de74-42e2-8911-0a20e9c6656e" testId="1564844b-e7a4-8631-b7a4-169fa1631751" testName="AuthorsAndBooksStillGoThroughTheirCrud" computerName="82847de148e1" duration="00:00:00.0562533" startTime="2026-11-19T09:14:07.5065145+00:00" endTime="2026-11-19T09:14:07.5650895+00:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="69820607-de74-42e2-8911-0a20e9c6656e" />
+    <UnitTestResult executionId="8799b2d6-23a2-4afd-97f3-85d4f22255cd" testId="18a1a23e-cf9f-87a6-97fb-dc7b4dbf9228" testName="out of print" computerName="82847de148e1" duration="00:00:00.0149565" startTime="2026-11-19T09:14:07.4034351+00:00" endTime="2026-11-19T09:14:07.4184743+00:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="8799b2d6-23a2-4afd-97f3-85d4f22255cd" />
+    <UnitTestResult executionId="b2d83535-06b4-41b0-a2d0-61dca7ca2f69" testId="1bfa290e-201e-8b27-bd4e-0bbc65ab0126" testName="ABookIsNoLongerAvailableOnceItsLastCopyIsGone" computerName="82847de148e1" duration="00:00:00.0875481" startTime="2026-11-19T09:14:07.4185478+00:00" endTime="2026-11-19T09:14:07.5064713+00:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="b2d83535-06b4-41b0-a2d0-61dca7ca2f69" />
+    <UnitTestResult executionId="8a9ac098-8f6c-423a-a54b-d52a87c5ccf2" testId="1a615c6b-8b12-8e12-8215-debb6fbc730b" testName="published, no copy left" computerName="82847de148e1" duration="00:00:00.0177941" startTime="2026-11-19T09:14:07.3718245+00:00" endTime="2026-11-19T09:14:07.3908695+00:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="8a9ac098-8f6c-423a-a54b-d52a87c5ccf2" />
+    <UnitTestResult executionId="4855b1c1-0fa6-4a4e-8a65-fee2d30818a8" testId="1d77d7da-37cd-8ef0-a447-a59159b91a7d" testName="published, one copy" computerName="82847de148e1" duration="00:00:00.4732949" startTime="2026-11-19T09:14:06.8822076+00:00" endTime="2026-11-19T09:14:07.3688834+00:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="4855b1c1-0fa6-4a4e-8a65-fee2d30818a8" />
+    <UnitTestResult executionId="26c12f75-46d1-47c9-b857-845b7b4bd11b" testId="1de9a56e-65c9-80cd-bcde-efb0f3480750" testName="draft" computerName="82847de148e1" duration="00:00:00.0121184" startTime="2026-11-19T09:14:07.3911889+00:00" endTime="2026-11-19T09:14:07.4033906+00:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="26c12f75-46d1-47c9-b857-845b7b4bd11b" />
+  </Results>
+  <TestDefinitions>
+    <UnitTest name="AuthorsAndBooksStillGoThroughTheirCrud" storage="/judge/cases/simple-fix/acceptance/bin/debug/net10.0/acceptance.dll" id="1564844b-e7a4-8631-b7a4-169fa1631751">
+      <Execution id="69820607-de74-42e2-8911-0a20e9c6656e" />
+      <TestMethod codeBase="/judge/cases/simple-fix/acceptance/bin/Debug/net10.0/Acceptance.dll" adapterTypeName="executor://mstestadapter/v4" className="Benchmarks.SimpleFix.LibraryTests" name="AuthorsAndBooksStillGoThroughTheirCrud" />
+    </UnitTest>
+    <UnitTest name="ABookIsNoLongerAvailableOnceItsLastCopyIsGone" storage="/judge/cases/simple-fix/acceptance/bin/debug/net10.0/acceptance.dll" id="1bfa290e-201e-8b27-bd4e-0bbc65ab0126">
+      <Execution id="b2d83535-06b4-41b0-a2d0-61dca7ca2f69" />
+      <TestMethod codeBase="/judge/cases/simple-fix/acceptance/bin/Debug/net10.0/Acceptance.dll" adapterTypeName="executor://mstestadapter/v4" className="Benchmarks.SimpleFix.LibraryTests" name="ABookIsNoLongerAvailableOnceItsLastCopyIsGone" />
+    </UnitTest>
+    <UnitTest name="published, no copy left" storage="/judge/cases/simple-fix/acceptance/bin/debug/net10.0/acceptance.dll" id="1a615c6b-8b12-8e12-8215-debb6fbc730b">
+      <Execution id="8a9ac098-8f6c-423a-a54b-d52a87c5ccf2" />
+      <TestMethod codeBase="/judge/cases/simple-fix/acceptance/bin/Debug/net10.0/Acceptance.dll" adapterTypeName="executor://mstestadapter/v4" className="Benchmarks.SimpleFix.LibraryTests" name="ABookIsAvailableWhenPublishedWithCopiesLeft" />
+    </UnitTest>
+    <UnitTest name="draft" storage="/judge/cases/simple-fix/acceptance/bin/debug/net10.0/acceptance.dll" id="1de9a56e-65c9-80cd-bcde-efb0f3480750">
+      <Execution id="26c12f75-46d1-47c9-b857-845b7b4bd11b" />
+      <TestMethod codeBase="/judge/cases/simple-fix/acceptance/bin/Debug/net10.0/Acceptance.dll" adapterTypeName="executor://mstestadapter/v4" className="Benchmarks.SimpleFix.LibraryTests" name="ABookIsAvailableWhenPublishedWithCopiesLeft" />
+    </UnitTest>
+    <UnitTest name="published, one copy" storage="/judge/cases/simple-fix/acceptance/bin/debug/net10.0/acceptance.dll" id="1d77d7da-37cd-8ef0-a447-a59159b91a7d">
+      <Execution id="4855b1c1-0fa6-4a4e-8a65-fee2d30818a8" />
+      <TestMethod codeBase="/judge/cases/simple-fix/acceptance/bin/Debug/net10.0/Acceptance.dll" adapterTypeName="executor://mstestadapter/v4" className="Benchmarks.SimpleFix.LibraryTests" name="ABookIsAvailableWhenPublishedWithCopiesLeft" />
+    </UnitTest>
+    <UnitTest name="out of print" storage="/judge/cases/simple-fix/acceptance/bin/debug/net10.0/acceptance.dll" id="18a1a23e-cf9f-87a6-97fb-dc7b4dbf9228">
+      <Execution id="8799b2d6-23a2-4afd-97f3-85d4f22255cd" />
+      <TestMethod codeBase="/judge/cases/simple-fix/acceptance/bin/Debug/net10.0/Acceptance.dll" adapterTypeName="executor://mstestadapter/v4" className="Benchmarks.SimpleFix.LibraryTests" name="ABookIsAvailableWhenPublishedWithCopiesLeft" />
+    </UnitTest>
+  </TestDefinitions>
+  <TestEntries>
+    <TestEntry testId="1564844b-e7a4-8631-b7a4-169fa1631751" executionId="69820607-de74-42e2-8911-0a20e9c6656e" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="18a1a23e-cf9f-87a6-97fb-dc7b4dbf9228" executionId="8799b2d6-23a2-4afd-97f3-85d4f22255cd" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="1bfa290e-201e-8b27-bd4e-0bbc65ab0126" executionId="b2d83535-06b4-41b0-a2d0-61dca7ca2f69" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="1a615c6b-8b12-8e12-8215-debb6fbc730b" executionId="8a9ac098-8f6c-423a-a54b-d52a87c5ccf2" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="1d77d7da-37cd-8ef0-a447-a59159b91a7d" executionId="4855b1c1-0fa6-4a4e-8a65-fee2d30818a8" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="1de9a56e-65c9-80cd-bcde-efb0f3480750" executionId="26c12f75-46d1-47c9-b857-845b7b4bd11b" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+  </TestEntries>
+  <TestLists>
+    <TestList name="Results Not in a List" id="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestList name="All Loaded Results" id="19431567-8539-422a-85d7-44ee4e166bda" />
+  </TestLists>
+  <ResultSummary outcome="Completed">
+    <Counters total="6" executed="6" passed="6" failed="0" error="0" timeout="0" aborted="0" inconclusive="0" passedButRunAborted="0" notRunnable="0" notExecuted="0" disconnected="0" warning="0" completed="0" inProgress="0" pending="0" />
+  </ResultSummary>
+</TestRun>

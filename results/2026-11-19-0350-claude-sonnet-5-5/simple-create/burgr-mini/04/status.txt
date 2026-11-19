@@ -1,0 +1,9 @@
+A  specs/warehouse.yaml
+A  src/Warehouse.Tests/ApiTests.cs
+A  src/Warehouse/Api/WarehouseEndpoints.g.cs
+A  src/Warehouse/Contracts/ProductInput.cs
+A  src/Warehouse/Contracts/WarehouseContracts.g.cs
+A  src/Warehouse/Domain/Product.cs
+A  src/Warehouse/Domain/WarehouseModel.g.cs
+A  src/Warehouse/Infrastructure/WarehouseDbContext.g.cs
+A  src/Warehouse/Program.cs

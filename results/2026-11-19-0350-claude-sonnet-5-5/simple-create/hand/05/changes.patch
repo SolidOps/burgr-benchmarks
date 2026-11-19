@@ -1,0 +1,479 @@
+diff --git a/src/Warehouse.Tests/ApiTests.cs b/src/Warehouse.Tests/ApiTests.cs
+new file mode 100644
+index 0000000..c3ef3c1
+--- /dev/null
++++ b/src/Warehouse.Tests/ApiTests.cs
+@@ -0,0 +1,163 @@
++using Microsoft.AspNetCore.Hosting;
++using System.Net;
++using System.Net.Http.Json;
++using System.Text.Json;
++using Microsoft.AspNetCore.Mvc.Testing;
++
++namespace Warehouse.Tests;
++
++public class WarehouseFactory : WebApplicationFactory<Program>
++{
++    private readonly string _db = Path.Combine(Path.GetTempPath(), $"wh-{Guid.NewGuid():N}.db");
++
++    protected override void ConfigureWebHost(IWebHostBuilder builder) =>
++        builder.UseSetting("ConnectionStrings:Warehouse", $"Data Source={_db}");
++
++    protected override void Dispose(bool disposing)
++    {
++        base.Dispose(disposing);
++        Microsoft.Data.Sqlite.SqliteConnection.ClearAllPools();
++        try { File.Delete(_db); } catch { }
++    }
++}
++
++[TestClass]
++public class ApiTests
++{
++    private WarehouseFactory _factory = null!;
++    private HttpClient _client = null!;
++
++    [TestInitialize] public void Init() { _factory = new(); _client = _factory.CreateClient(); }
++    [TestCleanup] public void Cleanup() { _client.Dispose(); _factory.Dispose(); }
++
++    private async Task<JsonElement> Json(HttpResponseMessage r) =>
++        (await r.Content.ReadFromJsonAsync<JsonElement>());
++
++    private async Task<Guid> CreateSupplier(string name = "Acme")
++    {
++        var r = await _client.PostAsJsonAsync("/suppliers", new { name, email = "a@b.c" });
++        Assert.AreEqual(HttpStatusCode.Created, r.StatusCode);
++        return (await Json(r)).GetProperty("id").GetGuid();
++    }
++
++    private Task<HttpResponseMessage> PostProduct(Guid supplierId, string sku = "SKU1", int stock = 5,
++        int reorder = 5, int status = 0) =>
++        _client.PostAsJsonAsync("/products", new { sku, name = "Widget", stock, reorderLevel = reorder, status, supplierId });
++
++    [TestMethod]
++    public async Task Supplier_round_trip()
++    {
++        var id = await CreateSupplier();
++        var get = await Json(await _client.GetAsync($"/suppliers/{id}"));
++        Assert.AreEqual("Acme", get.GetProperty("name").GetString());
++        Assert.AreEqual(0, get.GetProperty("products").GetArrayLength());
++
++        var put = await _client.PutAsJsonAsync($"/suppliers/{id}", new { name = "Beta" });
++        Assert.AreEqual(HttpStatusCode.OK, put.StatusCode);
++        Assert.AreEqual("Beta", (await Json(put)).GetProperty("name").GetString());
++
++        var list = await Json(await _client.GetAsync("/suppliers"));
++        Assert.AreEqual(1, list.GetArrayLength());
++
++        Assert.AreEqual(HttpStatusCode.NoContent, (await _client.DeleteAsync($"/suppliers/{id}")).StatusCode);
++        Assert.AreEqual(HttpStatusCode.NotFound, (await _client.GetAsync($"/suppliers/{id}")).StatusCode);
++    }
++
++    [TestMethod]
++    public async Task Product_round_trip_and_supplier_includes_products()
++    {
++        var sid = await CreateSupplier();
++        var created = await PostProduct(sid);
++        Assert.AreEqual(HttpStatusCode.Created, created.StatusCode);
++        var p = await Json(created);
++        var pid = p.GetProperty("id").GetGuid();
++        Assert.AreEqual(sid, p.GetProperty("supplierId").GetGuid());
++
++        var sup = await Json(await _client.GetAsync($"/suppliers/{sid}"));
++        Assert.AreEqual(1, sup.GetProperty("products").GetArrayLength());
++
++        var put = await _client.PutAsJsonAsync($"/products/{pid}",
++            new { sku = "SKU2", name = "Gadget", stock = 50, reorderLevel = 5, status = 1, supplierId = sid });
++        Assert.AreEqual(HttpStatusCode.OK, put.StatusCode);
++        var updated = await Json(put);
++        Assert.AreEqual("SKU2", updated.GetProperty("sku").GetString());
++        Assert.AreEqual(1, updated.GetProperty("status").GetInt32());
++
++        Assert.AreEqual(1, (await Json(await _client.GetAsync("/products"))).GetArrayLength());
++        Assert.AreEqual(HttpStatusCode.NoContent, (await _client.DeleteAsync($"/products/{pid}")).StatusCode);
++        Assert.AreEqual(HttpStatusCode.NotFound, (await _client.GetAsync($"/products/{pid}")).StatusCode);
++    }
++
++    [TestMethod]
++    [DataRow(0, 5, 5, true)]
++    [DataRow(0, 4, 5, true)]
++    [DataRow(0, 6, 5, false)]
++    [DataRow(1, 0, 5, false)]
++    public async Task NeedsReorder_is_computed(int status, int stock, int reorder, bool expected)
++    {
++        var sid = await CreateSupplier();
++        var p = await Json(await PostProduct(sid, stock: stock, reorder: reorder, status: status));
++        Assert.AreEqual(expected, p.GetProperty("needsReorder").GetBoolean());
++    }
++
++    [TestMethod]
++    public async Task Unknown_ids_return_404()
++    {
++        var id = Guid.NewGuid();
++        Assert.AreEqual(HttpStatusCode.NotFound, (await _client.GetAsync($"/suppliers/{id}")).StatusCode);
++        Assert.AreEqual(HttpStatusCode.NotFound, (await _client.GetAsync($"/products/{id}")).StatusCode);
++        Assert.AreEqual(HttpStatusCode.NotFound, (await _client.DeleteAsync($"/products/{id}")).StatusCode);
++        Assert.AreEqual(HttpStatusCode.NotFound,
++            (await _client.PutAsJsonAsync($"/suppliers/{id}", new { name = "x" })).StatusCode);
++    }
++
++    [TestMethod]
++    public async Task Supplier_validation()
++    {
++        Assert.AreEqual(HttpStatusCode.BadRequest,
++            (await _client.PostAsJsonAsync("/suppliers", new { name = "" })).StatusCode);
++        Assert.AreEqual(HttpStatusCode.BadRequest,
++            (await _client.PostAsJsonAsync("/suppliers", new { name = new string('a', 101) })).StatusCode);
++        Assert.AreEqual(HttpStatusCode.BadRequest,
++            (await _client.PostAsJsonAsync("/suppliers", new { name = "ok", email = new string('a', 101) })).StatusCode);
++    }
++
++    [TestMethod]
++    public async Task Product_validation()
++    {
++        var sid = await CreateSupplier();
++        Assert.AreEqual(HttpStatusCode.BadRequest, (await PostProduct(sid, sku: "")).StatusCode);
++        Assert.AreEqual(HttpStatusCode.BadRequest, (await PostProduct(sid, sku: new string('a', 21))).StatusCode);
++        Assert.AreEqual(HttpStatusCode.BadRequest, (await PostProduct(sid, stock: -1)).StatusCode);
++        Assert.AreEqual(HttpStatusCode.BadRequest, (await PostProduct(sid, reorder: -1)).StatusCode);
++        Assert.AreEqual(HttpStatusCode.BadRequest, (await PostProduct(sid, status: 2)).StatusCode);
++        Assert.AreEqual(HttpStatusCode.BadRequest, (await PostProduct(Guid.NewGuid())).StatusCode);
++        Assert.AreEqual(HttpStatusCode.BadRequest, (await PostProduct(Guid.Empty)).StatusCode);
++        var body = await Json(await PostProduct(Guid.NewGuid()));
++        Assert.IsTrue(body.GetProperty("errors").TryGetProperty("supplierId", out _));
++    }
++
++    [TestMethod]
++    public async Task Unique_values_return_409()
++    {
++        var sid = await CreateSupplier("Acme");
++        Assert.AreEqual(HttpStatusCode.Conflict,
++            (await _client.PostAsJsonAsync("/suppliers", new { name = "Acme" })).StatusCode);
++
++        Assert.AreEqual(HttpStatusCode.Created, (await PostProduct(sid, "A")).StatusCode);
++        Assert.AreEqual(HttpStatusCode.Conflict, (await PostProduct(sid, "A")).StatusCode);
++
++        var other = await Json(await PostProduct(sid, "B"));
++        var put = await _client.PutAsJsonAsync($"/products/{other.GetProperty("id").GetGuid()}",
++            new { sku = "A", name = "x", stock = 1, reorderLevel = 1, status = 0, supplierId = sid });
++        Assert.AreEqual(HttpStatusCode.Conflict, put.StatusCode);
++    }
++
++    [TestMethod]
++    public async Task Deleting_supplier_with_products_returns_409()
++    {
++        var sid = await CreateSupplier();
++        await PostProduct(sid);
++        Assert.AreEqual(HttpStatusCode.Conflict, (await _client.DeleteAsync($"/suppliers/{sid}")).StatusCode);
++    }
++}
+diff --git a/src/Warehouse/Api/WarehouseEndpoints.cs b/src/Warehouse/Api/WarehouseEndpoints.cs
+new file mode 100644
+index 0000000..b106cc3
+--- /dev/null
++++ b/src/Warehouse/Api/WarehouseEndpoints.cs
+@@ -0,0 +1,109 @@
++using Acme.Warehouse.Contracts;
++using Acme.Warehouse.Domain;
++using Acme.Warehouse.Infrastructure;
++using Microsoft.Data.Sqlite;
++using Microsoft.EntityFrameworkCore;
++
++namespace Acme.Warehouse.Api;
++
++public static class WarehouseEndpoints
++{
++    public static IEndpointRouteBuilder MapWarehouseEndpoints(this IEndpointRouteBuilder app)
++    {
++        var suppliers = app.MapGroup("/suppliers");
++        suppliers.MapGet("/", async (WarehouseDbContext db) =>
++            Results.Ok((await db.Suppliers.AsNoTracking().OrderBy(s => s.Name).ToListAsync())
++                .Select(s => SupplierDto.From(s))));
++        suppliers.MapGet("/{id:guid}", async (Guid id, WarehouseDbContext db) =>
++            await db.Suppliers.AsNoTracking().Include(s => s.Products).FirstOrDefaultAsync(s => s.Id == id)
++                is { } s ? Results.Ok(SupplierDto.From(s, true)) : Results.NotFound());
++        suppliers.MapPost("/", async (SupplierInput input, WarehouseDbContext db) =>
++        {
++            var errors = input.Validate();
++            if (errors.Count > 0) return Results.ValidationProblem(errors);
++            var s = new Supplier { Id = Guid.NewGuid() };
++            input.ApplyTo(s);
++            db.Suppliers.Add(s);
++            if (await TrySave(db) is { } conflict) return conflict;
++            return Results.Created($"/suppliers/{s.Id}", SupplierDto.From(s));
++        });
++        suppliers.MapPut("/{id:guid}", async (Guid id, SupplierInput input, WarehouseDbContext db) =>
++        {
++            var s = await db.Suppliers.FindAsync(id);
++            if (s is null) return Results.NotFound();
++            var errors = input.Validate();
++            if (errors.Count > 0) return Results.ValidationProblem(errors);
++            input.ApplyTo(s);
++            if (await TrySave(db) is { } conflict) return conflict;
++            return Results.Ok(SupplierDto.From(s));
++        });
++        suppliers.MapDelete("/{id:guid}", async (Guid id, WarehouseDbContext db) =>
++        {
++            var s = await db.Suppliers.FindAsync(id);
++            if (s is null) return Results.NotFound();
++            db.Suppliers.Remove(s);
++            if (await TrySave(db) is { } conflict) return conflict;
++            return Results.NoContent();
++        });
++
++        var products = app.MapGroup("/products");
++        products.MapGet("/", async (WarehouseDbContext db) =>
++            Results.Ok((await db.Products.AsNoTracking().OrderBy(p => p.Sku).ToListAsync())
++                .Select(ProductDto.From)));
++        products.MapGet("/{id:guid}", async (Guid id, WarehouseDbContext db) =>
++            await db.Products.AsNoTracking().FirstOrDefaultAsync(p => p.Id == id)
++                is { } p ? Results.Ok(ProductDto.From(p)) : Results.NotFound());
++        products.MapPost("/", async (ProductInput input, WarehouseDbContext db) =>
++        {
++            var errors = await Validate(input, db);
++            if (errors.Count > 0) return Results.ValidationProblem(errors);
++            var p = new Product { Id = Guid.NewGuid() };
++            input.ApplyTo(p);
++            db.Products.Add(p);
++            if (await TrySave(db) is { } conflict) return conflict;
++            return Results.Created($"/products/{p.Id}", ProductDto.From(p));
++        });
++        products.MapPut("/{id:guid}", async (Guid id, ProductInput input, WarehouseDbContext db) =>
++        {
++            var p = await db.Products.FindAsync(id);
++            if (p is null) return Results.NotFound();
++            var errors = await Validate(input, db);
++            if (errors.Count > 0) return Results.ValidationProblem(errors);
++            input.ApplyTo(p);
++            if (await TrySave(db) is { } conflict) return conflict;
++            return Results.Ok(ProductDto.From(p));
++        });
++        products.MapDelete("/{id:guid}", async (Guid id, WarehouseDbContext db) =>
++        {
++            var p = await db.Products.FindAsync(id);
++            if (p is null) return Results.NotFound();
++            db.Products.Remove(p);
++            if (await TrySave(db) is { } conflict) return conflict;
++            return Results.NoContent();
++        });
++
++        return app;
++    }
++
++    private static async Task<Dictionary<string, string[]>> Validate(ProductInput input, WarehouseDbContext db)
++    {
++        var errors = input.Validate();
++        if (!errors.ContainsKey("supplierId") && !await db.Suppliers.AnyAsync(s => s.Id == input.SupplierId))
++            errors["supplierId"] = ["supplierId does not reference an existing supplier."];
++        return errors;
++    }
++
++    private static async Task<IResult?> TrySave(WarehouseDbContext db)
++    {
++        try
++        {
++            await db.SaveChangesAsync();
++            return null;
++        }
++        catch (DbUpdateException ex) when (ex.InnerException is SqliteException { SqliteErrorCode: 19 })
++        {
++            return Results.Problem(statusCode: StatusCodes.Status409Conflict, title: "Conflict",
++                detail: "A unique value is already taken or the object is still referenced.");
++        }
++    }
++}
+diff --git a/src/Warehouse/Contracts/ProductContracts.cs b/src/Warehouse/Contracts/ProductContracts.cs
+new file mode 100644
+index 0000000..79fce56
+--- /dev/null
++++ b/src/Warehouse/Contracts/ProductContracts.cs
+@@ -0,0 +1,44 @@
++using Acme.Warehouse.Domain;
++
++namespace Acme.Warehouse.Contracts;
++
++public record ProductDto(Guid Id, string Sku, string Name, int Stock, int ReorderLevel,
++    ProductStatus Status, Guid SupplierId, bool NeedsReorder)
++{
++    public static ProductDto From(Product p) =>
++        new(p.Id, p.Sku, p.Name, p.Stock, p.ReorderLevel, p.Status, p.SupplierId, p.NeedsReorder);
++}
++
++public class ProductInput
++{
++    public string? Sku { get; set; }
++    public string? Name { get; set; }
++    public int Stock { get; set; }
++    public int ReorderLevel { get; set; }
++    public int Status { get; set; }
++    public Guid SupplierId { get; set; }
++
++    public Dictionary<string, string[]> Validate()
++    {
++        var e = new Dictionary<string, string[]>();
++        if (string.IsNullOrWhiteSpace(Sku)) e["sku"] = ["sku is required."];
++        else if (Sku.Length > 20) e["sku"] = ["sku must be at most 20 characters."];
++        if (string.IsNullOrWhiteSpace(Name)) e["name"] = ["name is required."];
++        else if (Name.Length > 100) e["name"] = ["name must be at most 100 characters."];
++        if (Stock < 0) e["stock"] = ["stock must not be negative."];
++        if (ReorderLevel < 0) e["reorderLevel"] = ["reorderLevel must not be negative."];
++        if (!Enum.IsDefined(typeof(ProductStatus), Status)) e["status"] = ["status is not a valid value."];
++        if (SupplierId == Guid.Empty) e["supplierId"] = ["supplierId is required."];
++        return e;
++    }
++
++    public void ApplyTo(Product p)
++    {
++        p.Sku = Sku!;
++        p.Name = Name!;
++        p.Stock = Stock;
++        p.ReorderLevel = ReorderLevel;
++        p.Status = (ProductStatus)Status;
++        p.SupplierId = SupplierId;
++    }
++}
+diff --git a/src/Warehouse/Contracts/SupplierContracts.cs b/src/Warehouse/Contracts/SupplierContracts.cs
+new file mode 100644
+index 0000000..bd32668
+--- /dev/null
++++ b/src/Warehouse/Contracts/SupplierContracts.cs
+@@ -0,0 +1,30 @@
++using Acme.Warehouse.Domain;
++
++namespace Acme.Warehouse.Contracts;
++
++public record SupplierDto(Guid Id, string Name, string? Email, List<ProductDto>? Products)
++{
++    public static SupplierDto From(Supplier s, bool withProducts = false) =>
++        new(s.Id, s.Name, s.Email, withProducts ? s.Products.Select(ProductDto.From).ToList() : null);
++}
++
++public class SupplierInput
++{
++    public string? Name { get; set; }
++    public string? Email { get; set; }
++
++    public Dictionary<string, string[]> Validate()
++    {
++        var e = new Dictionary<string, string[]>();
++        if (string.IsNullOrWhiteSpace(Name)) e["name"] = ["name is required."];
++        else if (Name.Length > 100) e["name"] = ["name must be at most 100 characters."];
++        if (Email is { Length: > 100 }) e["email"] = ["email must be at most 100 characters."];
++        return e;
++    }
++
++    public void ApplyTo(Supplier s)
++    {
++        s.Name = Name!;
++        s.Email = Email;
++    }
++}
+diff --git a/src/Warehouse/Domain/Product.cs b/src/Warehouse/Domain/Product.cs
+new file mode 100644
+index 0000000..e1d87e3
+--- /dev/null
++++ b/src/Warehouse/Domain/Product.cs
+@@ -0,0 +1,17 @@
++namespace Acme.Warehouse.Domain;
++
++public enum ProductStatus { Active = 0, Discontinued = 1 }
++
++public class Product
++{
++    public Guid Id { get; set; }
++    public string Sku { get; set; } = "";
++    public string Name { get; set; } = "";
++    public int Stock { get; set; }
++    public int ReorderLevel { get; set; }
++    public ProductStatus Status { get; set; }
++    public Guid SupplierId { get; set; }
++    public Supplier? Supplier { get; set; }
++
++    public bool NeedsReorder => Status == ProductStatus.Active && Stock <= ReorderLevel;
++}
+diff --git a/src/Warehouse/Domain/Supplier.cs b/src/Warehouse/Domain/Supplier.cs
+new file mode 100644
+index 0000000..a5cdbee
+--- /dev/null
++++ b/src/Warehouse/Domain/Supplier.cs
+@@ -0,0 +1,9 @@
++namespace Acme.Warehouse.Domain;
++
++public class Supplier
++{
++    public Guid Id { get; set; }
++    public string Name { get; set; } = "";
++    public string? Email { get; set; }
++    public List<Product> Products { get; set; } = [];
++}
+diff --git a/src/Warehouse/Infrastructure/WarehouseDbContext.cs b/src/Warehouse/Infrastructure/WarehouseDbContext.cs
+new file mode 100644
+index 0000000..3dc0252
+--- /dev/null
++++ b/src/Warehouse/Infrastructure/WarehouseDbContext.cs
+@@ -0,0 +1,32 @@
++using Acme.Warehouse.Domain;
++using Microsoft.EntityFrameworkCore;
++
++namespace Acme.Warehouse.Infrastructure;
++
++public class WarehouseDbContext(DbContextOptions<WarehouseDbContext> options) : DbContext(options)
++{
++    public DbSet<Supplier> Suppliers => Set<Supplier>();
++    public DbSet<Product> Products => Set<Product>();
++
++    protected override void OnModelCreating(ModelBuilder b)
++    {
++        b.Entity<Supplier>(e =>
++        {
++            e.HasKey(x => x.Id);
++            e.Property(x => x.Name).IsRequired().HasMaxLength(100);
++            e.Property(x => x.Email).HasMaxLength(100);
++            e.HasIndex(x => x.Name).IsUnique();
++        });
++        b.Entity<Product>(e =>
++        {
++            e.HasKey(x => x.Id);
++            e.Property(x => x.Sku).IsRequired().HasMaxLength(20);
++            e.Property(x => x.Name).IsRequired().HasMaxLength(100);
++            e.Property(x => x.Status).HasConversion<int>();
++            e.Ignore(x => x.NeedsReorder);
++            e.HasIndex(x => x.Sku).IsUnique();
++            e.HasOne(x => x.Supplier).WithMany(s => s.Products)
++                .HasForeignKey(x => x.SupplierId).OnDelete(DeleteBehavior.Restrict);
++        });
++    }
++}
+diff --git a/src/Warehouse/Program.cs b/src/Warehouse/Program.cs
+new file mode 100644
+index 0000000..ab334f5
+--- /dev/null
++++ b/src/Warehouse/Program.cs
+@@ -0,0 +1,16 @@
++using Acme.Warehouse.Api;
++using Acme.Warehouse.Infrastructure;
++using Microsoft.EntityFrameworkCore;
++
++var builder = WebApplication.CreateBuilder(args);
++builder.Services.AddDbContext<WarehouseDbContext>(o =>
++    o.UseSqlite(builder.Configuration.GetConnectionString("Warehouse") ?? "Data Source=warehouse.db"));
++
++var app = builder.Build();
++using (var scope = app.Services.CreateScope())
++    scope.ServiceProvider.GetRequiredService<WarehouseDbContext>().Database.EnsureCreated();
++
++app.MapWarehouseEndpoints();
++app.Run();
++
++public partial class Program;
+diff --git a/src/Warehouse/appsettings.json b/src/Warehouse/appsettings.json
+new file mode 100644
+index 0000000..e2e506d
+--- /dev/null
++++ b/src/Warehouse/appsettings.json
+@@ -0,0 +1,5 @@
++{
++  "ConnectionStrings": { "Warehouse": "Data Source=warehouse.db" },
++  "Logging": { "LogLevel": { "Default": "Information", "Microsoft.AspNetCore": "Warning" } },
++  "AllowedHosts": "*"
++}

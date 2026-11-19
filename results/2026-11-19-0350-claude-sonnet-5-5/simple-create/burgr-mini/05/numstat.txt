@@ -1,0 +1,9 @@
+43	0	specs/model.yaml
+121	0	src/Warehouse.Tests/ApiTests.cs
+201	0	src/Warehouse/Api/WarehouseEndpoints.g.cs
+10	0	src/Warehouse/Contracts/ProductInput.cs
+191	0	src/Warehouse/Contracts/WarehouseContracts.g.cs
+6	0	src/Warehouse/Domain/Product.cs
+47	0	src/Warehouse/Domain/WarehouseModel.g.cs
+55	0	src/Warehouse/Infrastructure/WarehouseDbContext.g.cs
+16	0	src/Warehouse/Program.cs

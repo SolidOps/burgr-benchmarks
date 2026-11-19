@@ -1,0 +1,1429 @@
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (22ms) [Parameters=[], CommandType='Text', CommandTimeout='30']
+      PRAGMA journal_mode = 'wal';
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (0ms) [Parameters=[], CommandType='Text', CommandTimeout='30']
+      CREATE TABLE "LocalUsers" (
+          "Id" TEXT NOT NULL CONSTRAINT "PK_LocalUsers" PRIMARY KEY,
+          "Name" TEXT NOT NULL,
+          "HashedPassword" TEXT NOT NULL
+      );
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (0ms) [Parameters=[], CommandType='Text', CommandTimeout='30']
+      CREATE TABLE "Rights" (
+          "Id" TEXT NOT NULL CONSTRAINT "PK_Rights" PRIMARY KEY,
+          "Name" TEXT NOT NULL
+      );
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (0ms) [Parameters=[], CommandType='Text', CommandTimeout='30']
+      CREATE TABLE "Teams" (
+          "Id" TEXT NOT NULL CONSTRAINT "PK_Teams" PRIMARY KEY,
+          "Name" TEXT NOT NULL,
+          "Description" TEXT NULL
+      );
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (0ms) [Parameters=[], CommandType='Text', CommandTimeout='30']
+      CREATE TABLE "Users" (
+          "Id" TEXT NOT NULL CONSTRAINT "PK_Users" PRIMARY KEY,
+          "Email" TEXT NOT NULL,
+          "Provider" TEXT NOT NULL,
+          "TechnicalUser" INTEGER NOT NULL,
+          "Preferences" TEXT NULL
+      );
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (0ms) [Parameters=[], CommandType='Text', CommandTimeout='30']
+      CREATE TABLE "TeamMembers" (
+          "Id" TEXT NOT NULL CONSTRAINT "PK_TeamMembers" PRIMARY KEY,
+          "UserEmail" TEXT NOT NULL,
+          "IsOwner" INTEGER NOT NULL,
+          "TeamId" TEXT NOT NULL,
+          CONSTRAINT "FK_TeamMembers_Teams_TeamId" FOREIGN KEY ("TeamId") REFERENCES "Teams" ("Id") ON DELETE CASCADE
+      );
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (0ms) [Parameters=[], CommandType='Text', CommandTimeout='30']
+      CREATE TABLE "Invites" (
+          "Id" TEXT NOT NULL CONSTRAINT "PK_Invites" PRIMARY KEY,
+          "Email" TEXT NOT NULL,
+          "CreatorName" TEXT NOT NULL,
+          "CreatorMessage" TEXT NOT NULL,
+          "Status" TEXT NOT NULL,
+          "CreatorId" TEXT NOT NULL,
+          CONSTRAINT "FK_Invites_Users_CreatorId" FOREIGN KEY ("CreatorId") REFERENCES "Users" ("Id") ON DELETE RESTRICT
+      );
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (0ms) [Parameters=[], CommandType='Text', CommandTimeout='30']
+      CREATE TABLE "UserRights" (
+          "Id" TEXT NOT NULL CONSTRAINT "PK_UserRights" PRIMARY KEY,
+          "RightId" TEXT NOT NULL,
+          "UserId" TEXT NOT NULL,
+          CONSTRAINT "FK_UserRights_Rights_RightId" FOREIGN KEY ("RightId") REFERENCES "Rights" ("Id") ON DELETE RESTRICT,
+          CONSTRAINT "FK_UserRights_Users_UserId" FOREIGN KEY ("UserId") REFERENCES "Users" ("Id") ON DELETE CASCADE
+      );
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (0ms) [Parameters=[], CommandType='Text', CommandTimeout='30']
+      INSERT INTO "Rights" ("Id", "Name")
+      VALUES ('8E0D6A2C-34A1-4C55-9A3E-6F1D2B7C9E01', 'Admin');
+      SELECT changes();
+      
+      INSERT INTO "Rights" ("Id", "Name")
+      VALUES ('8E0D6A2C-34A1-4C55-9A3E-6F1D2B7C9E02', 'ManageUsers');
+      SELECT changes();
+      
+      INSERT INTO "Rights" ("Id", "Name")
+      VALUES ('8E0D6A2C-34A1-4C55-9A3E-6F1D2B7C9E03', 'ManageTeams');
+      SELECT changes();
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (0ms) [Parameters=[], CommandType='Text', CommandTimeout='30']
+      CREATE INDEX "IX_Invites_CreatorId" ON "Invites" ("CreatorId");
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (0ms) [Parameters=[], CommandType='Text', CommandTimeout='30']
+      CREATE UNIQUE INDEX "IX_LocalUsers_Name" ON "LocalUsers" ("Name");
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (0ms) [Parameters=[], CommandType='Text', CommandTimeout='30']
+      CREATE UNIQUE INDEX "IX_Rights_Name" ON "Rights" ("Name");
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (0ms) [Parameters=[], CommandType='Text', CommandTimeout='30']
+      CREATE UNIQUE INDEX "IX_TeamMembers_TeamId_UserEmail" ON "TeamMembers" ("TeamId", "UserEmail");
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (0ms) [Parameters=[], CommandType='Text', CommandTimeout='30']
+      CREATE UNIQUE INDEX "IX_Teams_Name" ON "Teams" ("Name");
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (0ms) [Parameters=[], CommandType='Text', CommandTimeout='30']
+      CREATE INDEX "IX_UserRights_RightId" ON "UserRights" ("RightId");
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (0ms) [Parameters=[], CommandType='Text', CommandTimeout='30']
+      CREATE UNIQUE INDEX "IX_UserRights_UserId_RightId" ON "UserRights" ("UserId", "RightId");
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (0ms) [Parameters=[], CommandType='Text', CommandTimeout='30']
+      CREATE UNIQUE INDEX "IX_Users_Email" ON "Users" ("Email");
+warn: Microsoft.AspNetCore.DataProtection.Repositories.FileSystemXmlRepository[60]
+      Storing keys in a directory '/home/bench/.aspnet/DataProtection-Keys' that may not be persisted outside of the container. Protected data will be unavailable when container is destroyed. For more information go to https://aka.ms/aspnet/dataprotectionwarning
+info: Microsoft.AspNetCore.DataProtection.KeyManagement.XmlKeyManager[62]
+      User profile is available. Using '/home/bench/.aspnet/DataProtection-Keys' as key repository; keys will not be encrypted at rest.
+warn: Microsoft.AspNetCore.Hosting.Diagnostics[15]
+      Overriding HTTP_PORTS '8080' and HTTPS_PORTS ''. Binding to values defined by URLS instead 'http://127.0.0.1:5080'.
+info: Microsoft.Hosting.Lifetime[14]
+      Now listening on: http://127.0.0.1:5080
+info: Microsoft.Hosting.Lifetime[0]
+      Application started. Press Ctrl+C to shut down.
+info: Microsoft.Hosting.Lifetime[0]
+      Hosting environment: Production
+info: Microsoft.Hosting.Lifetime[0]
+      Content root path: /work/src/UM.Api
+info: Microsoft.AspNetCore.Hosting.Diagnostics[1]
+      Request starting HTTP/1.1 GET http://127.0.0.1:5080/ - - -
+info: Microsoft.AspNetCore.Hosting.Diagnostics[2]
+      Request finished HTTP/1.1 GET http://127.0.0.1:5080/ - 404 0 - 176.6208ms
+info: Microsoft.AspNetCore.Hosting.Diagnostics[16]
+      Request reached the end of the middleware pipeline without being handled by application code. Request path: GET http://127.0.0.1:5080/, Response status code: 404
+info: Microsoft.AspNetCore.Hosting.Diagnostics[1]
+      Request starting HTTP/1.1 POST http://127.0.0.1:5080/users - application/json;+charset=utf-8 -
+info: Microsoft.AspNetCore.Routing.EndpointMiddleware[0]
+      Executing endpoint 'HTTP: POST /users/'
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (2ms) [Parameters=[@name='?' (Size = 32)], CommandType='Text', CommandTimeout='30']
+      SELECT "l"."Id", "l"."HashedPassword", "l"."Name"
+      FROM "LocalUsers" AS "l"
+      WHERE "l"."Name" = @name
+      LIMIT 1
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (0ms) [Parameters=[@p0='?' (DbType = Guid), @p1='?', @p2='?' (Size = 32)], CommandType='Text', CommandTimeout='30']
+      INSERT INTO "LocalUsers" ("Id", "HashedPassword", "Name")
+      VALUES (@p0, @p1, @p2);
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (1ms) [Parameters=[@p0='?' (DbType = Guid), @p1='?' (Size = 32), @p2='?', @p3='?' (Size = 5), @p4='?' (DbType = Boolean)], CommandType='Text', CommandTimeout='30']
+      INSERT INTO "Users" ("Id", "Email", "Preferences", "Provider", "TechnicalUser")
+      VALUES (@p0, @p1, @p2, @p3, @p4);
+info: Microsoft.AspNetCore.Http.Result.CreatedResult[1]
+      Setting HTTP status code 201.
+info: Microsoft.AspNetCore.Http.Result.CreatedResult[3]
+      Writing value of type 'UserDto' as Json.
+info: Microsoft.AspNetCore.Routing.EndpointMiddleware[1]
+      Executed endpoint 'HTTP: POST /users/'
+info: Microsoft.AspNetCore.Hosting.Diagnostics[2]
+      Request finished HTTP/1.1 POST http://127.0.0.1:5080/users - 201 - application/json;+charset=utf-8 305.8232ms
+info: Microsoft.AspNetCore.Hosting.Diagnostics[1]
+      Request starting HTTP/1.1 POST http://127.0.0.1:5080/users - application/json;+charset=utf-8 -
+info: Microsoft.AspNetCore.Routing.EndpointMiddleware[0]
+      Executing endpoint 'HTTP: POST /users/'
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (0ms) [Parameters=[@name='?' (Size = 32)], CommandType='Text', CommandTimeout='30']
+      SELECT "l"."Id", "l"."HashedPassword", "l"."Name"
+      FROM "LocalUsers" AS "l"
+      WHERE "l"."Name" = @name
+      LIMIT 1
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (0ms) [Parameters=[@p0='?' (DbType = Guid), @p1='?', @p2='?' (Size = 32)], CommandType='Text', CommandTimeout='30']
+      INSERT INTO "LocalUsers" ("Id", "HashedPassword", "Name")
+      VALUES (@p0, @p1, @p2);
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (0ms) [Parameters=[@p0='?' (DbType = Guid), @p1='?' (Size = 32), @p2='?', @p3='?' (Size = 5), @p4='?' (DbType = Boolean)], CommandType='Text', CommandTimeout='30']
+      INSERT INTO "Users" ("Id", "Email", "Preferences", "Provider", "TechnicalUser")
+      VALUES (@p0, @p1, @p2, @p3, @p4);
+info: Microsoft.AspNetCore.Http.Result.CreatedResult[1]
+      Setting HTTP status code 201.
+info: Microsoft.AspNetCore.Http.Result.CreatedResult[3]
+      Writing value of type 'UserDto' as Json.
+info: Microsoft.AspNetCore.Routing.EndpointMiddleware[1]
+      Executed endpoint 'HTTP: POST /users/'
+info: Microsoft.AspNetCore.Hosting.Diagnostics[2]
+      Request finished HTTP/1.1 POST http://127.0.0.1:5080/users - 201 - application/json;+charset=utf-8 50.7505ms
+info: Microsoft.AspNetCore.Hosting.Diagnostics[1]
+      Request starting HTTP/1.1 POST http://127.0.0.1:5080/teams - application/json;+charset=utf-8 -
+info: Microsoft.AspNetCore.Routing.EndpointMiddleware[0]
+      Executing endpoint 'HTTP: POST /teams/'
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (0ms) [Parameters=[@email='?' (Size = 32)], CommandType='Text', CommandTimeout='30']
+      SELECT "u1"."Id", "u1"."Email", "u1"."Preferences", "u1"."Provider", "u1"."TechnicalUser", "s"."Id", "s"."RightId", "s"."UserId", "s"."Id0", "s"."Name"
+      FROM (
+          SELECT "u"."Id", "u"."Email", "u"."Preferences", "u"."Provider", "u"."TechnicalUser"
+          FROM "Users" AS "u"
+          WHERE "u"."Email" = @email
+          LIMIT 1
+      ) AS "u1"
+      LEFT JOIN (
+          SELECT "u0"."Id", "u0"."RightId", "u0"."UserId", "r"."Id" AS "Id0", "r"."Name"
+          FROM "UserRights" AS "u0"
+          INNER JOIN "Rights" AS "r" ON "u0"."RightId" = "r"."Id"
+      ) AS "s" ON "u1"."Id" = "s"."UserId"
+      ORDER BY "u1"."Id", "s"."Id"
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (0ms) [Parameters=[@email='?' (Size = 32)], CommandType='Text', CommandTimeout='30']
+      SELECT "u1"."Id", "u1"."Email", "u1"."Preferences", "u1"."Provider", "u1"."TechnicalUser", "s"."Id", "s"."RightId", "s"."UserId", "s"."Id0", "s"."Name"
+      FROM (
+          SELECT "u"."Id", "u"."Email", "u"."Preferences", "u"."Provider", "u"."TechnicalUser"
+          FROM "Users" AS "u"
+          WHERE "u"."Email" = @email
+          LIMIT 1
+      ) AS "u1"
+      LEFT JOIN (
+          SELECT "u0"."Id", "u0"."RightId", "u0"."UserId", "r"."Id" AS "Id0", "r"."Name"
+          FROM "UserRights" AS "u0"
+          INNER JOIN "Rights" AS "r" ON "u0"."RightId" = "r"."Id"
+      ) AS "s" ON "u1"."Id" = "s"."UserId"
+      ORDER BY "u1"."Id", "s"."Id"
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (0ms) [Parameters=[@p0='?' (DbType = Guid), @p1='?' (Size = 13), @p2='?' (Size = 37)], CommandType='Text', CommandTimeout='30']
+      INSERT INTO "Teams" ("Id", "Description", "Name")
+      VALUES (@p0, @p1, @p2);
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (0ms) [Parameters=[@p0='?' (DbType = Guid), @p1='?' (DbType = Boolean), @p2='?' (DbType = Guid), @p3='?' (Size = 32)], CommandType='Text', CommandTimeout='30']
+      INSERT INTO "TeamMembers" ("Id", "IsOwner", "TeamId", "UserEmail")
+      VALUES (@p0, @p1, @p2, @p3);
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (0ms) [Parameters=[@p0='?' (DbType = Guid), @p1='?' (DbType = Boolean), @p2='?' (DbType = Guid), @p3='?' (Size = 32)], CommandType='Text', CommandTimeout='30']
+      INSERT INTO "TeamMembers" ("Id", "IsOwner", "TeamId", "UserEmail")
+      VALUES (@p0, @p1, @p2, @p3);
+info: Microsoft.AspNetCore.Http.Result.CreatedResult[1]
+      Setting HTTP status code 201.
+info: Microsoft.AspNetCore.Http.Result.CreatedResult[3]
+      Writing value of type 'TeamDto' as Json.
+info: Microsoft.AspNetCore.Routing.EndpointMiddleware[1]
+      Executed endpoint 'HTTP: POST /teams/'
+info: Microsoft.AspNetCore.Hosting.Diagnostics[2]
+      Request finished HTTP/1.1 POST http://127.0.0.1:5080/teams - 201 - application/json;+charset=utf-8 93.4844ms
+info: Microsoft.AspNetCore.Hosting.Diagnostics[1]
+      Request starting HTTP/1.1 GET http://127.0.0.1:5080/teams/28a60075-0c1e-4c50-8264-a52f7eeaa06e - - -
+info: Microsoft.AspNetCore.Routing.EndpointMiddleware[0]
+      Executing endpoint 'HTTP: GET /teams/{id}'
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (0ms) [Parameters=[@id='?' (DbType = Guid)], CommandType='Text', CommandTimeout='30']
+      SELECT "t1"."Id", "t1"."Description", "t1"."Name", "t0"."Id", "t0"."IsOwner", "t0"."TeamId", "t0"."UserEmail"
+      FROM (
+          SELECT "t"."Id", "t"."Description", "t"."Name"
+          FROM "Teams" AS "t"
+          WHERE "t"."Id" = @id
+          LIMIT 1
+      ) AS "t1"
+      LEFT JOIN "TeamMembers" AS "t0" ON "t1"."Id" = "t0"."TeamId"
+      ORDER BY "t1"."Id"
+info: Microsoft.AspNetCore.Http.Result.OkObjectResult[1]
+      Setting HTTP status code 200.
+info: Microsoft.AspNetCore.Http.Result.OkObjectResult[3]
+      Writing value of type 'TeamDto' as Json.
+info: Microsoft.AspNetCore.Routing.EndpointMiddleware[1]
+      Executed endpoint 'HTTP: GET /teams/{id}'
+info: Microsoft.AspNetCore.Hosting.Diagnostics[2]
+      Request finished HTTP/1.1 GET http://127.0.0.1:5080/teams/28a60075-0c1e-4c50-8264-a52f7eeaa06e - 200 - application/json;+charset=utf-8 16.3478ms
+info: Microsoft.AspNetCore.Hosting.Diagnostics[1]
+      Request starting HTTP/1.1 GET http://127.0.0.1:5080/teams?pageSize=200 - - -
+info: Microsoft.AspNetCore.Routing.EndpointMiddleware[0]
+      Executing endpoint 'HTTP: GET /teams/'
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (0ms) [Parameters=[], CommandType='Text', CommandTimeout='30']
+      SELECT COUNT(*)
+      FROM "Teams" AS "t"
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (0ms) [Parameters=[@p1='?' (DbType = Int32), @p='?' (DbType = Int32)], CommandType='Text', CommandTimeout='30']
+      SELECT "t"."Id", "t"."Description", "t"."Name"
+      FROM "Teams" AS "t"
+      ORDER BY "t"."Id"
+      LIMIT @p1 OFFSET @p
+info: Microsoft.AspNetCore.Http.Result.OkObjectResult[1]
+      Setting HTTP status code 200.
+info: Microsoft.AspNetCore.Http.Result.OkObjectResult[3]
+      Writing value of type 'Page`1' as Json.
+info: Microsoft.AspNetCore.Routing.EndpointMiddleware[1]
+      Executed endpoint 'HTTP: GET /teams/'
+info: Microsoft.AspNetCore.Hosting.Diagnostics[2]
+      Request finished HTTP/1.1 GET http://127.0.0.1:5080/teams?pageSize=200 - 200 - application/json;+charset=utf-8 34.0308ms
+info: Microsoft.AspNetCore.Hosting.Diagnostics[1]
+      Request starting HTTP/1.1 PUT http://127.0.0.1:5080/teams/28a60075-0c1e-4c50-8264-a52f7eeaa06e - application/json;+charset=utf-8 -
+info: Microsoft.AspNetCore.Routing.EndpointMiddleware[0]
+      Executing endpoint 'HTTP: PUT /teams/{id}'
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (0ms) [Parameters=[@id='?' (DbType = Guid)], CommandType='Text', CommandTimeout='30']
+      SELECT "t1"."Id", "t1"."Description", "t1"."Name", "t0"."Id", "t0"."IsOwner", "t0"."TeamId", "t0"."UserEmail"
+      FROM (
+          SELECT "t"."Id", "t"."Description", "t"."Name"
+          FROM "Teams" AS "t"
+          WHERE "t"."Id" = @id
+          LIMIT 1
+      ) AS "t1"
+      LEFT JOIN "TeamMembers" AS "t0" ON "t1"."Id" = "t0"."TeamId"
+      ORDER BY "t1"."Id"
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (0ms) [Parameters=[@p0='?' (DbType = Guid)], CommandType='Text', CommandTimeout='30']
+      DELETE FROM "TeamMembers"
+      WHERE "Id" = @p0
+      RETURNING 1;
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (0ms) [Parameters=[@p0='?' (DbType = Guid)], CommandType='Text', CommandTimeout='30']
+      DELETE FROM "TeamMembers"
+      WHERE "Id" = @p0
+      RETURNING 1;
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (0ms) [Parameters=[@p2='?' (DbType = Guid), @p0='?', @p1='?' (Size = 40)], CommandType='Text', CommandTimeout='30']
+      UPDATE "Teams" SET "Description" = @p0, "Name" = @p1
+      WHERE "Id" = @p2
+      RETURNING 1;
+info: Microsoft.AspNetCore.Http.Result.OkObjectResult[1]
+      Setting HTTP status code 200.
+info: Microsoft.AspNetCore.Http.Result.OkObjectResult[3]
+      Writing value of type 'TeamDto' as Json.
+info: Microsoft.AspNetCore.Routing.EndpointMiddleware[1]
+      Executed endpoint 'HTTP: PUT /teams/{id}'
+info: Microsoft.AspNetCore.Hosting.Diagnostics[2]
+      Request finished HTTP/1.1 PUT http://127.0.0.1:5080/teams/28a60075-0c1e-4c50-8264-a52f7eeaa06e - 200 - application/json;+charset=utf-8 21.4693ms
+info: Microsoft.AspNetCore.Hosting.Diagnostics[1]
+      Request starting HTTP/1.1 GET http://127.0.0.1:5080/teams/28a60075-0c1e-4c50-8264-a52f7eeaa06e - - -
+info: Microsoft.AspNetCore.Routing.EndpointMiddleware[0]
+      Executing endpoint 'HTTP: GET /teams/{id}'
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (0ms) [Parameters=[@id='?' (DbType = Guid)], CommandType='Text', CommandTimeout='30']
+      SELECT "t1"."Id", "t1"."Description", "t1"."Name", "t0"."Id", "t0"."IsOwner", "t0"."TeamId", "t0"."UserEmail"
+      FROM (
+          SELECT "t"."Id", "t"."Description", "t"."Name"
+          FROM "Teams" AS "t"
+          WHERE "t"."Id" = @id
+          LIMIT 1
+      ) AS "t1"
+      LEFT JOIN "TeamMembers" AS "t0" ON "t1"."Id" = "t0"."TeamId"
+      ORDER BY "t1"."Id"
+info: Microsoft.AspNetCore.Http.Result.OkObjectResult[1]
+      Setting HTTP status code 200.
+info: Microsoft.AspNetCore.Http.Result.OkObjectResult[3]
+      Writing value of type 'TeamDto' as Json.
+info: Microsoft.AspNetCore.Routing.EndpointMiddleware[1]
+      Executed endpoint 'HTTP: GET /teams/{id}'
+info: Microsoft.AspNetCore.Hosting.Diagnostics[2]
+      Request finished HTTP/1.1 GET http://127.0.0.1:5080/teams/28a60075-0c1e-4c50-8264-a52f7eeaa06e - 200 - application/json;+charset=utf-8 1.4402ms
+info: Microsoft.AspNetCore.Hosting.Diagnostics[1]
+      Request starting HTTP/1.1 DELETE http://127.0.0.1:5080/teams/28a60075-0c1e-4c50-8264-a52f7eeaa06e - - -
+info: Microsoft.AspNetCore.Routing.EndpointMiddleware[0]
+      Executing endpoint 'HTTP: DELETE /teams/{id}'
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (0ms) [Parameters=[@id='?' (DbType = Guid)], CommandType='Text', CommandTimeout='30']
+      SELECT "t1"."Id", "t1"."Description", "t1"."Name", "t0"."Id", "t0"."IsOwner", "t0"."TeamId", "t0"."UserEmail"
+      FROM (
+          SELECT "t"."Id", "t"."Description", "t"."Name"
+          FROM "Teams" AS "t"
+          WHERE "t"."Id" = @id
+          LIMIT 1
+      ) AS "t1"
+      LEFT JOIN "TeamMembers" AS "t0" ON "t1"."Id" = "t0"."TeamId"
+      ORDER BY "t1"."Id"
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (0ms) [Parameters=[@p0='?' (DbType = Guid)], CommandType='Text', CommandTimeout='30']
+      DELETE FROM "Teams"
+      WHERE "Id" = @p0
+      RETURNING 1;
+info: Microsoft.AspNetCore.Http.Result.NoContentResult[1]
+      Setting HTTP status code 204.
+info: Microsoft.AspNetCore.Routing.EndpointMiddleware[1]
+      Executed endpoint 'HTTP: DELETE /teams/{id}'
+info: Microsoft.AspNetCore.Hosting.Diagnostics[2]
+      Request finished HTTP/1.1 DELETE http://127.0.0.1:5080/teams/28a60075-0c1e-4c50-8264-a52f7eeaa06e - 204 - - 8.1733ms
+info: Microsoft.AspNetCore.Hosting.Diagnostics[1]
+      Request starting HTTP/1.1 GET http://127.0.0.1:5080/teams/28a60075-0c1e-4c50-8264-a52f7eeaa06e - - -
+info: Microsoft.AspNetCore.Routing.EndpointMiddleware[0]
+      Executing endpoint 'HTTP: GET /teams/{id}'
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (0ms) [Parameters=[@id='?' (DbType = Guid)], CommandType='Text', CommandTimeout='30']
+      SELECT "t1"."Id", "t1"."Description", "t1"."Name", "t0"."Id", "t0"."IsOwner", "t0"."TeamId", "t0"."UserEmail"
+      FROM (
+          SELECT "t"."Id", "t"."Description", "t"."Name"
+          FROM "Teams" AS "t"
+          WHERE "t"."Id" = @id
+          LIMIT 1
+      ) AS "t1"
+      LEFT JOIN "TeamMembers" AS "t0" ON "t1"."Id" = "t0"."TeamId"
+      ORDER BY "t1"."Id"
+info: Microsoft.AspNetCore.Http.HttpResults.ProblemHttpResult[1]
+      Setting HTTP status code 404.
+info: Microsoft.AspNetCore.Http.HttpResults.ProblemHttpResult[3]
+      Writing value of type 'ProblemDetails' as Json.
+info: Microsoft.AspNetCore.Routing.EndpointMiddleware[1]
+      Executed endpoint 'HTTP: GET /teams/{id}'
+info: Microsoft.AspNetCore.Hosting.Diagnostics[2]
+      Request finished HTTP/1.1 GET http://127.0.0.1:5080/teams/28a60075-0c1e-4c50-8264-a52f7eeaa06e - 404 - application/problem+json 9.2936ms
+info: Microsoft.AspNetCore.Hosting.Diagnostics[1]
+      Request starting HTTP/1.1 POST http://127.0.0.1:5080/users - application/json;+charset=utf-8 -
+info: Microsoft.AspNetCore.Routing.EndpointMiddleware[0]
+      Executing endpoint 'HTTP: POST /users/'
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (0ms) [Parameters=[@name='?' (Size = 32)], CommandType='Text', CommandTimeout='30']
+      SELECT "l"."Id", "l"."HashedPassword", "l"."Name"
+      FROM "LocalUsers" AS "l"
+      WHERE "l"."Name" = @name
+      LIMIT 1
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (0ms) [Parameters=[@p0='?' (DbType = Guid), @p1='?', @p2='?' (Size = 32)], CommandType='Text', CommandTimeout='30']
+      INSERT INTO "LocalUsers" ("Id", "HashedPassword", "Name")
+      VALUES (@p0, @p1, @p2);
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (0ms) [Parameters=[@p0='?' (DbType = Guid), @p1='?' (Size = 32), @p2='?', @p3='?' (Size = 5), @p4='?' (DbType = Boolean)], CommandType='Text', CommandTimeout='30']
+      INSERT INTO "Users" ("Id", "Email", "Preferences", "Provider", "TechnicalUser")
+      VALUES (@p0, @p1, @p2, @p3, @p4);
+info: Microsoft.AspNetCore.Http.Result.CreatedResult[1]
+      Setting HTTP status code 201.
+info: Microsoft.AspNetCore.Http.Result.CreatedResult[3]
+      Writing value of type 'UserDto' as Json.
+info: Microsoft.AspNetCore.Routing.EndpointMiddleware[1]
+      Executed endpoint 'HTTP: POST /users/'
+info: Microsoft.AspNetCore.Hosting.Diagnostics[2]
+      Request finished HTTP/1.1 POST http://127.0.0.1:5080/users - 201 - application/json;+charset=utf-8 7.7771ms
+info: Microsoft.AspNetCore.Hosting.Diagnostics[1]
+      Request starting HTTP/1.1 POST http://127.0.0.1:5080/users - application/json;+charset=utf-8 -
+info: Microsoft.AspNetCore.Routing.EndpointMiddleware[0]
+      Executing endpoint 'HTTP: POST /users/'
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (0ms) [Parameters=[@name='?' (Size = 32)], CommandType='Text', CommandTimeout='30']
+      SELECT "l"."Id", "l"."HashedPassword", "l"."Name"
+      FROM "LocalUsers" AS "l"
+      WHERE "l"."Name" = @name
+      LIMIT 1
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (0ms) [Parameters=[@p0='?' (DbType = Guid), @p1='?', @p2='?' (Size = 32)], CommandType='Text', CommandTimeout='30']
+      INSERT INTO "LocalUsers" ("Id", "HashedPassword", "Name")
+      VALUES (@p0, @p1, @p2);
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (0ms) [Parameters=[@p0='?' (DbType = Guid), @p1='?' (Size = 32), @p2='?', @p3='?' (Size = 5), @p4='?' (DbType = Boolean)], CommandType='Text', CommandTimeout='30']
+      INSERT INTO "Users" ("Id", "Email", "Preferences", "Provider", "TechnicalUser")
+      VALUES (@p0, @p1, @p2, @p3, @p4);
+info: Microsoft.AspNetCore.Http.Result.CreatedResult[1]
+      Setting HTTP status code 201.
+info: Microsoft.AspNetCore.Http.Result.CreatedResult[3]
+      Writing value of type 'UserDto' as Json.
+info: Microsoft.AspNetCore.Routing.EndpointMiddleware[1]
+      Executed endpoint 'HTTP: POST /users/'
+info: Microsoft.AspNetCore.Hosting.Diagnostics[2]
+      Request finished HTTP/1.1 POST http://127.0.0.1:5080/users - 201 - application/json;+charset=utf-8 5.5021ms
+info: Microsoft.AspNetCore.Hosting.Diagnostics[1]
+      Request starting HTTP/1.1 POST http://127.0.0.1:5080/users - application/json;+charset=utf-8 -
+info: Microsoft.AspNetCore.Routing.EndpointMiddleware[0]
+      Executing endpoint 'HTTP: POST /users/'
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (0ms) [Parameters=[@name='?' (Size = 32)], CommandType='Text', CommandTimeout='30']
+      SELECT "l"."Id", "l"."HashedPassword", "l"."Name"
+      FROM "LocalUsers" AS "l"
+      WHERE "l"."Name" = @name
+      LIMIT 1
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (0ms) [Parameters=[@p0='?' (DbType = Guid), @p1='?', @p2='?' (Size = 32)], CommandType='Text', CommandTimeout='30']
+      INSERT INTO "LocalUsers" ("Id", "HashedPassword", "Name")
+      VALUES (@p0, @p1, @p2);
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (0ms) [Parameters=[@p0='?' (DbType = Guid), @p1='?' (Size = 32), @p2='?', @p3='?' (Size = 5), @p4='?' (DbType = Boolean)], CommandType='Text', CommandTimeout='30']
+      INSERT INTO "Users" ("Id", "Email", "Preferences", "Provider", "TechnicalUser")
+      VALUES (@p0, @p1, @p2, @p3, @p4);
+info: Microsoft.AspNetCore.Http.Result.CreatedResult[1]
+      Setting HTTP status code 201.
+info: Microsoft.AspNetCore.Http.Result.CreatedResult[3]
+      Writing value of type 'UserDto' as Json.
+info: Microsoft.AspNetCore.Routing.EndpointMiddleware[1]
+      Executed endpoint 'HTTP: POST /users/'
+info: Microsoft.AspNetCore.Hosting.Diagnostics[2]
+      Request finished HTTP/1.1 POST http://127.0.0.1:5080/users - 201 - application/json;+charset=utf-8 5.2048ms
+info: Microsoft.AspNetCore.Hosting.Diagnostics[1]
+      Request starting HTTP/1.1 POST http://127.0.0.1:5080/teams - application/json;+charset=utf-8 -
+info: Microsoft.AspNetCore.Routing.EndpointMiddleware[0]
+      Executing endpoint 'HTTP: POST /teams/'
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (0ms) [Parameters=[@email='?' (Size = 32)], CommandType='Text', CommandTimeout='30']
+      SELECT "u1"."Id", "u1"."Email", "u1"."Preferences", "u1"."Provider", "u1"."TechnicalUser", "s"."Id", "s"."RightId", "s"."UserId", "s"."Id0", "s"."Name"
+      FROM (
+          SELECT "u"."Id", "u"."Email", "u"."Preferences", "u"."Provider", "u"."TechnicalUser"
+          FROM "Users" AS "u"
+          WHERE "u"."Email" = @email
+          LIMIT 1
+      ) AS "u1"
+      LEFT JOIN (
+          SELECT "u0"."Id", "u0"."RightId", "u0"."UserId", "r"."Id" AS "Id0", "r"."Name"
+          FROM "UserRights" AS "u0"
+          INNER JOIN "Rights" AS "r" ON "u0"."RightId" = "r"."Id"
+      ) AS "s" ON "u1"."Id" = "s"."UserId"
+      ORDER BY "u1"."Id", "s"."Id"
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (0ms) [Parameters=[@email='?' (Size = 32)], CommandType='Text', CommandTimeout='30']
+      SELECT "u1"."Id", "u1"."Email", "u1"."Preferences", "u1"."Provider", "u1"."TechnicalUser", "s"."Id", "s"."RightId", "s"."UserId", "s"."Id0", "s"."Name"
+      FROM (
+          SELECT "u"."Id", "u"."Email", "u"."Preferences", "u"."Provider", "u"."TechnicalUser"
+          FROM "Users" AS "u"
+          WHERE "u"."Email" = @email
+          LIMIT 1
+      ) AS "u1"
+      LEFT JOIN (
+          SELECT "u0"."Id", "u0"."RightId", "u0"."UserId", "r"."Id" AS "Id0", "r"."Name"
+          FROM "UserRights" AS "u0"
+          INNER JOIN "Rights" AS "r" ON "u0"."RightId" = "r"."Id"
+      ) AS "s" ON "u1"."Id" = "s"."UserId"
+      ORDER BY "u1"."Id", "s"."Id"
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (0ms) [Parameters=[@p0='?' (DbType = Guid), @p1='?', @p2='?' (Size = 37)], CommandType='Text', CommandTimeout='30']
+      INSERT INTO "Teams" ("Id", "Description", "Name")
+      VALUES (@p0, @p1, @p2);
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (0ms) [Parameters=[@p0='?' (DbType = Guid), @p1='?' (DbType = Boolean), @p2='?' (DbType = Guid), @p3='?' (Size = 32)], CommandType='Text', CommandTimeout='30']
+      INSERT INTO "TeamMembers" ("Id", "IsOwner", "TeamId", "UserEmail")
+      VALUES (@p0, @p1, @p2, @p3);
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (0ms) [Parameters=[@p0='?' (DbType = Guid), @p1='?' (DbType = Boolean), @p2='?' (DbType = Guid), @p3='?' (Size = 32)], CommandType='Text', CommandTimeout='30']
+      INSERT INTO "TeamMembers" ("Id", "IsOwner", "TeamId", "UserEmail")
+      VALUES (@p0, @p1, @p2, @p3);
+info: Microsoft.AspNetCore.Http.Result.CreatedResult[1]
+      Setting HTTP status code 201.
+info: Microsoft.AspNetCore.Http.Result.CreatedResult[3]
+      Writing value of type 'TeamDto' as Json.
+info: Microsoft.AspNetCore.Routing.EndpointMiddleware[1]
+      Executed endpoint 'HTTP: POST /teams/'
+info: Microsoft.AspNetCore.Hosting.Diagnostics[2]
+      Request finished HTTP/1.1 POST http://127.0.0.1:5080/teams - 201 - application/json;+charset=utf-8 15.6549ms
+info: Microsoft.AspNetCore.Hosting.Diagnostics[1]
+      Request starting HTTP/1.1 PUT http://127.0.0.1:5080/teams/d1d91d9f-fc70-4d6f-ac96-52f898475739 - application/json;+charset=utf-8 -
+info: Microsoft.AspNetCore.Routing.EndpointMiddleware[0]
+      Executing endpoint 'HTTP: PUT /teams/{id}'
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (0ms) [Parameters=[@id='?' (DbType = Guid)], CommandType='Text', CommandTimeout='30']
+      SELECT "t1"."Id", "t1"."Description", "t1"."Name", "t0"."Id", "t0"."IsOwner", "t0"."TeamId", "t0"."UserEmail"
+      FROM (
+          SELECT "t"."Id", "t"."Description", "t"."Name"
+          FROM "Teams" AS "t"
+          WHERE "t"."Id" = @id
+          LIMIT 1
+      ) AS "t1"
+      LEFT JOIN "TeamMembers" AS "t0" ON "t1"."Id" = "t0"."TeamId"
+      ORDER BY "t1"."Id"
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (0ms) [Parameters=[@email='?' (Size = 32)], CommandType='Text', CommandTimeout='30']
+      SELECT "u1"."Id", "u1"."Email", "u1"."Preferences", "u1"."Provider", "u1"."TechnicalUser", "s"."Id", "s"."RightId", "s"."UserId", "s"."Id0", "s"."Name"
+      FROM (
+          SELECT "u"."Id", "u"."Email", "u"."Preferences", "u"."Provider", "u"."TechnicalUser"
+          FROM "Users" AS "u"
+          WHERE "u"."Email" = @email
+          LIMIT 1
+      ) AS "u1"
+      LEFT JOIN (
+          SELECT "u0"."Id", "u0"."RightId", "u0"."UserId", "r"."Id" AS "Id0", "r"."Name"
+          FROM "UserRights" AS "u0"
+          INNER JOIN "Rights" AS "r" ON "u0"."RightId" = "r"."Id"
+      ) AS "s" ON "u1"."Id" = "s"."UserId"
+      ORDER BY "u1"."Id", "s"."Id"
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (0ms) [Parameters=[@email='?' (Size = 32)], CommandType='Text', CommandTimeout='30']
+      SELECT "u1"."Id", "u1"."Email", "u1"."Preferences", "u1"."Provider", "u1"."TechnicalUser", "s"."Id", "s"."RightId", "s"."UserId", "s"."Id0", "s"."Name"
+      FROM (
+          SELECT "u"."Id", "u"."Email", "u"."Preferences", "u"."Provider", "u"."TechnicalUser"
+          FROM "Users" AS "u"
+          WHERE "u"."Email" = @email
+          LIMIT 1
+      ) AS "u1"
+      LEFT JOIN (
+          SELECT "u0"."Id", "u0"."RightId", "u0"."UserId", "r"."Id" AS "Id0", "r"."Name"
+          FROM "UserRights" AS "u0"
+          INNER JOIN "Rights" AS "r" ON "u0"."RightId" = "r"."Id"
+      ) AS "s" ON "u1"."Id" = "s"."UserId"
+      ORDER BY "u1"."Id", "s"."Id"
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (0ms) [Parameters=[@p0='?' (DbType = Guid)], CommandType='Text', CommandTimeout='30']
+      DELETE FROM "TeamMembers"
+      WHERE "Id" = @p0
+      RETURNING 1;
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (0ms) [Parameters=[@p1='?' (DbType = Guid), @p0='?' (DbType = Boolean)], CommandType='Text', CommandTimeout='30']
+      UPDATE "TeamMembers" SET "IsOwner" = @p0
+      WHERE "Id" = @p1
+      RETURNING 1;
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (0ms) [Parameters=[@p0='?' (DbType = Guid), @p1='?' (DbType = Boolean), @p2='?' (DbType = Guid), @p3='?' (Size = 32)], CommandType='Text', CommandTimeout='30']
+      INSERT INTO "TeamMembers" ("Id", "IsOwner", "TeamId", "UserEmail")
+      VALUES (@p0, @p1, @p2, @p3);
+info: Microsoft.AspNetCore.Http.Result.OkObjectResult[1]
+      Setting HTTP status code 200.
+info: Microsoft.AspNetCore.Http.Result.OkObjectResult[3]
+      Writing value of type 'TeamDto' as Json.
+info: Microsoft.AspNetCore.Routing.EndpointMiddleware[1]
+      Executed endpoint 'HTTP: PUT /teams/{id}'
+info: Microsoft.AspNetCore.Hosting.Diagnostics[2]
+      Request finished HTTP/1.1 PUT http://127.0.0.1:5080/teams/d1d91d9f-fc70-4d6f-ac96-52f898475739 - 200 - application/json;+charset=utf-8 8.6773ms
+info: Microsoft.AspNetCore.Hosting.Diagnostics[1]
+      Request starting HTTP/1.1 GET http://127.0.0.1:5080/teams/d1d91d9f-fc70-4d6f-ac96-52f898475739 - - -
+info: Microsoft.AspNetCore.Routing.EndpointMiddleware[0]
+      Executing endpoint 'HTTP: GET /teams/{id}'
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (0ms) [Parameters=[@id='?' (DbType = Guid)], CommandType='Text', CommandTimeout='30']
+      SELECT "t1"."Id", "t1"."Description", "t1"."Name", "t0"."Id", "t0"."IsOwner", "t0"."TeamId", "t0"."UserEmail"
+      FROM (
+          SELECT "t"."Id", "t"."Description", "t"."Name"
+          FROM "Teams" AS "t"
+          WHERE "t"."Id" = @id
+          LIMIT 1
+      ) AS "t1"
+      LEFT JOIN "TeamMembers" AS "t0" ON "t1"."Id" = "t0"."TeamId"
+      ORDER BY "t1"."Id"
+info: Microsoft.AspNetCore.Http.Result.OkObjectResult[1]
+      Setting HTTP status code 200.
+info: Microsoft.AspNetCore.Http.Result.OkObjectResult[3]
+      Writing value of type 'TeamDto' as Json.
+info: Microsoft.AspNetCore.Routing.EndpointMiddleware[1]
+      Executed endpoint 'HTTP: GET /teams/{id}'
+info: Microsoft.AspNetCore.Hosting.Diagnostics[2]
+      Request finished HTTP/1.1 GET http://127.0.0.1:5080/teams/d1d91d9f-fc70-4d6f-ac96-52f898475739 - 200 - application/json;+charset=utf-8 1.2179ms
+info: Microsoft.AspNetCore.Hosting.Diagnostics[1]
+      Request starting HTTP/1.1 POST http://127.0.0.1:5080/users - application/json;+charset=utf-8 -
+info: Microsoft.AspNetCore.Routing.EndpointMiddleware[0]
+      Executing endpoint 'HTTP: POST /users/'
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (0ms) [Parameters=[@name='?' (Size = 32)], CommandType='Text', CommandTimeout='30']
+      SELECT "l"."Id", "l"."HashedPassword", "l"."Name"
+      FROM "LocalUsers" AS "l"
+      WHERE "l"."Name" = @name
+      LIMIT 1
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (0ms) [Parameters=[@p0='?' (DbType = Guid), @p1='?', @p2='?' (Size = 32)], CommandType='Text', CommandTimeout='30']
+      INSERT INTO "LocalUsers" ("Id", "HashedPassword", "Name")
+      VALUES (@p0, @p1, @p2);
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (0ms) [Parameters=[@p0='?' (DbType = Guid), @p1='?' (Size = 32), @p2='?', @p3='?' (Size = 5), @p4='?' (DbType = Boolean)], CommandType='Text', CommandTimeout='30']
+      INSERT INTO "Users" ("Id", "Email", "Preferences", "Provider", "TechnicalUser")
+      VALUES (@p0, @p1, @p2, @p3, @p4);
+info: Microsoft.AspNetCore.Http.Result.CreatedResult[1]
+      Setting HTTP status code 201.
+info: Microsoft.AspNetCore.Http.Result.CreatedResult[3]
+      Writing value of type 'UserDto' as Json.
+info: Microsoft.AspNetCore.Routing.EndpointMiddleware[1]
+      Executed endpoint 'HTTP: POST /users/'
+info: Microsoft.AspNetCore.Hosting.Diagnostics[2]
+      Request finished HTTP/1.1 POST http://127.0.0.1:5080/users - 201 - application/json;+charset=utf-8 7.1166ms
+info: Microsoft.AspNetCore.Hosting.Diagnostics[1]
+      Request starting HTTP/1.1 POST http://127.0.0.1:5080/users - application/json;+charset=utf-8 -
+info: Microsoft.AspNetCore.Routing.EndpointMiddleware[0]
+      Executing endpoint 'HTTP: POST /users/'
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (0ms) [Parameters=[@name='?' (Size = 32)], CommandType='Text', CommandTimeout='30']
+      SELECT "l"."Id", "l"."HashedPassword", "l"."Name"
+      FROM "LocalUsers" AS "l"
+      WHERE "l"."Name" = @name
+      LIMIT 1
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (0ms) [Parameters=[@p0='?' (DbType = Guid), @p1='?', @p2='?' (Size = 32)], CommandType='Text', CommandTimeout='30']
+      INSERT INTO "LocalUsers" ("Id", "HashedPassword", "Name")
+      VALUES (@p0, @p1, @p2);
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (0ms) [Parameters=[@p0='?' (DbType = Guid), @p1='?' (Size = 32), @p2='?', @p3='?' (Size = 5), @p4='?' (DbType = Boolean)], CommandType='Text', CommandTimeout='30']
+      INSERT INTO "Users" ("Id", "Email", "Preferences", "Provider", "TechnicalUser")
+      VALUES (@p0, @p1, @p2, @p3, @p4);
+info: Microsoft.AspNetCore.Http.Result.CreatedResult[1]
+      Setting HTTP status code 201.
+info: Microsoft.AspNetCore.Http.Result.CreatedResult[3]
+      Writing value of type 'UserDto' as Json.
+info: Microsoft.AspNetCore.Routing.EndpointMiddleware[1]
+      Executed endpoint 'HTTP: POST /users/'
+info: Microsoft.AspNetCore.Hosting.Diagnostics[2]
+      Request finished HTTP/1.1 POST http://127.0.0.1:5080/users - 201 - application/json;+charset=utf-8 5.7460ms
+info: Microsoft.AspNetCore.Hosting.Diagnostics[1]
+      Request starting HTTP/1.1 POST http://127.0.0.1:5080/teams - application/json;+charset=utf-8 -
+info: Microsoft.AspNetCore.Routing.EndpointMiddleware[0]
+      Executing endpoint 'HTTP: POST /teams/'
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (0ms) [Parameters=[@email='?' (Size = 32)], CommandType='Text', CommandTimeout='30']
+      SELECT "u1"."Id", "u1"."Email", "u1"."Preferences", "u1"."Provider", "u1"."TechnicalUser", "s"."Id", "s"."RightId", "s"."UserId", "s"."Id0", "s"."Name"
+      FROM (
+          SELECT "u"."Id", "u"."Email", "u"."Preferences", "u"."Provider", "u"."TechnicalUser"
+          FROM "Users" AS "u"
+          WHERE "u"."Email" = @email
+          LIMIT 1
+      ) AS "u1"
+      LEFT JOIN (
+          SELECT "u0"."Id", "u0"."RightId", "u0"."UserId", "r"."Id" AS "Id0", "r"."Name"
+          FROM "UserRights" AS "u0"
+          INNER JOIN "Rights" AS "r" ON "u0"."RightId" = "r"."Id"
+      ) AS "s" ON "u1"."Id" = "s"."UserId"
+      ORDER BY "u1"."Id", "s"."Id"
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (0ms) [Parameters=[@email='?' (Size = 32)], CommandType='Text', CommandTimeout='30']
+      SELECT "u1"."Id", "u1"."Email", "u1"."Preferences", "u1"."Provider", "u1"."TechnicalUser", "s"."Id", "s"."RightId", "s"."UserId", "s"."Id0", "s"."Name"
+      FROM (
+          SELECT "u"."Id", "u"."Email", "u"."Preferences", "u"."Provider", "u"."TechnicalUser"
+          FROM "Users" AS "u"
+          WHERE "u"."Email" = @email
+          LIMIT 1
+      ) AS "u1"
+      LEFT JOIN (
+          SELECT "u0"."Id", "u0"."RightId", "u0"."UserId", "r"."Id" AS "Id0", "r"."Name"
+          FROM "UserRights" AS "u0"
+          INNER JOIN "Rights" AS "r" ON "u0"."RightId" = "r"."Id"
+      ) AS "s" ON "u1"."Id" = "s"."UserId"
+      ORDER BY "u1"."Id", "s"."Id"
+info: Microsoft.AspNetCore.Http.HttpResults.ValidationProblem[1]
+      Setting HTTP status code 400.
+info: Microsoft.AspNetCore.Http.HttpResults.ValidationProblem[3]
+      Writing value of type 'HttpValidationProblemDetails' as Json.
+info: Microsoft.AspNetCore.Routing.EndpointMiddleware[1]
+      Executed endpoint 'HTTP: POST /teams/'
+info: Microsoft.AspNetCore.Hosting.Diagnostics[2]
+      Request finished HTTP/1.1 POST http://127.0.0.1:5080/teams - 400 - application/problem+json 3.4848ms
+info: Microsoft.AspNetCore.Hosting.Diagnostics[1]
+      Request starting HTTP/1.1 POST http://127.0.0.1:5080/teams - application/json;+charset=utf-8 -
+info: Microsoft.AspNetCore.Routing.EndpointMiddleware[0]
+      Executing endpoint 'HTTP: POST /teams/'
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (0ms) [Parameters=[@email='?' (Size = 32)], CommandType='Text', CommandTimeout='30']
+      SELECT "u1"."Id", "u1"."Email", "u1"."Preferences", "u1"."Provider", "u1"."TechnicalUser", "s"."Id", "s"."RightId", "s"."UserId", "s"."Id0", "s"."Name"
+      FROM (
+          SELECT "u"."Id", "u"."Email", "u"."Preferences", "u"."Provider", "u"."TechnicalUser"
+          FROM "Users" AS "u"
+          WHERE "u"."Email" = @email
+          LIMIT 1
+      ) AS "u1"
+      LEFT JOIN (
+          SELECT "u0"."Id", "u0"."RightId", "u0"."UserId", "r"."Id" AS "Id0", "r"."Name"
+          FROM "UserRights" AS "u0"
+          INNER JOIN "Rights" AS "r" ON "u0"."RightId" = "r"."Id"
+      ) AS "s" ON "u1"."Id" = "s"."UserId"
+      ORDER BY "u1"."Id", "s"."Id"
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (0ms) [Parameters=[@email='?' (Size = 32)], CommandType='Text', CommandTimeout='30']
+      SELECT "u1"."Id", "u1"."Email", "u1"."Preferences", "u1"."Provider", "u1"."TechnicalUser", "s"."Id", "s"."RightId", "s"."UserId", "s"."Id0", "s"."Name"
+      FROM (
+          SELECT "u"."Id", "u"."Email", "u"."Preferences", "u"."Provider", "u"."TechnicalUser"
+          FROM "Users" AS "u"
+          WHERE "u"."Email" = @email
+          LIMIT 1
+      ) AS "u1"
+      LEFT JOIN (
+          SELECT "u0"."Id", "u0"."RightId", "u0"."UserId", "r"."Id" AS "Id0", "r"."Name"
+          FROM "UserRights" AS "u0"
+          INNER JOIN "Rights" AS "r" ON "u0"."RightId" = "r"."Id"
+      ) AS "s" ON "u1"."Id" = "s"."UserId"
+      ORDER BY "u1"."Id", "s"."Id"
+info: Microsoft.AspNetCore.Http.HttpResults.ValidationProblem[1]
+      Setting HTTP status code 400.
+info: Microsoft.AspNetCore.Http.HttpResults.ValidationProblem[3]
+      Writing value of type 'HttpValidationProblemDetails' as Json.
+info: Microsoft.AspNetCore.Routing.EndpointMiddleware[1]
+      Executed endpoint 'HTTP: POST /teams/'
+info: Microsoft.AspNetCore.Hosting.Diagnostics[2]
+      Request finished HTTP/1.1 POST http://127.0.0.1:5080/teams - 400 - application/problem+json 1.4656ms
+info: Microsoft.AspNetCore.Hosting.Diagnostics[1]
+      Request starting HTTP/1.1 POST http://127.0.0.1:5080/teams - application/json;+charset=utf-8 -
+info: Microsoft.AspNetCore.Routing.EndpointMiddleware[0]
+      Executing endpoint 'HTTP: POST /teams/'
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (0ms) [Parameters=[@email='?' (Size = 32)], CommandType='Text', CommandTimeout='30']
+      SELECT "u1"."Id", "u1"."Email", "u1"."Preferences", "u1"."Provider", "u1"."TechnicalUser", "s"."Id", "s"."RightId", "s"."UserId", "s"."Id0", "s"."Name"
+      FROM (
+          SELECT "u"."Id", "u"."Email", "u"."Preferences", "u"."Provider", "u"."TechnicalUser"
+          FROM "Users" AS "u"
+          WHERE "u"."Email" = @email
+          LIMIT 1
+      ) AS "u1"
+      LEFT JOIN (
+          SELECT "u0"."Id", "u0"."RightId", "u0"."UserId", "r"."Id" AS "Id0", "r"."Name"
+          FROM "UserRights" AS "u0"
+          INNER JOIN "Rights" AS "r" ON "u0"."RightId" = "r"."Id"
+      ) AS "s" ON "u1"."Id" = "s"."UserId"
+      ORDER BY "u1"."Id", "s"."Id"
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (0ms) [Parameters=[@p0='?' (DbType = Guid), @p1='?', @p2='?' (Size = 37)], CommandType='Text', CommandTimeout='30']
+      INSERT INTO "Teams" ("Id", "Description", "Name")
+      VALUES (@p0, @p1, @p2);
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (0ms) [Parameters=[@p0='?' (DbType = Guid), @p1='?' (DbType = Boolean), @p2='?' (DbType = Guid), @p3='?' (Size = 32)], CommandType='Text', CommandTimeout='30']
+      INSERT INTO "TeamMembers" ("Id", "IsOwner", "TeamId", "UserEmail")
+      VALUES (@p0, @p1, @p2, @p3);
+info: Microsoft.AspNetCore.Http.Result.CreatedResult[1]
+      Setting HTTP status code 201.
+info: Microsoft.AspNetCore.Http.Result.CreatedResult[3]
+      Writing value of type 'TeamDto' as Json.
+info: Microsoft.AspNetCore.Routing.EndpointMiddleware[1]
+      Executed endpoint 'HTTP: POST /teams/'
+info: Microsoft.AspNetCore.Hosting.Diagnostics[2]
+      Request finished HTTP/1.1 POST http://127.0.0.1:5080/teams - 201 - application/json;+charset=utf-8 5.1121ms
+info: Microsoft.AspNetCore.Hosting.Diagnostics[1]
+      Request starting HTTP/1.1 PUT http://127.0.0.1:5080/teams/6b2cb352-01d1-418c-bb61-7944147fe150 - application/json;+charset=utf-8 -
+info: Microsoft.AspNetCore.Routing.EndpointMiddleware[0]
+      Executing endpoint 'HTTP: PUT /teams/{id}'
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (0ms) [Parameters=[@id='?' (DbType = Guid)], CommandType='Text', CommandTimeout='30']
+      SELECT "t1"."Id", "t1"."Description", "t1"."Name", "t0"."Id", "t0"."IsOwner", "t0"."TeamId", "t0"."UserEmail"
+      FROM (
+          SELECT "t"."Id", "t"."Description", "t"."Name"
+          FROM "Teams" AS "t"
+          WHERE "t"."Id" = @id
+          LIMIT 1
+      ) AS "t1"
+      LEFT JOIN "TeamMembers" AS "t0" ON "t1"."Id" = "t0"."TeamId"
+      ORDER BY "t1"."Id"
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (0ms) [Parameters=[@email='?' (Size = 32)], CommandType='Text', CommandTimeout='30']
+      SELECT "u1"."Id", "u1"."Email", "u1"."Preferences", "u1"."Provider", "u1"."TechnicalUser", "s"."Id", "s"."RightId", "s"."UserId", "s"."Id0", "s"."Name"
+      FROM (
+          SELECT "u"."Id", "u"."Email", "u"."Preferences", "u"."Provider", "u"."TechnicalUser"
+          FROM "Users" AS "u"
+          WHERE "u"."Email" = @email
+          LIMIT 1
+      ) AS "u1"
+      LEFT JOIN (
+          SELECT "u0"."Id", "u0"."RightId", "u0"."UserId", "r"."Id" AS "Id0", "r"."Name"
+          FROM "UserRights" AS "u0"
+          INNER JOIN "Rights" AS "r" ON "u0"."RightId" = "r"."Id"
+      ) AS "s" ON "u1"."Id" = "s"."UserId"
+      ORDER BY "u1"."Id", "s"."Id"
+info: Microsoft.AspNetCore.Http.HttpResults.ValidationProblem[1]
+      Setting HTTP status code 400.
+info: Microsoft.AspNetCore.Http.HttpResults.ValidationProblem[3]
+      Writing value of type 'HttpValidationProblemDetails' as Json.
+info: Microsoft.AspNetCore.Routing.EndpointMiddleware[1]
+      Executed endpoint 'HTTP: PUT /teams/{id}'
+info: Microsoft.AspNetCore.Hosting.Diagnostics[2]
+      Request finished HTTP/1.1 PUT http://127.0.0.1:5080/teams/6b2cb352-01d1-418c-bb61-7944147fe150 - 400 - application/problem+json 1.5420ms
+info: Microsoft.AspNetCore.Hosting.Diagnostics[1]
+      Request starting HTTP/1.1 POST http://127.0.0.1:5080/teams - application/json;+charset=utf-8 -
+info: Microsoft.AspNetCore.Routing.EndpointMiddleware[0]
+      Executing endpoint 'HTTP: POST /teams/'
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (0ms) [Parameters=[@email='?' (Size = 18)], CommandType='Text', CommandTimeout='30']
+      SELECT "u1"."Id", "u1"."Email", "u1"."Preferences", "u1"."Provider", "u1"."TechnicalUser", "s"."Id", "s"."RightId", "s"."UserId", "s"."Id0", "s"."Name"
+      FROM (
+          SELECT "u"."Id", "u"."Email", "u"."Preferences", "u"."Provider", "u"."TechnicalUser"
+          FROM "Users" AS "u"
+          WHERE "u"."Email" = @email
+          LIMIT 1
+      ) AS "u1"
+      LEFT JOIN (
+          SELECT "u0"."Id", "u0"."RightId", "u0"."UserId", "r"."Id" AS "Id0", "r"."Name"
+          FROM "UserRights" AS "u0"
+          INNER JOIN "Rights" AS "r" ON "u0"."RightId" = "r"."Id"
+      ) AS "s" ON "u1"."Id" = "s"."UserId"
+      ORDER BY "u1"."Id", "s"."Id"
+info: Microsoft.AspNetCore.Http.HttpResults.ValidationProblem[1]
+      Setting HTTP status code 400.
+info: Microsoft.AspNetCore.Http.HttpResults.ValidationProblem[3]
+      Writing value of type 'HttpValidationProblemDetails' as Json.
+info: Microsoft.AspNetCore.Routing.EndpointMiddleware[1]
+      Executed endpoint 'HTTP: POST /teams/'
+info: Microsoft.AspNetCore.Hosting.Diagnostics[2]
+      Request finished HTTP/1.1 POST http://127.0.0.1:5080/teams - 400 - application/problem+json 1.0274ms
+info: Microsoft.AspNetCore.Hosting.Diagnostics[1]
+      Request starting HTTP/1.1 POST http://127.0.0.1:5080/teams - application/json;+charset=utf-8 -
+info: Microsoft.AspNetCore.Routing.EndpointMiddleware[0]
+      Executing endpoint 'HTTP: POST /teams/'
+info: Microsoft.AspNetCore.Http.HttpResults.ValidationProblem[1]
+      Setting HTTP status code 400.
+info: Microsoft.AspNetCore.Http.HttpResults.ValidationProblem[3]
+      Writing value of type 'HttpValidationProblemDetails' as Json.
+info: Microsoft.AspNetCore.Routing.EndpointMiddleware[1]
+      Executed endpoint 'HTTP: POST /teams/'
+info: Microsoft.AspNetCore.Hosting.Diagnostics[2]
+      Request finished HTTP/1.1 POST http://127.0.0.1:5080/teams - 400 - application/problem+json 0.4063ms
+info: Microsoft.AspNetCore.Hosting.Diagnostics[1]
+      Request starting HTTP/1.1 POST http://127.0.0.1:5080/teams - application/json;+charset=utf-8 -
+info: Microsoft.AspNetCore.Routing.EndpointMiddleware[0]
+      Executing endpoint 'HTTP: POST /teams/'
+info: Microsoft.AspNetCore.Http.HttpResults.ValidationProblem[1]
+      Setting HTTP status code 400.
+info: Microsoft.AspNetCore.Http.HttpResults.ValidationProblem[3]
+      Writing value of type 'HttpValidationProblemDetails' as Json.
+info: Microsoft.AspNetCore.Routing.EndpointMiddleware[1]
+      Executed endpoint 'HTTP: POST /teams/'
+info: Microsoft.AspNetCore.Hosting.Diagnostics[2]
+      Request finished HTTP/1.1 POST http://127.0.0.1:5080/teams - 400 - application/problem+json 0.3842ms
+info: Microsoft.AspNetCore.Hosting.Diagnostics[1]
+      Request starting HTTP/1.1 POST http://127.0.0.1:5080/teams - application/json;+charset=utf-8 -
+info: Microsoft.AspNetCore.Routing.EndpointMiddleware[0]
+      Executing endpoint 'HTTP: POST /teams/'
+info: Microsoft.AspNetCore.Http.HttpResults.ValidationProblem[1]
+      Setting HTTP status code 400.
+info: Microsoft.AspNetCore.Http.HttpResults.ValidationProblem[3]
+      Writing value of type 'HttpValidationProblemDetails' as Json.
+info: Microsoft.AspNetCore.Routing.EndpointMiddleware[1]
+      Executed endpoint 'HTTP: POST /teams/'
+info: Microsoft.AspNetCore.Hosting.Diagnostics[2]
+      Request finished HTTP/1.1 POST http://127.0.0.1:5080/teams - 400 - application/problem+json 0.3553ms
+info: Microsoft.AspNetCore.Hosting.Diagnostics[1]
+      Request starting HTTP/1.1 POST http://127.0.0.1:5080/teams - application/json;+charset=utf-8 -
+info: Microsoft.AspNetCore.Routing.EndpointMiddleware[0]
+      Executing endpoint 'HTTP: POST /teams/'
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (4ms) [Parameters=[@p0='?' (DbType = Guid), @p1='?', @p2='?' (Size = 37)], CommandType='Text', CommandTimeout='30']
+      INSERT INTO "Teams" ("Id", "Description", "Name")
+      VALUES (@p0, @p1, @p2);
+info: Microsoft.AspNetCore.Http.Result.CreatedResult[1]
+      Setting HTTP status code 201.
+info: Microsoft.AspNetCore.Http.Result.CreatedResult[3]
+      Writing value of type 'TeamDto' as Json.
+info: Microsoft.AspNetCore.Routing.EndpointMiddleware[1]
+      Executed endpoint 'HTTP: POST /teams/'
+info: Microsoft.AspNetCore.Hosting.Diagnostics[2]
+      Request finished HTTP/1.1 POST http://127.0.0.1:5080/teams - 201 - application/json;+charset=utf-8 5.2806ms
+info: Microsoft.AspNetCore.Hosting.Diagnostics[1]
+      Request starting HTTP/1.1 POST http://127.0.0.1:5080/teams - application/json;+charset=utf-8 -
+info: Microsoft.AspNetCore.Routing.EndpointMiddleware[0]
+      Executing endpoint 'HTTP: POST /teams/'
+fail: Microsoft.EntityFrameworkCore.Database.Command[20102]
+      Failed executing DbCommand (0ms) [Parameters=[@p0='?' (DbType = Guid), @p1='?', @p2='?' (Size = 37)], CommandType='Text', CommandTimeout='30']
+      INSERT INTO "Teams" ("Id", "Description", "Name")
+      VALUES (@p0, @p1, @p2);
+fail: Microsoft.EntityFrameworkCore.Update[10000]
+      An exception occurred in the database while saving changes for context type 'SolidOps.UM.Infrastructure.UMDbContext'.
+      Microsoft.EntityFrameworkCore.DbUpdateException: An error occurred while saving the entity changes. See the inner exception for details.
+       ---> Microsoft.Data.Sqlite.SqliteException (0x80004005): SQLite Error 19: 'UNIQUE constraint failed: Teams.Name'.
+         at Microsoft.Data.Sqlite.SqliteException.ThrowExceptionForRC(Int32 rc, sqlite3 db)
+         at Microsoft.Data.Sqlite.SqliteDataReader.NextResult()
+         at Microsoft.Data.Sqlite.SqliteCommand.ExecuteReader(CommandBehavior behavior)
+         at Microsoft.Data.Sqlite.SqliteCommand.ExecuteReaderAsync(CommandBehavior behavior, CancellationToken cancellationToken)
+         at Microsoft.Data.Sqlite.SqliteCommand.ExecuteDbDataReaderAsync(CommandBehavior behavior, CancellationToken cancellationToken)
+         at Microsoft.EntityFrameworkCore.Storage.RelationalCommand.ExecuteReaderAsync(RelationalCommandParameterObject parameterObject, CancellationToken cancellationToken)
+         at Microsoft.EntityFrameworkCore.Storage.RelationalCommand.ExecuteReaderAsync(RelationalCommandParameterObject parameterObject, CancellationToken cancellationToken)
+         at Microsoft.EntityFrameworkCore.Update.ReaderModificationCommandBatch.ExecuteAsync(IRelationalConnection connection, CancellationToken cancellationToken)
+         --- End of inner exception stack trace ---
+         at Microsoft.EntityFrameworkCore.Update.ReaderModificationCommandBatch.ExecuteAsync(IRelationalConnection connection, CancellationToken cancellationToken)
+         at Microsoft.EntityFrameworkCore.Update.Internal.BatchExecutor.ExecuteAsync(IEnumerable`1 commandBatches, IRelationalConnection connection, CancellationToken cancellationToken)
+         at Microsoft.EntityFrameworkCore.Update.Internal.BatchExecutor.ExecuteAsync(IEnumerable`1 commandBatches, IRelationalConnection connection, CancellationToken cancellationToken)
+         at Microsoft.EntityFrameworkCore.Update.Internal.BatchExecutor.ExecuteAsync(IEnumerable`1 commandBatches, IRelationalConnection connection, CancellationToken cancellationToken)
+         at Microsoft.EntityFrameworkCore.Storage.RelationalDatabase.SaveChangesAsync(IList`1 entries, CancellationToken cancellationToken)
+         at Microsoft.EntityFrameworkCore.ChangeTracking.Internal.StateManager.SaveChangesAsync(IList`1 entriesToSave, CancellationToken cancellationToken)
+         at Microsoft.EntityFrameworkCore.ChangeTracking.Internal.StateManager.SaveChangesAsync(StateManager stateManager, Boolean acceptAllChangesOnSuccess, CancellationToken cancellationToken)
+         at Microsoft.EntityFrameworkCore.DbContext.SaveChangesAsync(Boolean acceptAllChangesOnSuccess, CancellationToken cancellationToken)
+      Microsoft.EntityFrameworkCore.DbUpdateException: An error occurred while saving the entity changes. See the inner exception for details.
+       ---> Microsoft.Data.Sqlite.SqliteException (0x80004005): SQLite Error 19: 'UNIQUE constraint failed: Teams.Name'.
+         at Microsoft.Data.Sqlite.SqliteException.ThrowExceptionForRC(Int32 rc, sqlite3 db)
+         at Microsoft.Data.Sqlite.SqliteDataReader.NextResult()
+         at Microsoft.Data.Sqlite.SqliteCommand.ExecuteReader(CommandBehavior behavior)
+         at Microsoft.Data.Sqlite.SqliteCommand.ExecuteReaderAsync(CommandBehavior behavior, CancellationToken cancellationToken)
+         at Microsoft.Data.Sqlite.SqliteCommand.ExecuteDbDataReaderAsync(CommandBehavior behavior, CancellationToken cancellationToken)
+         at Microsoft.EntityFrameworkCore.Storage.RelationalCommand.ExecuteReaderAsync(RelationalCommandParameterObject parameterObject, CancellationToken cancellationToken)
+         at Microsoft.EntityFrameworkCore.Storage.RelationalCommand.ExecuteReaderAsync(RelationalCommandParameterObject parameterObject, CancellationToken cancellationToken)
+         at Microsoft.EntityFrameworkCore.Update.ReaderModificationCommandBatch.ExecuteAsync(IRelationalConnection connection, CancellationToken cancellationToken)
+         --- End of inner exception stack trace ---
+         at Microsoft.EntityFrameworkCore.Update.ReaderModificationCommandBatch.ExecuteAsync(IRelationalConnection connection, CancellationToken cancellationToken)
+         at Microsoft.EntityFrameworkCore.Update.Internal.BatchExecutor.ExecuteAsync(IEnumerable`1 commandBatches, IRelationalConnection connection, CancellationToken cancellationToken)
+         at Microsoft.EntityFrameworkCore.Update.Internal.BatchExecutor.ExecuteAsync(IEnumerable`1 commandBatches, IRelationalConnection connection, CancellationToken cancellationToken)
+         at Microsoft.EntityFrameworkCore.Update.Internal.BatchExecutor.ExecuteAsync(IEnumerable`1 commandBatches, IRelationalConnection connection, CancellationToken cancellationToken)
+         at Microsoft.EntityFrameworkCore.Storage.RelationalDatabase.SaveChangesAsync(IList`1 entries, CancellationToken cancellationToken)
+         at Microsoft.EntityFrameworkCore.ChangeTracking.Internal.StateManager.SaveChangesAsync(IList`1 entriesToSave, CancellationToken cancellationToken)
+         at Microsoft.EntityFrameworkCore.ChangeTracking.Internal.StateManager.SaveChangesAsync(StateManager stateManager, Boolean acceptAllChangesOnSuccess, CancellationToken cancellationToken)
+         at Microsoft.EntityFrameworkCore.DbContext.SaveChangesAsync(Boolean acceptAllChangesOnSuccess, CancellationToken cancellationToken)
+info: Microsoft.AspNetCore.Http.HttpResults.ProblemHttpResult[1]
+      Setting HTTP status code 409.
+info: Microsoft.AspNetCore.Http.HttpResults.ProblemHttpResult[3]
+      Writing value of type 'ProblemDetails' as Json.
+info: Microsoft.AspNetCore.Routing.EndpointMiddleware[1]
+      Executed endpoint 'HTTP: POST /teams/'
+info: Microsoft.AspNetCore.Hosting.Diagnostics[2]
+      Request finished HTTP/1.1 POST http://127.0.0.1:5080/teams - 409 - application/problem+json 11.2172ms
+info: Microsoft.AspNetCore.Hosting.Diagnostics[1]
+      Request starting HTTP/1.1 POST http://127.0.0.1:5080/users - application/json;+charset=utf-8 -
+info: Microsoft.AspNetCore.Routing.EndpointMiddleware[0]
+      Executing endpoint 'HTTP: POST /users/'
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (0ms) [Parameters=[@name='?' (Size = 32)], CommandType='Text', CommandTimeout='30']
+      SELECT "l"."Id", "l"."HashedPassword", "l"."Name"
+      FROM "LocalUsers" AS "l"
+      WHERE "l"."Name" = @name
+      LIMIT 1
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (0ms) [Parameters=[@p0='?' (DbType = Guid), @p1='?', @p2='?' (Size = 32)], CommandType='Text', CommandTimeout='30']
+      INSERT INTO "LocalUsers" ("Id", "HashedPassword", "Name")
+      VALUES (@p0, @p1, @p2);
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (0ms) [Parameters=[@p0='?' (DbType = Guid), @p1='?' (Size = 32), @p2='?', @p3='?' (Size = 5), @p4='?' (DbType = Boolean)], CommandType='Text', CommandTimeout='30']
+      INSERT INTO "Users" ("Id", "Email", "Preferences", "Provider", "TechnicalUser")
+      VALUES (@p0, @p1, @p2, @p3, @p4);
+info: Microsoft.AspNetCore.Http.Result.CreatedResult[1]
+      Setting HTTP status code 201.
+info: Microsoft.AspNetCore.Http.Result.CreatedResult[3]
+      Writing value of type 'UserDto' as Json.
+info: Microsoft.AspNetCore.Routing.EndpointMiddleware[1]
+      Executed endpoint 'HTTP: POST /users/'
+info: Microsoft.AspNetCore.Hosting.Diagnostics[2]
+      Request finished HTTP/1.1 POST http://127.0.0.1:5080/users - 201 - application/json;+charset=utf-8 5.9789ms
+info: Microsoft.AspNetCore.Hosting.Diagnostics[1]
+      Request starting HTTP/1.1 POST http://127.0.0.1:5080/teams - application/json;+charset=utf-8 -
+info: Microsoft.AspNetCore.Routing.EndpointMiddleware[0]
+      Executing endpoint 'HTTP: POST /teams/'
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (0ms) [Parameters=[@email='?' (Size = 32)], CommandType='Text', CommandTimeout='30']
+      SELECT "u1"."Id", "u1"."Email", "u1"."Preferences", "u1"."Provider", "u1"."TechnicalUser", "s"."Id", "s"."RightId", "s"."UserId", "s"."Id0", "s"."Name"
+      FROM (
+          SELECT "u"."Id", "u"."Email", "u"."Preferences", "u"."Provider", "u"."TechnicalUser"
+          FROM "Users" AS "u"
+          WHERE "u"."Email" = @email
+          LIMIT 1
+      ) AS "u1"
+      LEFT JOIN (
+          SELECT "u0"."Id", "u0"."RightId", "u0"."UserId", "r"."Id" AS "Id0", "r"."Name"
+          FROM "UserRights" AS "u0"
+          INNER JOIN "Rights" AS "r" ON "u0"."RightId" = "r"."Id"
+      ) AS "s" ON "u1"."Id" = "s"."UserId"
+      ORDER BY "u1"."Id", "s"."Id"
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (0ms) [Parameters=[@p0='?' (DbType = Guid), @p1='?', @p2='?' (Size = 37)], CommandType='Text', CommandTimeout='30']
+      INSERT INTO "Teams" ("Id", "Description", "Name")
+      VALUES (@p0, @p1, @p2);
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (0ms) [Parameters=[@p0='?' (DbType = Guid), @p1='?' (DbType = Boolean), @p2='?' (DbType = Guid), @p3='?' (Size = 32)], CommandType='Text', CommandTimeout='30']
+      INSERT INTO "TeamMembers" ("Id", "IsOwner", "TeamId", "UserEmail")
+      VALUES (@p0, @p1, @p2, @p3);
+info: Microsoft.AspNetCore.Http.Result.CreatedResult[1]
+      Setting HTTP status code 201.
+info: Microsoft.AspNetCore.Http.Result.CreatedResult[3]
+      Writing value of type 'TeamDto' as Json.
+info: Microsoft.AspNetCore.Routing.EndpointMiddleware[1]
+      Executed endpoint 'HTTP: POST /teams/'
+info: Microsoft.AspNetCore.Hosting.Diagnostics[2]
+      Request finished HTTP/1.1 POST http://127.0.0.1:5080/teams - 201 - application/json;+charset=utf-8 6.1652ms
+info: Microsoft.AspNetCore.Hosting.Diagnostics[1]
+      Request starting HTTP/1.1 DELETE http://127.0.0.1:5080/teams/7db7b431-36a6-41d9-8195-0faa5d7d0eca - - -
+info: Microsoft.AspNetCore.Routing.EndpointMiddleware[0]
+      Executing endpoint 'HTTP: DELETE /teams/{id}'
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (0ms) [Parameters=[@id='?' (DbType = Guid)], CommandType='Text', CommandTimeout='30']
+      SELECT "t1"."Id", "t1"."Description", "t1"."Name", "t0"."Id", "t0"."IsOwner", "t0"."TeamId", "t0"."UserEmail"
+      FROM (
+          SELECT "t"."Id", "t"."Description", "t"."Name"
+          FROM "Teams" AS "t"
+          WHERE "t"."Id" = @id
+          LIMIT 1
+      ) AS "t1"
+      LEFT JOIN "TeamMembers" AS "t0" ON "t1"."Id" = "t0"."TeamId"
+      ORDER BY "t1"."Id"
+info: Microsoft.AspNetCore.Http.HttpResults.ProblemHttpResult[1]
+      Setting HTTP status code 409.
+info: Microsoft.AspNetCore.Http.HttpResults.ProblemHttpResult[3]
+      Writing value of type 'ProblemDetails' as Json.
+info: Microsoft.AspNetCore.Routing.EndpointMiddleware[1]
+      Executed endpoint 'HTTP: DELETE /teams/{id}'
+info: Microsoft.AspNetCore.Hosting.Diagnostics[2]
+      Request finished HTTP/1.1 DELETE http://127.0.0.1:5080/teams/7db7b431-36a6-41d9-8195-0faa5d7d0eca - 409 - application/problem+json 1.3324ms
+info: Microsoft.AspNetCore.Hosting.Diagnostics[1]
+      Request starting HTTP/1.1 GET http://127.0.0.1:5080/teams/7db7b431-36a6-41d9-8195-0faa5d7d0eca - - -
+info: Microsoft.AspNetCore.Routing.EndpointMiddleware[0]
+      Executing endpoint 'HTTP: GET /teams/{id}'
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (0ms) [Parameters=[@id='?' (DbType = Guid)], CommandType='Text', CommandTimeout='30']
+      SELECT "t1"."Id", "t1"."Description", "t1"."Name", "t0"."Id", "t0"."IsOwner", "t0"."TeamId", "t0"."UserEmail"
+      FROM (
+          SELECT "t"."Id", "t"."Description", "t"."Name"
+          FROM "Teams" AS "t"
+          WHERE "t"."Id" = @id
+          LIMIT 1
+      ) AS "t1"
+      LEFT JOIN "TeamMembers" AS "t0" ON "t1"."Id" = "t0"."TeamId"
+      ORDER BY "t1"."Id"
+info: Microsoft.AspNetCore.Http.Result.OkObjectResult[1]
+      Setting HTTP status code 200.
+info: Microsoft.AspNetCore.Http.Result.OkObjectResult[3]
+      Writing value of type 'TeamDto' as Json.
+info: Microsoft.AspNetCore.Routing.EndpointMiddleware[1]
+      Executed endpoint 'HTTP: GET /teams/{id}'
+info: Microsoft.AspNetCore.Hosting.Diagnostics[2]
+      Request finished HTTP/1.1 GET http://127.0.0.1:5080/teams/7db7b431-36a6-41d9-8195-0faa5d7d0eca - 200 - application/json;+charset=utf-8 0.9974ms
+info: Microsoft.AspNetCore.Hosting.Diagnostics[1]
+      Request starting HTTP/1.1 GET http://127.0.0.1:5080/teams/8bd80c90-143e-4ec5-9f19-9c62d7fd26cc - - -
+info: Microsoft.AspNetCore.Routing.EndpointMiddleware[0]
+      Executing endpoint 'HTTP: GET /teams/{id}'
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (0ms) [Parameters=[@id='?' (DbType = Guid)], CommandType='Text', CommandTimeout='30']
+      SELECT "t1"."Id", "t1"."Description", "t1"."Name", "t0"."Id", "t0"."IsOwner", "t0"."TeamId", "t0"."UserEmail"
+      FROM (
+          SELECT "t"."Id", "t"."Description", "t"."Name"
+          FROM "Teams" AS "t"
+          WHERE "t"."Id" = @id
+          LIMIT 1
+      ) AS "t1"
+      LEFT JOIN "TeamMembers" AS "t0" ON "t1"."Id" = "t0"."TeamId"
+      ORDER BY "t1"."Id"
+info: Microsoft.AspNetCore.Http.HttpResults.ProblemHttpResult[1]
+      Setting HTTP status code 404.
+info: Microsoft.AspNetCore.Http.HttpResults.ProblemHttpResult[3]
+      Writing value of type 'ProblemDetails' as Json.
+info: Microsoft.AspNetCore.Routing.EndpointMiddleware[1]
+      Executed endpoint 'HTTP: GET /teams/{id}'
+info: Microsoft.AspNetCore.Hosting.Diagnostics[2]
+      Request finished HTTP/1.1 GET http://127.0.0.1:5080/teams/8bd80c90-143e-4ec5-9f19-9c62d7fd26cc - 404 - application/problem+json 0.8029ms
+info: Microsoft.AspNetCore.Hosting.Diagnostics[1]
+      Request starting HTTP/1.1 PUT http://127.0.0.1:5080/teams/de268e47-b8d2-40bb-9b3d-71ac009cda2f - application/json;+charset=utf-8 -
+info: Microsoft.AspNetCore.Routing.EndpointMiddleware[0]
+      Executing endpoint 'HTTP: PUT /teams/{id}'
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (0ms) [Parameters=[@id='?' (DbType = Guid)], CommandType='Text', CommandTimeout='30']
+      SELECT "t1"."Id", "t1"."Description", "t1"."Name", "t0"."Id", "t0"."IsOwner", "t0"."TeamId", "t0"."UserEmail"
+      FROM (
+          SELECT "t"."Id", "t"."Description", "t"."Name"
+          FROM "Teams" AS "t"
+          WHERE "t"."Id" = @id
+          LIMIT 1
+      ) AS "t1"
+      LEFT JOIN "TeamMembers" AS "t0" ON "t1"."Id" = "t0"."TeamId"
+      ORDER BY "t1"."Id"
+info: Microsoft.AspNetCore.Http.HttpResults.ProblemHttpResult[1]
+      Setting HTTP status code 404.
+info: Microsoft.AspNetCore.Http.HttpResults.ProblemHttpResult[3]
+      Writing value of type 'ProblemDetails' as Json.
+info: Microsoft.AspNetCore.Routing.EndpointMiddleware[1]
+      Executed endpoint 'HTTP: PUT /teams/{id}'
+info: Microsoft.AspNetCore.Hosting.Diagnostics[2]
+      Request finished HTTP/1.1 PUT http://127.0.0.1:5080/teams/de268e47-b8d2-40bb-9b3d-71ac009cda2f - 404 - application/problem+json 0.9419ms
+info: Microsoft.AspNetCore.Hosting.Diagnostics[1]
+      Request starting HTTP/1.1 DELETE http://127.0.0.1:5080/teams/375d13ac-1cc5-4a86-9171-4eaa2e55d294 - - -
+info: Microsoft.AspNetCore.Routing.EndpointMiddleware[0]
+      Executing endpoint 'HTTP: DELETE /teams/{id}'
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (0ms) [Parameters=[@id='?' (DbType = Guid)], CommandType='Text', CommandTimeout='30']
+      SELECT "t1"."Id", "t1"."Description", "t1"."Name", "t0"."Id", "t0"."IsOwner", "t0"."TeamId", "t0"."UserEmail"
+      FROM (
+          SELECT "t"."Id", "t"."Description", "t"."Name"
+          FROM "Teams" AS "t"
+          WHERE "t"."Id" = @id
+          LIMIT 1
+      ) AS "t1"
+      LEFT JOIN "TeamMembers" AS "t0" ON "t1"."Id" = "t0"."TeamId"
+      ORDER BY "t1"."Id"
+info: Microsoft.AspNetCore.Http.HttpResults.ProblemHttpResult[1]
+      Setting HTTP status code 404.
+info: Microsoft.AspNetCore.Http.HttpResults.ProblemHttpResult[3]
+      Writing value of type 'ProblemDetails' as Json.
+info: Microsoft.AspNetCore.Routing.EndpointMiddleware[1]
+      Executed endpoint 'HTTP: DELETE /teams/{id}'
+info: Microsoft.AspNetCore.Hosting.Diagnostics[2]
+      Request finished HTTP/1.1 DELETE http://127.0.0.1:5080/teams/375d13ac-1cc5-4a86-9171-4eaa2e55d294 - 404 - application/problem+json 0.7511ms
+info: Microsoft.AspNetCore.Hosting.Diagnostics[1]
+      Request starting HTTP/1.1 GET http://127.0.0.1:5080/teams - - -
+info: Microsoft.AspNetCore.Authorization.DefaultAuthorizationService[2]
+      Authorization failed. These requirements were not met:
+      DenyAnonymousAuthorizationRequirement: Requires an authenticated user.
+info: Microsoft.AspNetCore.Authentication.JwtBearer.JwtBearerHandler[12]
+      AuthenticationScheme: Bearer was challenged.
+info: Microsoft.AspNetCore.Hosting.Diagnostics[2]
+      Request finished HTTP/1.1 GET http://127.0.0.1:5080/teams - 401 0 - 2.2975ms
+info: Microsoft.AspNetCore.Hosting.Diagnostics[1]
+      Request starting HTTP/1.1 POST http://127.0.0.1:5080/teams - application/json;+charset=utf-8 -
+info: Microsoft.AspNetCore.Authorization.DefaultAuthorizationService[2]
+      Authorization failed. These requirements were not met:
+      DenyAnonymousAuthorizationRequirement: Requires an authenticated user.
+      Handler assertion should evaluate to true.
+info: Microsoft.AspNetCore.Authentication.JwtBearer.JwtBearerHandler[12]
+      AuthenticationScheme: Bearer was challenged.
+info: Microsoft.AspNetCore.Hosting.Diagnostics[2]
+      Request finished HTTP/1.1 POST http://127.0.0.1:5080/teams - 401 0 - 0.2676ms
+info: Microsoft.AspNetCore.Hosting.Diagnostics[1]
+      Request starting HTTP/1.1 POST http://127.0.0.1:5080/teams - application/json;+charset=utf-8 -
+info: Microsoft.AspNetCore.Routing.EndpointMiddleware[0]
+      Executing endpoint 'HTTP: POST /teams/'
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (4ms) [Parameters=[@p0='?' (DbType = Guid), @p1='?', @p2='?' (Size = 37)], CommandType='Text', CommandTimeout='30']
+      INSERT INTO "Teams" ("Id", "Description", "Name")
+      VALUES (@p0, @p1, @p2);
+info: Microsoft.AspNetCore.Http.Result.CreatedResult[1]
+      Setting HTTP status code 201.
+info: Microsoft.AspNetCore.Http.Result.CreatedResult[3]
+      Writing value of type 'TeamDto' as Json.
+info: Microsoft.AspNetCore.Routing.EndpointMiddleware[1]
+      Executed endpoint 'HTTP: POST /teams/'
+info: Microsoft.AspNetCore.Hosting.Diagnostics[2]
+      Request finished HTTP/1.1 POST http://127.0.0.1:5080/teams - 201 - application/json;+charset=utf-8 5.8411ms
+info: Microsoft.AspNetCore.Hosting.Diagnostics[1]
+      Request starting HTTP/1.1 GET http://127.0.0.1:5080/teams - - -
+info: Microsoft.AspNetCore.Routing.EndpointMiddleware[0]
+      Executing endpoint 'HTTP: GET /teams/'
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (0ms) [Parameters=[], CommandType='Text', CommandTimeout='30']
+      SELECT COUNT(*)
+      FROM "Teams" AS "t"
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (0ms) [Parameters=[@p1='?' (DbType = Int32), @p='?' (DbType = Int32)], CommandType='Text', CommandTimeout='30']
+      SELECT "t"."Id", "t"."Description", "t"."Name"
+      FROM "Teams" AS "t"
+      ORDER BY "t"."Id"
+      LIMIT @p1 OFFSET @p
+info: Microsoft.AspNetCore.Http.Result.OkObjectResult[1]
+      Setting HTTP status code 200.
+info: Microsoft.AspNetCore.Http.Result.OkObjectResult[3]
+      Writing value of type 'Page`1' as Json.
+info: Microsoft.AspNetCore.Routing.EndpointMiddleware[1]
+      Executed endpoint 'HTTP: GET /teams/'
+info: Microsoft.AspNetCore.Hosting.Diagnostics[2]
+      Request finished HTTP/1.1 GET http://127.0.0.1:5080/teams - 200 - application/json;+charset=utf-8 1.5954ms
+info: Microsoft.AspNetCore.Hosting.Diagnostics[1]
+      Request starting HTTP/1.1 GET http://127.0.0.1:5080/teams/82c7bcb1-49bc-4060-a719-c1787a6f9dcd - - -
+info: Microsoft.AspNetCore.Routing.EndpointMiddleware[0]
+      Executing endpoint 'HTTP: GET /teams/{id}'
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (0ms) [Parameters=[@id='?' (DbType = Guid)], CommandType='Text', CommandTimeout='30']
+      SELECT "t1"."Id", "t1"."Description", "t1"."Name", "t0"."Id", "t0"."IsOwner", "t0"."TeamId", "t0"."UserEmail"
+      FROM (
+          SELECT "t"."Id", "t"."Description", "t"."Name"
+          FROM "Teams" AS "t"
+          WHERE "t"."Id" = @id
+          LIMIT 1
+      ) AS "t1"
+      LEFT JOIN "TeamMembers" AS "t0" ON "t1"."Id" = "t0"."TeamId"
+      ORDER BY "t1"."Id"
+info: Microsoft.AspNetCore.Http.Result.OkObjectResult[1]
+      Setting HTTP status code 200.
+info: Microsoft.AspNetCore.Http.Result.OkObjectResult[3]
+      Writing value of type 'TeamDto' as Json.
+info: Microsoft.AspNetCore.Routing.EndpointMiddleware[1]
+      Executed endpoint 'HTTP: GET /teams/{id}'
+info: Microsoft.AspNetCore.Hosting.Diagnostics[2]
+      Request finished HTTP/1.1 GET http://127.0.0.1:5080/teams/82c7bcb1-49bc-4060-a719-c1787a6f9dcd - 200 - application/json;+charset=utf-8 1.0543ms
+info: Microsoft.AspNetCore.Hosting.Diagnostics[1]
+      Request starting HTTP/1.1 POST http://127.0.0.1:5080/teams - application/json;+charset=utf-8 -
+info: Microsoft.AspNetCore.Routing.EndpointMiddleware[0]
+      Executing endpoint 'HTTP: POST /teams/'
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (4ms) [Parameters=[@p0='?' (DbType = Guid), @p1='?', @p2='?' (Size = 37)], CommandType='Text', CommandTimeout='30']
+      INSERT INTO "Teams" ("Id", "Description", "Name")
+      VALUES (@p0, @p1, @p2);
+info: Microsoft.AspNetCore.Http.Result.CreatedResult[1]
+      Setting HTTP status code 201.
+info: Microsoft.AspNetCore.Http.Result.CreatedResult[3]
+      Writing value of type 'TeamDto' as Json.
+info: Microsoft.AspNetCore.Routing.EndpointMiddleware[1]
+      Executed endpoint 'HTTP: POST /teams/'
+info: Microsoft.AspNetCore.Hosting.Diagnostics[2]
+      Request finished HTTP/1.1 POST http://127.0.0.1:5080/teams - 201 - application/json;+charset=utf-8 4.7914ms
+info: Microsoft.AspNetCore.Hosting.Diagnostics[1]
+      Request starting HTTP/1.1 POST http://127.0.0.1:5080/teams - application/json;+charset=utf-8 -
+info: Microsoft.AspNetCore.Authorization.DefaultAuthorizationService[2]
+      Authorization failed. These requirements were not met:
+      Handler assertion should evaluate to true.
+info: Microsoft.AspNetCore.Authentication.JwtBearer.JwtBearerHandler[13]
+      AuthenticationScheme: Bearer was forbidden.
+info: Microsoft.AspNetCore.Hosting.Diagnostics[2]
+      Request finished HTTP/1.1 POST http://127.0.0.1:5080/teams - 403 0 - 1.0701ms
+info: Microsoft.AspNetCore.Hosting.Diagnostics[1]
+      Request starting HTTP/1.1 PUT http://127.0.0.1:5080/teams/1eaadf3c-6c11-4670-b049-8900a892b441 - application/json;+charset=utf-8 -
+info: Microsoft.AspNetCore.Authorization.DefaultAuthorizationService[2]
+      Authorization failed. These requirements were not met:
+      Handler assertion should evaluate to true.
+info: Microsoft.AspNetCore.Authentication.JwtBearer.JwtBearerHandler[13]
+      AuthenticationScheme: Bearer was forbidden.
+info: Microsoft.AspNetCore.Hosting.Diagnostics[2]
+      Request finished HTTP/1.1 PUT http://127.0.0.1:5080/teams/1eaadf3c-6c11-4670-b049-8900a892b441 - 403 0 - 0.3697ms
+info: Microsoft.AspNetCore.Hosting.Diagnostics[1]
+      Request starting HTTP/1.1 DELETE http://127.0.0.1:5080/teams/1eaadf3c-6c11-4670-b049-8900a892b441 - - -
+info: Microsoft.AspNetCore.Authorization.DefaultAuthorizationService[2]
+      Authorization failed. These requirements were not met:
+      Handler assertion should evaluate to true.
+info: Microsoft.AspNetCore.Authentication.JwtBearer.JwtBearerHandler[13]
+      AuthenticationScheme: Bearer was forbidden.
+info: Microsoft.AspNetCore.Hosting.Diagnostics[2]
+      Request finished HTTP/1.1 DELETE http://127.0.0.1:5080/teams/1eaadf3c-6c11-4670-b049-8900a892b441 - 403 0 - 0.2062ms
+info: Microsoft.AspNetCore.Hosting.Diagnostics[1]
+      Request starting HTTP/1.1 POST http://127.0.0.1:5080/teams - application/json;+charset=utf-8 -
+info: Microsoft.AspNetCore.Routing.EndpointMiddleware[0]
+      Executing endpoint 'HTTP: POST /teams/'
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (4ms) [Parameters=[@p0='?' (DbType = Guid), @p1='?', @p2='?' (Size = 37)], CommandType='Text', CommandTimeout='30']
+      INSERT INTO "Teams" ("Id", "Description", "Name")
+      VALUES (@p0, @p1, @p2);
+info: Microsoft.AspNetCore.Http.Result.CreatedResult[1]
+      Setting HTTP status code 201.
+info: Microsoft.AspNetCore.Http.Result.CreatedResult[3]
+      Writing value of type 'TeamDto' as Json.
+info: Microsoft.AspNetCore.Routing.EndpointMiddleware[1]
+      Executed endpoint 'HTTP: POST /teams/'
+info: Microsoft.AspNetCore.Hosting.Diagnostics[2]
+      Request finished HTTP/1.1 POST http://127.0.0.1:5080/teams - 201 - application/json;+charset=utf-8 5.0339ms
+info: Microsoft.AspNetCore.Hosting.Diagnostics[1]
+      Request starting HTTP/1.1 POST http://127.0.0.1:5080/users - application/json;+charset=utf-8 -
+info: Microsoft.AspNetCore.Routing.EndpointMiddleware[0]
+      Executing endpoint 'HTTP: POST /users/'
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (0ms) [Parameters=[@name='?' (Size = 32)], CommandType='Text', CommandTimeout='30']
+      SELECT "l"."Id", "l"."HashedPassword", "l"."Name"
+      FROM "LocalUsers" AS "l"
+      WHERE "l"."Name" = @name
+      LIMIT 1
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (0ms) [Parameters=[@p0='?' (DbType = Guid), @p1='?', @p2='?' (Size = 32)], CommandType='Text', CommandTimeout='30']
+      INSERT INTO "LocalUsers" ("Id", "HashedPassword", "Name")
+      VALUES (@p0, @p1, @p2);
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (0ms) [Parameters=[@p0='?' (DbType = Guid), @p1='?' (Size = 32), @p2='?', @p3='?' (Size = 5), @p4='?' (DbType = Boolean)], CommandType='Text', CommandTimeout='30']
+      INSERT INTO "Users" ("Id", "Email", "Preferences", "Provider", "TechnicalUser")
+      VALUES (@p0, @p1, @p2, @p3, @p4);
+info: Microsoft.AspNetCore.Http.Result.CreatedResult[1]
+      Setting HTTP status code 201.
+info: Microsoft.AspNetCore.Http.Result.CreatedResult[3]
+      Writing value of type 'UserDto' as Json.
+info: Microsoft.AspNetCore.Routing.EndpointMiddleware[1]
+      Executed endpoint 'HTTP: POST /users/'
+info: Microsoft.AspNetCore.Hosting.Diagnostics[2]
+      Request finished HTTP/1.1 POST http://127.0.0.1:5080/users - 201 - application/json;+charset=utf-8 5.2754ms
+info: Microsoft.AspNetCore.Hosting.Diagnostics[1]
+      Request starting HTTP/1.1 GET http://127.0.0.1:5080/users?pageSize=200 - - -
+info: Microsoft.AspNetCore.Routing.EndpointMiddleware[0]
+      Executing endpoint 'HTTP: GET /users/'
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (0ms) [Parameters=[], CommandType='Text', CommandTimeout='30']
+      SELECT COUNT(*)
+      FROM "Users" AS "u"
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (0ms) [Parameters=[@p1='?' (DbType = Int32), @p='?' (DbType = Int32)], CommandType='Text', CommandTimeout='30']
+      SELECT "u"."Id", "u"."Email", "u"."Preferences", "u"."Provider", "u"."TechnicalUser"
+      FROM "Users" AS "u"
+      ORDER BY "u"."Id"
+      LIMIT @p1 OFFSET @p
+info: Microsoft.AspNetCore.Http.Result.OkObjectResult[1]
+      Setting HTTP status code 200.
+info: Microsoft.AspNetCore.Http.Result.OkObjectResult[3]
+      Writing value of type 'Page`1' as Json.
+info: Microsoft.AspNetCore.Routing.EndpointMiddleware[1]
+      Executed endpoint 'HTTP: GET /users/'
+info: Microsoft.AspNetCore.Hosting.Diagnostics[2]
+      Request finished HTTP/1.1 GET http://127.0.0.1:5080/users?pageSize=200 - 200 - application/json;+charset=utf-8 8.5161ms
+info: Microsoft.AspNetCore.Hosting.Diagnostics[1]
+      Request starting HTTP/1.1 PUT http://127.0.0.1:5080/users/57b4d0b0-538e-4cf2-8d52-19678691ffe9 - application/json;+charset=utf-8 -
+info: Microsoft.AspNetCore.Routing.EndpointMiddleware[0]
+      Executing endpoint 'HTTP: PUT /users/{id}'
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (0ms) [Parameters=[@id='?' (DbType = Guid)], CommandType='Text', CommandTimeout='30']
+      SELECT "u1"."Id", "u1"."Email", "u1"."Preferences", "u1"."Provider", "u1"."TechnicalUser", "u0"."Id", "u0"."RightId", "u0"."UserId"
+      FROM (
+          SELECT "u"."Id", "u"."Email", "u"."Preferences", "u"."Provider", "u"."TechnicalUser"
+          FROM "Users" AS "u"
+          WHERE "u"."Id" = @id
+          LIMIT 1
+      ) AS "u1"
+      LEFT JOIN "UserRights" AS "u0" ON "u1"."Id" = "u0"."UserId"
+      ORDER BY "u1"."Id"
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (0ms) [Parameters=[@p1='?' (DbType = Guid), @p0='?' (Size = 6)], CommandType='Text', CommandTimeout='30']
+      UPDATE "Users" SET "Provider" = @p0
+      WHERE "Id" = @p1
+      RETURNING 1;
+info: Microsoft.AspNetCore.Http.Result.OkObjectResult[1]
+      Setting HTTP status code 200.
+info: Microsoft.AspNetCore.Http.Result.OkObjectResult[3]
+      Writing value of type 'UserDto' as Json.
+info: Microsoft.AspNetCore.Routing.EndpointMiddleware[1]
+      Executed endpoint 'HTTP: PUT /users/{id}'
+info: Microsoft.AspNetCore.Hosting.Diagnostics[2]
+      Request finished HTTP/1.1 PUT http://127.0.0.1:5080/users/57b4d0b0-538e-4cf2-8d52-19678691ffe9 - 200 - application/json;+charset=utf-8 15.5553ms
+info: Microsoft.AspNetCore.Hosting.Diagnostics[1]
+      Request starting HTTP/1.1 GET http://127.0.0.1:5080/users/57b4d0b0-538e-4cf2-8d52-19678691ffe9 - - -
+info: Microsoft.AspNetCore.Routing.EndpointMiddleware[0]
+      Executing endpoint 'HTTP: GET /users/{id}'
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (0ms) [Parameters=[@id='?' (DbType = Guid)], CommandType='Text', CommandTimeout='30']
+      SELECT "u1"."Id", "u1"."Email", "u1"."Preferences", "u1"."Provider", "u1"."TechnicalUser", "u0"."Id", "u0"."RightId", "u0"."UserId"
+      FROM (
+          SELECT "u"."Id", "u"."Email", "u"."Preferences", "u"."Provider", "u"."TechnicalUser"
+          FROM "Users" AS "u"
+          WHERE "u"."Id" = @id
+          LIMIT 1
+      ) AS "u1"
+      LEFT JOIN "UserRights" AS "u0" ON "u1"."Id" = "u0"."UserId"
+      ORDER BY "u1"."Id"
+info: Microsoft.AspNetCore.Http.Result.OkObjectResult[1]
+      Setting HTTP status code 200.
+info: Microsoft.AspNetCore.Http.Result.OkObjectResult[3]
+      Writing value of type 'UserDto' as Json.
+info: Microsoft.AspNetCore.Routing.EndpointMiddleware[1]
+      Executed endpoint 'HTTP: GET /users/{id}'
+info: Microsoft.AspNetCore.Hosting.Diagnostics[2]
+      Request finished HTTP/1.1 GET http://127.0.0.1:5080/users/57b4d0b0-538e-4cf2-8d52-19678691ffe9 - 200 - application/json;+charset=utf-8 1.9575ms
+info: Microsoft.AspNetCore.Hosting.Diagnostics[1]
+      Request starting HTTP/1.1 DELETE http://127.0.0.1:5080/users/57b4d0b0-538e-4cf2-8d52-19678691ffe9 - - -
+info: Microsoft.AspNetCore.Routing.EndpointMiddleware[0]
+      Executing endpoint 'HTTP: DELETE /users/{id}'
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (0ms) [Parameters=[@id='?' (DbType = Guid)], CommandType='Text', CommandTimeout='30']
+      SELECT "u1"."Id", "u1"."Email", "u1"."Preferences", "u1"."Provider", "u1"."TechnicalUser", "u0"."Id", "u0"."RightId", "u0"."UserId"
+      FROM (
+          SELECT "u"."Id", "u"."Email", "u"."Preferences", "u"."Provider", "u"."TechnicalUser"
+          FROM "Users" AS "u"
+          WHERE "u"."Id" = @id
+          LIMIT 1
+      ) AS "u1"
+      LEFT JOIN "UserRights" AS "u0" ON "u1"."Id" = "u0"."UserId"
+      ORDER BY "u1"."Id"
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (0ms) [Parameters=[@p0='?' (DbType = Guid)], CommandType='Text', CommandTimeout='30']
+      DELETE FROM "Users"
+      WHERE "Id" = @p0
+      RETURNING 1;
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (0ms) [Parameters=[@name='?' (Size = 32)], CommandType='Text', CommandTimeout='30']
+      SELECT "l"."Id", "l"."HashedPassword", "l"."Name"
+      FROM "LocalUsers" AS "l"
+      WHERE "l"."Name" = @name
+      LIMIT 1
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (0ms) [Parameters=[@p0='?' (DbType = Guid)], CommandType='Text', CommandTimeout='30']
+      DELETE FROM "LocalUsers"
+      WHERE "Id" = @p0
+      RETURNING 1;
+info: Microsoft.AspNetCore.Http.Result.NoContentResult[1]
+      Setting HTTP status code 204.
+info: Microsoft.AspNetCore.Routing.EndpointMiddleware[1]
+      Executed endpoint 'HTTP: DELETE /users/{id}'
+info: Microsoft.AspNetCore.Hosting.Diagnostics[2]
+      Request finished HTTP/1.1 DELETE http://127.0.0.1:5080/users/57b4d0b0-538e-4cf2-8d52-19678691ffe9 - 204 - - 10.8333ms
+info: Microsoft.AspNetCore.Hosting.Diagnostics[1]
+      Request starting HTTP/1.1 POST http://127.0.0.1:5080/users - application/json;+charset=utf-8 -
+info: Microsoft.AspNetCore.Authorization.DefaultAuthorizationService[2]
+      Authorization failed. These requirements were not met:
+      Handler assertion should evaluate to true.
+info: Microsoft.AspNetCore.Authentication.JwtBearer.JwtBearerHandler[13]
+      AuthenticationScheme: Bearer was forbidden.
+info: Microsoft.AspNetCore.Hosting.Diagnostics[2]
+      Request finished HTTP/1.1 POST http://127.0.0.1:5080/users - 403 0 - 0.3329ms
+info: Microsoft.AspNetCore.Hosting.Diagnostics[1]
+      Request starting HTTP/1.1 GET http://127.0.0.1:5080/invites - - -
+info: Microsoft.AspNetCore.Routing.EndpointMiddleware[0]
+      Executing endpoint 'HTTP: GET /invites/'
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (0ms) [Parameters=[], CommandType='Text', CommandTimeout='30']
+      SELECT COUNT(*)
+      FROM "Invites" AS "i"
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (0ms) [Parameters=[@p1='?' (DbType = Int32), @p='?' (DbType = Int32)], CommandType='Text', CommandTimeout='30']
+      SELECT "i"."Id", "i"."CreatorId", "i"."CreatorMessage", "i"."CreatorName", "i"."Email", "i"."Status"
+      FROM "Invites" AS "i"
+      ORDER BY "i"."Id"
+      LIMIT @p1 OFFSET @p
+info: Microsoft.AspNetCore.Http.Result.OkObjectResult[1]
+      Setting HTTP status code 200.
+info: Microsoft.AspNetCore.Http.Result.OkObjectResult[3]
+      Writing value of type 'Page`1' as Json.
+info: Microsoft.AspNetCore.Routing.EndpointMiddleware[1]
+      Executed endpoint 'HTTP: GET /invites/'
+info: Microsoft.AspNetCore.Hosting.Diagnostics[2]
+      Request finished HTTP/1.1 GET http://127.0.0.1:5080/invites - 200 - application/json;+charset=utf-8 8.9138ms
+info: Microsoft.Hosting.Lifetime[0]
+      Application is shutting down...

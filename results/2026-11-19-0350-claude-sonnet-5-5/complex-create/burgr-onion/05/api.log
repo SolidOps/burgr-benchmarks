@@ -1,0 +1,1437 @@
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (22ms) [Parameters=[], CommandType='Text', CommandTimeout='30']
+      PRAGMA journal_mode = 'wal';
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (0ms) [Parameters=[], CommandType='Text', CommandTimeout='30']
+      CREATE TABLE "Venues" (
+          "Id" TEXT NOT NULL CONSTRAINT "PK_Venues" PRIMARY KEY,
+          "Name" TEXT NOT NULL,
+          "Capacity" INTEGER NOT NULL,
+          "Address" TEXT NOT NULL
+      );
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (0ms) [Parameters=[], CommandType='Text', CommandTimeout='30']
+      CREATE TABLE "Shows" (
+          "Id" TEXT NOT NULL CONSTRAINT "PK_Shows" PRIMARY KEY,
+          "Title" TEXT NOT NULL,
+          "StartsAt" TEXT NOT NULL,
+          "Status" TEXT NOT NULL,
+          "VenueId" TEXT NOT NULL,
+          CONSTRAINT "FK_Shows_Venues_VenueId" FOREIGN KEY ("VenueId") REFERENCES "Venues" ("Id") ON DELETE RESTRICT
+      );
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (0ms) [Parameters=[], CommandType='Text', CommandTimeout='30']
+      CREATE TABLE "Bookings" (
+          "Id" TEXT NOT NULL CONSTRAINT "PK_Bookings" PRIMARY KEY,
+          "Tier" TEXT NOT NULL,
+          "CustomerEmail" TEXT NOT NULL,
+          "Quantity" INTEGER NOT NULL,
+          "TotalPrice" TEXT NOT NULL,
+          "ShowId" TEXT NOT NULL,
+          CONSTRAINT "FK_Bookings_Shows_ShowId" FOREIGN KEY ("ShowId") REFERENCES "Shows" ("Id") ON DELETE RESTRICT
+      );
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (0ms) [Parameters=[], CommandType='Text', CommandTimeout='30']
+      CREATE TABLE "TicketTiers" (
+          "Id" TEXT NOT NULL CONSTRAINT "PK_TicketTiers" PRIMARY KEY,
+          "Name" TEXT NOT NULL,
+          "Price" TEXT NOT NULL,
+          "Quota" INTEGER NOT NULL,
+          "Sold" INTEGER NOT NULL,
+          "ShowId" TEXT NOT NULL,
+          CONSTRAINT "FK_TicketTiers_Shows_ShowId" FOREIGN KEY ("ShowId") REFERENCES "Shows" ("Id") ON DELETE CASCADE
+      );
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (0ms) [Parameters=[], CommandType='Text', CommandTimeout='30']
+      CREATE INDEX "IX_Bookings_ShowId" ON "Bookings" ("ShowId");
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (0ms) [Parameters=[], CommandType='Text', CommandTimeout='30']
+      CREATE INDEX "IX_Shows_VenueId" ON "Shows" ("VenueId");
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (0ms) [Parameters=[], CommandType='Text', CommandTimeout='30']
+      CREATE INDEX "IX_TicketTiers_ShowId" ON "TicketTiers" ("ShowId");
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (0ms) [Parameters=[], CommandType='Text', CommandTimeout='30']
+      CREATE UNIQUE INDEX "IX_Venues_Name" ON "Venues" ("Name");
+warn: Microsoft.AspNetCore.DataProtection.Repositories.FileSystemXmlRepository[60]
+      Storing keys in a directory '/home/bench/.aspnet/DataProtection-Keys' that may not be persisted outside of the container. Protected data will be unavailable when container is destroyed. For more information go to https://aka.ms/aspnet/dataprotectionwarning
+warn: Microsoft.AspNetCore.Hosting.Diagnostics[15]
+      Overriding HTTP_PORTS '8080' and HTTPS_PORTS ''. Binding to values defined by URLS instead 'http://127.0.0.1:5080'.
+info: Microsoft.Hosting.Lifetime[14]
+      Now listening on: http://127.0.0.1:5080
+info: Microsoft.Hosting.Lifetime[0]
+      Application started. Press Ctrl+C to shut down.
+info: Microsoft.Hosting.Lifetime[0]
+      Hosting environment: Production
+info: Microsoft.Hosting.Lifetime[0]
+      Content root path: /work/src/Ticketing.Api
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (18ms) [Parameters=[@p0='?' (DbType = Guid), @p1='?' (Size = 61), @p2='?' (DbType = Int32), @p3='?' (Size = 38)], CommandType='Text', CommandTimeout='30']
+      INSERT INTO "Venues" ("Id", "Address", "Capacity", "Name")
+      VALUES (@p0, @p1, @p2, @p3);
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (0ms) [Parameters=[], CommandType='Text', CommandTimeout='30']
+      SELECT COUNT(*)
+      FROM "Venues" AS "v"
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (0ms) [Parameters=[@p1='?' (DbType = Int32), @p='?' (DbType = Int32)], CommandType='Text', CommandTimeout='30']
+      SELECT "v"."Id", "v"."Address", "v"."Capacity", "v"."Name"
+      FROM "Venues" AS "v"
+      ORDER BY "v"."Id"
+      LIMIT @p1 OFFSET @p
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (0ms) [Parameters=[@id='?' (DbType = Guid)], CommandType='Text', CommandTimeout='30']
+      SELECT "v0"."Id", "v0"."Address", "v0"."Capacity", "v0"."Name", "s"."Id", "s"."StartsAt", "s"."Status", "s"."Title", "s"."VenueId"
+      FROM (
+          SELECT "v"."Id", "v"."Address", "v"."Capacity", "v"."Name"
+          FROM "Venues" AS "v"
+          WHERE "v"."Id" = @id
+          LIMIT 1
+      ) AS "v0"
+      LEFT JOIN "Shows" AS "s" ON "v0"."Id" = "s"."VenueId"
+      ORDER BY "v0"."Id"
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (0ms) [Parameters=[], CommandType='Text', CommandTimeout='30']
+      SELECT COUNT(*)
+      FROM "Shows" AS "s"
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (0ms) [Parameters=[@p1='?' (DbType = Int32), @p='?' (DbType = Int32)], CommandType='Text', CommandTimeout='30']
+      SELECT "s"."Id", "s"."StartsAt", "s"."Status", "s"."Title", "s"."VenueId"
+      FROM "Shows" AS "s"
+      ORDER BY "s"."Id"
+      LIMIT @p1 OFFSET @p
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (5ms) [Parameters=[@p0='?' (DbType = Guid), @p1='?' (Size = 61), @p2='?' (DbType = Int32), @p3='?' (Size = 38)], CommandType='Text', CommandTimeout='30']
+      INSERT INTO "Venues" ("Id", "Address", "Capacity", "Name")
+      VALUES (@p0, @p1, @p2, @p3);
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (4ms) [Parameters=[@p0='?' (DbType = Guid), @p1='?' (Size = 61), @p2='?' (DbType = Int32), @p3='?' (Size = 38)], CommandType='Text', CommandTimeout='30']
+      INSERT INTO "Venues" ("Id", "Address", "Capacity", "Name")
+      VALUES (@p0, @p1, @p2, @p3);
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (3ms) [Parameters=[@p0='?' (DbType = Guid), @p1='?' (Size = 61), @p2='?' (DbType = Int32), @p3='?' (Size = 38)], CommandType='Text', CommandTimeout='30']
+      INSERT INTO "Venues" ("Id", "Address", "Capacity", "Name")
+      VALUES (@p0, @p1, @p2, @p3);
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (0ms) [Parameters=[@id='?' (DbType = Guid)], CommandType='Text', CommandTimeout='30']
+      SELECT EXISTS (
+          SELECT 1
+          FROM "Venues" AS "v"
+          WHERE "v"."Id" = @id)
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (0ms) [Parameters=[@id='?' (DbType = Guid)], CommandType='Text', CommandTimeout='30']
+      SELECT "v0"."Id", "v0"."Address", "v0"."Capacity", "v0"."Name", "s"."Id", "s"."StartsAt", "s"."Status", "s"."Title", "s"."VenueId"
+      FROM (
+          SELECT "v"."Id", "v"."Address", "v"."Capacity", "v"."Name"
+          FROM "Venues" AS "v"
+          WHERE "v"."Id" = @id
+          LIMIT 1
+      ) AS "v0"
+      LEFT JOIN "Shows" AS "s" ON "v0"."Id" = "s"."VenueId"
+      ORDER BY "v0"."Id"
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (4ms) [Parameters=[@p0='?' (DbType = Guid), @p1='?' (DbType = DateTime), @p2='?' (Size = 6), @p3='?' (Size = 37), @p4='?' (DbType = Guid)], CommandType='Text', CommandTimeout='30']
+      INSERT INTO "Shows" ("Id", "StartsAt", "Status", "Title", "VenueId")
+      VALUES (@p0, @p1, @p2, @p3, @p4);
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (3ms) [Parameters=[@p0='?' (DbType = Guid), @p1='?' (Size = 61), @p2='?' (DbType = Int32), @p3='?' (Size = 38)], CommandType='Text', CommandTimeout='30']
+      INSERT INTO "Venues" ("Id", "Address", "Capacity", "Name")
+      VALUES (@p0, @p1, @p2, @p3);
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (0ms) [Parameters=[@id='?' (DbType = Guid)], CommandType='Text', CommandTimeout='30']
+      SELECT EXISTS (
+          SELECT 1
+          FROM "Venues" AS "v"
+          WHERE "v"."Id" = @id)
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (0ms) [Parameters=[@id='?' (DbType = Guid)], CommandType='Text', CommandTimeout='30']
+      SELECT "v0"."Id", "v0"."Address", "v0"."Capacity", "v0"."Name", "s"."Id", "s"."StartsAt", "s"."Status", "s"."Title", "s"."VenueId"
+      FROM (
+          SELECT "v"."Id", "v"."Address", "v"."Capacity", "v"."Name"
+          FROM "Venues" AS "v"
+          WHERE "v"."Id" = @id
+          LIMIT 1
+      ) AS "v0"
+      LEFT JOIN "Shows" AS "s" ON "v0"."Id" = "s"."VenueId"
+      ORDER BY "v0"."Id"
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (0ms) [Parameters=[@p0='?' (DbType = Guid), @p1='?' (DbType = DateTime), @p2='?' (Size = 6), @p3='?' (Size = 37), @p4='?' (DbType = Guid)], CommandType='Text', CommandTimeout='30']
+      INSERT INTO "Shows" ("Id", "StartsAt", "Status", "Title", "VenueId")
+      VALUES (@p0, @p1, @p2, @p3, @p4);
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (0ms) [Parameters=[@p0='?' (DbType = Guid), @p1='?' (Size = 3), @p2='?' (DbType = Decimal), @p3='?' (DbType = Int32), @p4='?' (DbType = Guid), @p5='?' (DbType = Int32)], CommandType='Text', CommandTimeout='30']
+      INSERT INTO "TicketTiers" ("Id", "Name", "Price", "Quota", "ShowId", "Sold")
+      VALUES (@p0, @p1, @p2, @p3, @p4, @p5);
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (0ms) [Parameters=[@id='?' (DbType = Guid)], CommandType='Text', CommandTimeout='30']
+      SELECT "s0"."Id", "s0"."StartsAt", "s0"."Status", "s0"."Title", "s0"."VenueId", "t"."Id", "t"."Name", "t"."Price", "t"."Quota", "t"."ShowId", "t"."Sold"
+      FROM (
+          SELECT "s"."Id", "s"."StartsAt", "s"."Status", "s"."Title", "s"."VenueId"
+          FROM "Shows" AS "s"
+          WHERE "s"."Id" = @id
+          LIMIT 1
+      ) AS "s0"
+      LEFT JOIN "TicketTiers" AS "t" ON "s0"."Id" = "t"."ShowId"
+      ORDER BY "s0"."Id"
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (0ms) [Parameters=[@p0='?' (DbType = Guid), @p1='?' (Size = 15), @p2='?' (DbType = Int32), @p3='?' (DbType = Guid), @p4='?' (Size = 3), @p5='?' (DbType = Decimal)], CommandType='Text', CommandTimeout='30']
+      INSERT INTO "Bookings" ("Id", "CustomerEmail", "Quantity", "ShowId", "Tier", "TotalPrice")
+      VALUES (@p0, @p1, @p2, @p3, @p4, @p5);
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (0ms) [Parameters=[@p1='?' (DbType = Guid), @p0='?' (DbType = Int32)], CommandType='Text', CommandTimeout='30']
+      UPDATE "TicketTiers" SET "Sold" = @p0
+      WHERE "Id" = @p1
+      RETURNING 1;
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (0ms) [Parameters=[@id='?' (DbType = Guid)], CommandType='Text', CommandTimeout='30']
+      SELECT "b"."Id", "b"."CustomerEmail", "b"."Quantity", "b"."ShowId", "b"."Tier", "b"."TotalPrice"
+      FROM "Bookings" AS "b"
+      WHERE "b"."Id" = @id
+      LIMIT 1
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (3ms) [Parameters=[@p0='?' (DbType = Guid), @p1='?' (Size = 61), @p2='?' (DbType = Int32), @p3='?' (Size = 38)], CommandType='Text', CommandTimeout='30']
+      INSERT INTO "Venues" ("Id", "Address", "Capacity", "Name")
+      VALUES (@p0, @p1, @p2, @p3);
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (0ms) [Parameters=[@id='?' (DbType = Guid)], CommandType='Text', CommandTimeout='30']
+      SELECT "v0"."Id", "v0"."Address", "v0"."Capacity", "v0"."Name", "s"."Id", "s"."StartsAt", "s"."Status", "s"."Title", "s"."VenueId"
+      FROM (
+          SELECT "v"."Id", "v"."Address", "v"."Capacity", "v"."Name"
+          FROM "Venues" AS "v"
+          WHERE "v"."Id" = @id
+          LIMIT 1
+      ) AS "v0"
+      LEFT JOIN "Shows" AS "s" ON "v0"."Id" = "s"."VenueId"
+      ORDER BY "v0"."Id"
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (0ms) [Parameters=[@p3='?' (DbType = Guid), @p0='?' (Size = 62), @p1='?' (DbType = Int32), @p2='?' (Size = 40)], CommandType='Text', CommandTimeout='30']
+      UPDATE "Venues" SET "Address" = @p0, "Capacity" = @p1, "Name" = @p2
+      WHERE "Id" = @p3
+      RETURNING 1;
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (0ms) [Parameters=[@id='?' (DbType = Guid)], CommandType='Text', CommandTimeout='30']
+      SELECT "v0"."Id", "v0"."Address", "v0"."Capacity", "v0"."Name", "s"."Id", "s"."StartsAt", "s"."Status", "s"."Title", "s"."VenueId"
+      FROM (
+          SELECT "v"."Id", "v"."Address", "v"."Capacity", "v"."Name"
+          FROM "Venues" AS "v"
+          WHERE "v"."Id" = @id
+          LIMIT 1
+      ) AS "v0"
+      LEFT JOIN "Shows" AS "s" ON "v0"."Id" = "s"."VenueId"
+      ORDER BY "v0"."Id"
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (0ms) [Parameters=[@id='?' (DbType = Guid)], CommandType='Text', CommandTimeout='30']
+      SELECT "v0"."Id", "v0"."Address", "v0"."Capacity", "v0"."Name", "s"."Id", "s"."StartsAt", "s"."Status", "s"."Title", "s"."VenueId"
+      FROM (
+          SELECT "v"."Id", "v"."Address", "v"."Capacity", "v"."Name"
+          FROM "Venues" AS "v"
+          WHERE "v"."Id" = @id
+          LIMIT 1
+      ) AS "v0"
+      LEFT JOIN "Shows" AS "s" ON "v0"."Id" = "s"."VenueId"
+      ORDER BY "v0"."Id"
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (0ms) [Parameters=[@p0='?' (DbType = Guid)], CommandType='Text', CommandTimeout='30']
+      DELETE FROM "Venues"
+      WHERE "Id" = @p0
+      RETURNING 1;
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (0ms) [Parameters=[@id='?' (DbType = Guid)], CommandType='Text', CommandTimeout='30']
+      SELECT "v0"."Id", "v0"."Address", "v0"."Capacity", "v0"."Name", "s"."Id", "s"."StartsAt", "s"."Status", "s"."Title", "s"."VenueId"
+      FROM (
+          SELECT "v"."Id", "v"."Address", "v"."Capacity", "v"."Name"
+          FROM "Venues" AS "v"
+          WHERE "v"."Id" = @id
+          LIMIT 1
+      ) AS "v0"
+      LEFT JOIN "Shows" AS "s" ON "v0"."Id" = "s"."VenueId"
+      ORDER BY "v0"."Id"
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (4ms) [Parameters=[@p0='?' (DbType = Guid), @p1='?' (Size = 61), @p2='?' (DbType = Int32), @p3='?' (Size = 38)], CommandType='Text', CommandTimeout='30']
+      INSERT INTO "Venues" ("Id", "Address", "Capacity", "Name")
+      VALUES (@p0, @p1, @p2, @p3);
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (4ms) [Parameters=[@p0='?' (DbType = Guid), @p1='?' (Size = 61), @p2='?' (DbType = Int32), @p3='?' (Size = 38)], CommandType='Text', CommandTimeout='30']
+      INSERT INTO "Venues" ("Id", "Address", "Capacity", "Name")
+      VALUES (@p0, @p1, @p2, @p3);
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (0ms) [Parameters=[], CommandType='Text', CommandTimeout='30']
+      SELECT COUNT(*)
+      FROM "Venues" AS "v"
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (0ms) [Parameters=[@p1='?' (DbType = Int32), @p='?' (DbType = Int32)], CommandType='Text', CommandTimeout='30']
+      SELECT "v"."Id", "v"."Address", "v"."Capacity", "v"."Name"
+      FROM "Venues" AS "v"
+      ORDER BY "v"."Name"
+      LIMIT @p1 OFFSET @p
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (3ms) [Parameters=[@p0='?' (DbType = Guid), @p1='?' (Size = 61), @p2='?' (DbType = Int32), @p3='?' (Size = 38)], CommandType='Text', CommandTimeout='30']
+      INSERT INTO "Venues" ("Id", "Address", "Capacity", "Name")
+      VALUES (@p0, @p1, @p2, @p3);
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (0ms) [Parameters=[@id='?' (DbType = Guid)], CommandType='Text', CommandTimeout='30']
+      SELECT EXISTS (
+          SELECT 1
+          FROM "Venues" AS "v"
+          WHERE "v"."Id" = @id)
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (0ms) [Parameters=[@id='?' (DbType = Guid)], CommandType='Text', CommandTimeout='30']
+      SELECT "v0"."Id", "v0"."Address", "v0"."Capacity", "v0"."Name", "s"."Id", "s"."StartsAt", "s"."Status", "s"."Title", "s"."VenueId"
+      FROM (
+          SELECT "v"."Id", "v"."Address", "v"."Capacity", "v"."Name"
+          FROM "Venues" AS "v"
+          WHERE "v"."Id" = @id
+          LIMIT 1
+      ) AS "v0"
+      LEFT JOIN "Shows" AS "s" ON "v0"."Id" = "s"."VenueId"
+      ORDER BY "v0"."Id"
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (3ms) [Parameters=[@p0='?' (DbType = Guid), @p1='?' (DbType = DateTime), @p2='?' (Size = 6), @p3='?' (Size = 22), @p4='?' (DbType = Guid)], CommandType='Text', CommandTimeout='30']
+      INSERT INTO "Shows" ("Id", "StartsAt", "Status", "Title", "VenueId")
+      VALUES (@p0, @p1, @p2, @p3, @p4);
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (0ms) [Parameters=[@id='?' (DbType = Guid)], CommandType='Text', CommandTimeout='30']
+      SELECT EXISTS (
+          SELECT 1
+          FROM "Venues" AS "v"
+          WHERE "v"."Id" = @id)
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (0ms) [Parameters=[@id='?' (DbType = Guid)], CommandType='Text', CommandTimeout='30']
+      SELECT "v0"."Id", "v0"."Address", "v0"."Capacity", "v0"."Name", "s"."Id", "s"."StartsAt", "s"."Status", "s"."Title", "s"."VenueId"
+      FROM (
+          SELECT "v"."Id", "v"."Address", "v"."Capacity", "v"."Name"
+          FROM "Venues" AS "v"
+          WHERE "v"."Id" = @id
+          LIMIT 1
+      ) AS "v0"
+      LEFT JOIN "Shows" AS "s" ON "v0"."Id" = "s"."VenueId"
+      ORDER BY "v0"."Id"
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (3ms) [Parameters=[@p0='?' (DbType = Guid), @p1='?' (DbType = DateTime), @p2='?' (Size = 6), @p3='?' (Size = 22), @p4='?' (DbType = Guid)], CommandType='Text', CommandTimeout='30']
+      INSERT INTO "Shows" ("Id", "StartsAt", "Status", "Title", "VenueId")
+      VALUES (@p0, @p1, @p2, @p3, @p4);
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (0ms) [Parameters=[], CommandType='Text', CommandTimeout='30']
+      SELECT COUNT(*)
+      FROM "Shows" AS "s"
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (0ms) [Parameters=[@p1='?' (DbType = Int32), @p='?' (DbType = Int32)], CommandType='Text', CommandTimeout='30']
+      SELECT "s"."Id", "s"."StartsAt", "s"."Status", "s"."Title", "s"."VenueId"
+      FROM "Shows" AS "s"
+      ORDER BY "s"."Title" DESC
+      LIMIT @p1 OFFSET @p
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (3ms) [Parameters=[@p0='?' (DbType = Guid), @p1='?' (Size = 61), @p2='?' (DbType = Int32), @p3='?' (Size = 38)], CommandType='Text', CommandTimeout='30']
+      INSERT INTO "Venues" ("Id", "Address", "Capacity", "Name")
+      VALUES (@p0, @p1, @p2, @p3);
+fail: Microsoft.EntityFrameworkCore.Database.Command[20102]
+      Failed executing DbCommand (0ms) [Parameters=[@p0='?' (DbType = Guid), @p1='?' (Size = 61), @p2='?' (DbType = Int32), @p3='?' (Size = 38)], CommandType='Text', CommandTimeout='30']
+      INSERT INTO "Venues" ("Id", "Address", "Capacity", "Name")
+      VALUES (@p0, @p1, @p2, @p3);
+fail: Microsoft.EntityFrameworkCore.Update[10000]
+      An exception occurred in the database while saving changes for context type 'Acme.Ticketing.Infrastructure.TicketingDbContext'.
+      Microsoft.EntityFrameworkCore.DbUpdateException: An error occurred while saving the entity changes. See the inner exception for details.
+       ---> Microsoft.Data.Sqlite.SqliteException (0x80004005): SQLite Error 19: 'UNIQUE constraint failed: Venues.Name'.
+         at Microsoft.Data.Sqlite.SqliteException.ThrowExceptionForRC(Int32 rc, sqlite3 db)
+         at Microsoft.Data.Sqlite.SqliteDataReader.NextResult()
+         at Microsoft.Data.Sqlite.SqliteCommand.ExecuteReader(CommandBehavior behavior)
+         at Microsoft.Data.Sqlite.SqliteCommand.ExecuteReaderAsync(CommandBehavior behavior, CancellationToken cancellationToken)
+         at Microsoft.Data.Sqlite.SqliteCommand.ExecuteDbDataReaderAsync(CommandBehavior behavior, CancellationToken cancellationToken)
+         at Microsoft.EntityFrameworkCore.Storage.RelationalCommand.ExecuteReaderAsync(RelationalCommandParameterObject parameterObject, CancellationToken cancellationToken)
+         at Microsoft.EntityFrameworkCore.Storage.RelationalCommand.ExecuteReaderAsync(RelationalCommandParameterObject parameterObject, CancellationToken cancellationToken)
+         at Microsoft.EntityFrameworkCore.Update.ReaderModificationCommandBatch.ExecuteAsync(IRelationalConnection connection, CancellationToken cancellationToken)
+         --- End of inner exception stack trace ---
+         at Microsoft.EntityFrameworkCore.Update.ReaderModificationCommandBatch.ExecuteAsync(IRelationalConnection connection, CancellationToken cancellationToken)
+         at Microsoft.EntityFrameworkCore.Update.Internal.BatchExecutor.ExecuteAsync(IEnumerable`1 commandBatches, IRelationalConnection connection, CancellationToken cancellationToken)
+         at Microsoft.EntityFrameworkCore.Update.Internal.BatchExecutor.ExecuteAsync(IEnumerable`1 commandBatches, IRelationalConnection connection, CancellationToken cancellationToken)
+         at Microsoft.EntityFrameworkCore.Update.Internal.BatchExecutor.ExecuteAsync(IEnumerable`1 commandBatches, IRelationalConnection connection, CancellationToken cancellationToken)
+         at Microsoft.EntityFrameworkCore.Storage.RelationalDatabase.SaveChangesAsync(IList`1 entries, CancellationToken cancellationToken)
+         at Microsoft.EntityFrameworkCore.ChangeTracking.Internal.StateManager.SaveChangesAsync(IList`1 entriesToSave, CancellationToken cancellationToken)
+         at Microsoft.EntityFrameworkCore.ChangeTracking.Internal.StateManager.SaveChangesAsync(StateManager stateManager, Boolean acceptAllChangesOnSuccess, CancellationToken cancellationToken)
+         at Microsoft.EntityFrameworkCore.DbContext.SaveChangesAsync(Boolean acceptAllChangesOnSuccess, CancellationToken cancellationToken)
+      Microsoft.EntityFrameworkCore.DbUpdateException: An error occurred while saving the entity changes. See the inner exception for details.
+       ---> Microsoft.Data.Sqlite.SqliteException (0x80004005): SQLite Error 19: 'UNIQUE constraint failed: Venues.Name'.
+         at Microsoft.Data.Sqlite.SqliteException.ThrowExceptionForRC(Int32 rc, sqlite3 db)
+         at Microsoft.Data.Sqlite.SqliteDataReader.NextResult()
+         at Microsoft.Data.Sqlite.SqliteCommand.ExecuteReader(CommandBehavior behavior)
+         at Microsoft.Data.Sqlite.SqliteCommand.ExecuteReaderAsync(CommandBehavior behavior, CancellationToken cancellationToken)
+         at Microsoft.Data.Sqlite.SqliteCommand.ExecuteDbDataReaderAsync(CommandBehavior behavior, CancellationToken cancellationToken)
+         at Microsoft.EntityFrameworkCore.Storage.RelationalCommand.ExecuteReaderAsync(RelationalCommandParameterObject parameterObject, CancellationToken cancellationToken)
+         at Microsoft.EntityFrameworkCore.Storage.RelationalCommand.ExecuteReaderAsync(RelationalCommandParameterObject parameterObject, CancellationToken cancellationToken)
+         at Microsoft.EntityFrameworkCore.Update.ReaderModificationCommandBatch.ExecuteAsync(IRelationalConnection connection, CancellationToken cancellationToken)
+         --- End of inner exception stack trace ---
+         at Microsoft.EntityFrameworkCore.Update.ReaderModificationCommandBatch.ExecuteAsync(IRelationalConnection connection, CancellationToken cancellationToken)
+         at Microsoft.EntityFrameworkCore.Update.Internal.BatchExecutor.ExecuteAsync(IEnumerable`1 commandBatches, IRelationalConnection connection, CancellationToken cancellationToken)
+         at Microsoft.EntityFrameworkCore.Update.Internal.BatchExecutor.ExecuteAsync(IEnumerable`1 commandBatches, IRelationalConnection connection, CancellationToken cancellationToken)
+         at Microsoft.EntityFrameworkCore.Update.Internal.BatchExecutor.ExecuteAsync(IEnumerable`1 commandBatches, IRelationalConnection connection, CancellationToken cancellationToken)
+         at Microsoft.EntityFrameworkCore.Storage.RelationalDatabase.SaveChangesAsync(IList`1 entries, CancellationToken cancellationToken)
+         at Microsoft.EntityFrameworkCore.ChangeTracking.Internal.StateManager.SaveChangesAsync(IList`1 entriesToSave, CancellationToken cancellationToken)
+         at Microsoft.EntityFrameworkCore.ChangeTracking.Internal.StateManager.SaveChangesAsync(StateManager stateManager, Boolean acceptAllChangesOnSuccess, CancellationToken cancellationToken)
+         at Microsoft.EntityFrameworkCore.DbContext.SaveChangesAsync(Boolean acceptAllChangesOnSuccess, CancellationToken cancellationToken)
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (4ms) [Parameters=[@p0='?' (DbType = Guid), @p1='?' (Size = 61), @p2='?' (DbType = Int32), @p3='?' (Size = 38)], CommandType='Text', CommandTimeout='30']
+      INSERT INTO "Venues" ("Id", "Address", "Capacity", "Name")
+      VALUES (@p0, @p1, @p2, @p3);
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (0ms) [Parameters=[@id='?' (DbType = Guid)], CommandType='Text', CommandTimeout='30']
+      SELECT EXISTS (
+          SELECT 1
+          FROM "Venues" AS "v"
+          WHERE "v"."Id" = @id)
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (0ms) [Parameters=[@id='?' (DbType = Guid)], CommandType='Text', CommandTimeout='30']
+      SELECT "v0"."Id", "v0"."Address", "v0"."Capacity", "v0"."Name", "s"."Id", "s"."StartsAt", "s"."Status", "s"."Title", "s"."VenueId"
+      FROM (
+          SELECT "v"."Id", "v"."Address", "v"."Capacity", "v"."Name"
+          FROM "Venues" AS "v"
+          WHERE "v"."Id" = @id
+          LIMIT 1
+      ) AS "v0"
+      LEFT JOIN "Shows" AS "s" ON "v0"."Id" = "s"."VenueId"
+      ORDER BY "v0"."Id"
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (3ms) [Parameters=[@p0='?' (DbType = Guid), @p1='?' (DbType = DateTime), @p2='?' (Size = 6), @p3='?' (Size = 37), @p4='?' (DbType = Guid)], CommandType='Text', CommandTimeout='30']
+      INSERT INTO "Shows" ("Id", "StartsAt", "Status", "Title", "VenueId")
+      VALUES (@p0, @p1, @p2, @p3, @p4);
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (0ms) [Parameters=[@id='?' (DbType = Guid)], CommandType='Text', CommandTimeout='30']
+      SELECT "v0"."Id", "v0"."Address", "v0"."Capacity", "v0"."Name", "s"."Id", "s"."StartsAt", "s"."Status", "s"."Title", "s"."VenueId"
+      FROM (
+          SELECT "v"."Id", "v"."Address", "v"."Capacity", "v"."Name"
+          FROM "Venues" AS "v"
+          WHERE "v"."Id" = @id
+          LIMIT 1
+      ) AS "v0"
+      LEFT JOIN "Shows" AS "s" ON "v0"."Id" = "s"."VenueId"
+      ORDER BY "v0"."Id"
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (3ms) [Parameters=[@p0='?' (DbType = Guid), @p1='?' (Size = 61), @p2='?' (DbType = Int32), @p3='?' (Size = 38)], CommandType='Text', CommandTimeout='30']
+      INSERT INTO "Venues" ("Id", "Address", "Capacity", "Name")
+      VALUES (@p0, @p1, @p2, @p3);
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (0ms) [Parameters=[@id='?' (DbType = Guid)], CommandType='Text', CommandTimeout='30']
+      SELECT EXISTS (
+          SELECT 1
+          FROM "Venues" AS "v"
+          WHERE "v"."Id" = @id)
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (0ms) [Parameters=[@id='?' (DbType = Guid)], CommandType='Text', CommandTimeout='30']
+      SELECT "v0"."Id", "v0"."Address", "v0"."Capacity", "v0"."Name", "s"."Id", "s"."StartsAt", "s"."Status", "s"."Title", "s"."VenueId"
+      FROM (
+          SELECT "v"."Id", "v"."Address", "v"."Capacity", "v"."Name"
+          FROM "Venues" AS "v"
+          WHERE "v"."Id" = @id
+          LIMIT 1
+      ) AS "v0"
+      LEFT JOIN "Shows" AS "s" ON "v0"."Id" = "s"."VenueId"
+      ORDER BY "v0"."Id"
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (3ms) [Parameters=[@p0='?' (DbType = Guid), @p1='?' (DbType = DateTime), @p2='?' (Size = 6), @p3='?' (Size = 37), @p4='?' (DbType = Guid)], CommandType='Text', CommandTimeout='30']
+      INSERT INTO "Shows" ("Id", "StartsAt", "Status", "Title", "VenueId")
+      VALUES (@p0, @p1, @p2, @p3, @p4);
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (0ms) [Parameters=[@id='?' (DbType = Guid)], CommandType='Text', CommandTimeout='30']
+      SELECT EXISTS (
+          SELECT 1
+          FROM "Venues" AS "v"
+          WHERE "v"."Id" = @id)
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (0ms) [Parameters=[@id='?' (DbType = Guid)], CommandType='Text', CommandTimeout='30']
+      SELECT "v0"."Id", "v0"."Address", "v0"."Capacity", "v0"."Name", "s"."Id", "s"."StartsAt", "s"."Status", "s"."Title", "s"."VenueId"
+      FROM (
+          SELECT "v"."Id", "v"."Address", "v"."Capacity", "v"."Name"
+          FROM "Venues" AS "v"
+          WHERE "v"."Id" = @id
+          LIMIT 1
+      ) AS "v0"
+      LEFT JOIN "Shows" AS "s" ON "v0"."Id" = "s"."VenueId"
+      ORDER BY "v0"."Id"
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (2ms) [Parameters=[@p0='?' (DbType = Guid), @p1='?' (DbType = DateTime), @p2='?' (Size = 6), @p3='?' (Size = 37), @p4='?' (DbType = Guid)], CommandType='Text', CommandTimeout='30']
+      INSERT INTO "Shows" ("Id", "StartsAt", "Status", "Title", "VenueId")
+      VALUES (@p0, @p1, @p2, @p3, @p4);
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (0ms) [Parameters=[@id='?' (DbType = Guid)], CommandType='Text', CommandTimeout='30']
+      SELECT "v0"."Id", "v0"."Address", "v0"."Capacity", "v0"."Name", "s"."Id", "s"."StartsAt", "s"."Status", "s"."Title", "s"."VenueId"
+      FROM (
+          SELECT "v"."Id", "v"."Address", "v"."Capacity", "v"."Name"
+          FROM "Venues" AS "v"
+          WHERE "v"."Id" = @id
+          LIMIT 1
+      ) AS "v0"
+      LEFT JOIN "Shows" AS "s" ON "v0"."Id" = "s"."VenueId"
+      ORDER BY "v0"."Id"
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (2ms) [Parameters=[@p0='?' (DbType = Guid), @p1='?' (Size = 61), @p2='?' (DbType = Int32), @p3='?' (Size = 38)], CommandType='Text', CommandTimeout='30']
+      INSERT INTO "Venues" ("Id", "Address", "Capacity", "Name")
+      VALUES (@p0, @p1, @p2, @p3);
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (0ms) [Parameters=[@id='?' (DbType = Guid)], CommandType='Text', CommandTimeout='30']
+      SELECT EXISTS (
+          SELECT 1
+          FROM "Venues" AS "v"
+          WHERE "v"."Id" = @id)
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (0ms) [Parameters=[@id='?' (DbType = Guid)], CommandType='Text', CommandTimeout='30']
+      SELECT "v0"."Id", "v0"."Address", "v0"."Capacity", "v0"."Name", "s"."Id", "s"."StartsAt", "s"."Status", "s"."Title", "s"."VenueId"
+      FROM (
+          SELECT "v"."Id", "v"."Address", "v"."Capacity", "v"."Name"
+          FROM "Venues" AS "v"
+          WHERE "v"."Id" = @id
+          LIMIT 1
+      ) AS "v0"
+      LEFT JOIN "Shows" AS "s" ON "v0"."Id" = "s"."VenueId"
+      ORDER BY "v0"."Id"
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (0ms) [Parameters=[@p0='?' (DbType = Guid), @p1='?' (DbType = DateTime), @p2='?' (Size = 6), @p3='?' (Size = 37), @p4='?' (DbType = Guid)], CommandType='Text', CommandTimeout='30']
+      INSERT INTO "Shows" ("Id", "StartsAt", "Status", "Title", "VenueId")
+      VALUES (@p0, @p1, @p2, @p3, @p4);
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (0ms) [Parameters=[@p0='?' (DbType = Guid), @p1='?' (Size = 7), @p2='?' (DbType = Decimal), @p3='?' (DbType = Int32), @p4='?' (DbType = Guid), @p5='?' (DbType = Int32)], CommandType='Text', CommandTimeout='30']
+      INSERT INTO "TicketTiers" ("Id", "Name", "Price", "Quota", "ShowId", "Sold")
+      VALUES (@p0, @p1, @p2, @p3, @p4, @p5);
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (0ms) [Parameters=[@p0='?' (DbType = Guid), @p1='?' (Size = 3), @p2='?' (DbType = Decimal), @p3='?' (DbType = Int32), @p4='?' (DbType = Guid), @p5='?' (DbType = Int32)], CommandType='Text', CommandTimeout='30']
+      INSERT INTO "TicketTiers" ("Id", "Name", "Price", "Quota", "ShowId", "Sold")
+      VALUES (@p0, @p1, @p2, @p3, @p4, @p5);
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (0ms) [Parameters=[@id='?' (DbType = Guid)], CommandType='Text', CommandTimeout='30']
+      SELECT "s0"."Id", "s0"."StartsAt", "s0"."Status", "s0"."Title", "s0"."VenueId", "t"."Id", "t"."Name", "t"."Price", "t"."Quota", "t"."ShowId", "t"."Sold"
+      FROM (
+          SELECT "s"."Id", "s"."StartsAt", "s"."Status", "s"."Title", "s"."VenueId"
+          FROM "Shows" AS "s"
+          WHERE "s"."Id" = @id
+          LIMIT 1
+      ) AS "s0"
+      LEFT JOIN "TicketTiers" AS "t" ON "s0"."Id" = "t"."ShowId"
+      ORDER BY "s0"."Id"
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (3ms) [Parameters=[@p0='?' (DbType = Guid), @p1='?' (Size = 61), @p2='?' (DbType = Int32), @p3='?' (Size = 38)], CommandType='Text', CommandTimeout='30']
+      INSERT INTO "Venues" ("Id", "Address", "Capacity", "Name")
+      VALUES (@p0, @p1, @p2, @p3);
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (0ms) [Parameters=[@id='?' (DbType = Guid)], CommandType='Text', CommandTimeout='30']
+      SELECT EXISTS (
+          SELECT 1
+          FROM "Venues" AS "v"
+          WHERE "v"."Id" = @id)
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (0ms) [Parameters=[@id='?' (DbType = Guid)], CommandType='Text', CommandTimeout='30']
+      SELECT "v0"."Id", "v0"."Address", "v0"."Capacity", "v0"."Name", "s"."Id", "s"."StartsAt", "s"."Status", "s"."Title", "s"."VenueId"
+      FROM (
+          SELECT "v"."Id", "v"."Address", "v"."Capacity", "v"."Name"
+          FROM "Venues" AS "v"
+          WHERE "v"."Id" = @id
+          LIMIT 1
+      ) AS "v0"
+      LEFT JOIN "Shows" AS "s" ON "v0"."Id" = "s"."VenueId"
+      ORDER BY "v0"."Id"
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (0ms) [Parameters=[@p0='?' (DbType = Guid), @p1='?' (DbType = DateTime), @p2='?' (Size = 6), @p3='?' (Size = 37), @p4='?' (DbType = Guid)], CommandType='Text', CommandTimeout='30']
+      INSERT INTO "Shows" ("Id", "StartsAt", "Status", "Title", "VenueId")
+      VALUES (@p0, @p1, @p2, @p3, @p4);
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (0ms) [Parameters=[@p0='?' (DbType = Guid), @p1='?' (Size = 3), @p2='?' (DbType = Decimal), @p3='?' (DbType = Int32), @p4='?' (DbType = Guid), @p5='?' (DbType = Int32)], CommandType='Text', CommandTimeout='30']
+      INSERT INTO "TicketTiers" ("Id", "Name", "Price", "Quota", "ShowId", "Sold")
+      VALUES (@p0, @p1, @p2, @p3, @p4, @p5);
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (0ms) [Parameters=[@p0='?' (DbType = Guid), @p1='?' (Size = 7), @p2='?' (DbType = Decimal), @p3='?' (DbType = Int32), @p4='?' (DbType = Guid), @p5='?' (DbType = Int32)], CommandType='Text', CommandTimeout='30']
+      INSERT INTO "TicketTiers" ("Id", "Name", "Price", "Quota", "ShowId", "Sold")
+      VALUES (@p0, @p1, @p2, @p3, @p4, @p5);
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (0ms) [Parameters=[@id='?' (DbType = Guid)], CommandType='Text', CommandTimeout='30']
+      SELECT "s0"."Id", "s0"."StartsAt", "s0"."Status", "s0"."Title", "s0"."VenueId", "t"."Id", "t"."Name", "t"."Price", "t"."Quota", "t"."ShowId", "t"."Sold"
+      FROM (
+          SELECT "s"."Id", "s"."StartsAt", "s"."Status", "s"."Title", "s"."VenueId"
+          FROM "Shows" AS "s"
+          WHERE "s"."Id" = @id
+          LIMIT 1
+      ) AS "s0"
+      LEFT JOIN "TicketTiers" AS "t" ON "s0"."Id" = "t"."ShowId"
+      ORDER BY "s0"."Id"
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (0ms) [Parameters=[@id='?' (DbType = Guid)], CommandType='Text', CommandTimeout='30']
+      SELECT EXISTS (
+          SELECT 1
+          FROM "Venues" AS "v"
+          WHERE "v"."Id" = @id)
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (0ms) [Parameters=[@id='?' (DbType = Guid)], CommandType='Text', CommandTimeout='30']
+      SELECT "v0"."Id", "v0"."Address", "v0"."Capacity", "v0"."Name", "s"."Id", "s"."StartsAt", "s"."Status", "s"."Title", "s"."VenueId"
+      FROM (
+          SELECT "v"."Id", "v"."Address", "v"."Capacity", "v"."Name"
+          FROM "Venues" AS "v"
+          WHERE "v"."Id" = @id
+          LIMIT 1
+      ) AS "v0"
+      LEFT JOIN "Shows" AS "s" ON "v0"."Id" = "s"."VenueId"
+      ORDER BY "v0"."Id"
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (0ms) [Parameters=[@p2='?' (DbType = Guid), @p0='?' (DbType = DateTime), @p1='?' (Size = 37)], CommandType='Text', CommandTimeout='30']
+      UPDATE "Shows" SET "StartsAt" = @p0, "Title" = @p1
+      WHERE "Id" = @p2
+      RETURNING 1;
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (0ms) [Parameters=[@p0='?' (DbType = Guid)], CommandType='Text', CommandTimeout='30']
+      DELETE FROM "TicketTiers"
+      WHERE "Id" = @p0
+      RETURNING 1;
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (1ms) [Parameters=[@p2='?' (DbType = Guid), @p0='?' (DbType = Decimal), @p1='?' (DbType = Int32)], CommandType='Text', CommandTimeout='30']
+      UPDATE "TicketTiers" SET "Price" = @p0, "Quota" = @p1
+      WHERE "Id" = @p2
+      RETURNING 1;
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (0ms) [Parameters=[@p0='?' (DbType = Guid), @p1='?' (Size = 7), @p2='?' (DbType = Decimal), @p3='?' (DbType = Int32), @p4='?' (DbType = Guid), @p5='?' (DbType = Int32)], CommandType='Text', CommandTimeout='30']
+      INSERT INTO "TicketTiers" ("Id", "Name", "Price", "Quota", "ShowId", "Sold")
+      VALUES (@p0, @p1, @p2, @p3, @p4, @p5);
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (0ms) [Parameters=[@id='?' (DbType = Guid)], CommandType='Text', CommandTimeout='30']
+      SELECT "s0"."Id", "s0"."StartsAt", "s0"."Status", "s0"."Title", "s0"."VenueId", "t"."Id", "t"."Name", "t"."Price", "t"."Quota", "t"."ShowId", "t"."Sold"
+      FROM (
+          SELECT "s"."Id", "s"."StartsAt", "s"."Status", "s"."Title", "s"."VenueId"
+          FROM "Shows" AS "s"
+          WHERE "s"."Id" = @id
+          LIMIT 1
+      ) AS "s0"
+      LEFT JOIN "TicketTiers" AS "t" ON "s0"."Id" = "t"."ShowId"
+      ORDER BY "s0"."Id"
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (3ms) [Parameters=[@p0='?' (DbType = Guid), @p1='?' (Size = 61), @p2='?' (DbType = Int32), @p3='?' (Size = 38)], CommandType='Text', CommandTimeout='30']
+      INSERT INTO "Venues" ("Id", "Address", "Capacity", "Name")
+      VALUES (@p0, @p1, @p2, @p3);
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (0ms) [Parameters=[@id='?' (DbType = Guid)], CommandType='Text', CommandTimeout='30']
+      SELECT EXISTS (
+          SELECT 1
+          FROM "Venues" AS "v"
+          WHERE "v"."Id" = @id)
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (0ms) [Parameters=[@id='?' (DbType = Guid)], CommandType='Text', CommandTimeout='30']
+      SELECT "v0"."Id", "v0"."Address", "v0"."Capacity", "v0"."Name", "s"."Id", "s"."StartsAt", "s"."Status", "s"."Title", "s"."VenueId"
+      FROM (
+          SELECT "v"."Id", "v"."Address", "v"."Capacity", "v"."Name"
+          FROM "Venues" AS "v"
+          WHERE "v"."Id" = @id
+          LIMIT 1
+      ) AS "v0"
+      LEFT JOIN "Shows" AS "s" ON "v0"."Id" = "s"."VenueId"
+      ORDER BY "v0"."Id"
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (0ms) [Parameters=[@id='?' (DbType = Guid)], CommandType='Text', CommandTimeout='30']
+      SELECT EXISTS (
+          SELECT 1
+          FROM "Venues" AS "v"
+          WHERE "v"."Id" = @id)
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (0ms) [Parameters=[@id='?' (DbType = Guid)], CommandType='Text', CommandTimeout='30']
+      SELECT "v0"."Id", "v0"."Address", "v0"."Capacity", "v0"."Name", "s"."Id", "s"."StartsAt", "s"."Status", "s"."Title", "s"."VenueId"
+      FROM (
+          SELECT "v"."Id", "v"."Address", "v"."Capacity", "v"."Name"
+          FROM "Venues" AS "v"
+          WHERE "v"."Id" = @id
+          LIMIT 1
+      ) AS "v0"
+      LEFT JOIN "Shows" AS "s" ON "v0"."Id" = "s"."VenueId"
+      ORDER BY "v0"."Id"
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (0ms) [Parameters=[@p0='?' (DbType = Guid), @p1='?' (DbType = DateTime), @p2='?' (Size = 6), @p3='?' (Size = 37), @p4='?' (DbType = Guid)], CommandType='Text', CommandTimeout='30']
+      INSERT INTO "Shows" ("Id", "StartsAt", "Status", "Title", "VenueId")
+      VALUES (@p0, @p1, @p2, @p3, @p4);
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (0ms) [Parameters=[@p0='?' (DbType = Guid), @p1='?' (Size = 3), @p2='?' (DbType = Decimal), @p3='?' (DbType = Int32), @p4='?' (DbType = Guid), @p5='?' (DbType = Int32)], CommandType='Text', CommandTimeout='30']
+      INSERT INTO "TicketTiers" ("Id", "Name", "Price", "Quota", "ShowId", "Sold")
+      VALUES (@p0, @p1, @p2, @p3, @p4, @p5);
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (0ms) [Parameters=[@p0='?' (DbType = Guid), @p1='?' (Size = 7), @p2='?' (DbType = Decimal), @p3='?' (DbType = Int32), @p4='?' (DbType = Guid), @p5='?' (DbType = Int32)], CommandType='Text', CommandTimeout='30']
+      INSERT INTO "TicketTiers" ("Id", "Name", "Price", "Quota", "ShowId", "Sold")
+      VALUES (@p0, @p1, @p2, @p3, @p4, @p5);
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (0ms) [Parameters=[@id='?' (DbType = Guid)], CommandType='Text', CommandTimeout='30']
+      SELECT "s0"."Id", "s0"."StartsAt", "s0"."Status", "s0"."Title", "s0"."VenueId", "t"."Id", "t"."Name", "t"."Price", "t"."Quota", "t"."ShowId", "t"."Sold"
+      FROM (
+          SELECT "s"."Id", "s"."StartsAt", "s"."Status", "s"."Title", "s"."VenueId"
+          FROM "Shows" AS "s"
+          WHERE "s"."Id" = @id
+          LIMIT 1
+      ) AS "s0"
+      LEFT JOIN "TicketTiers" AS "t" ON "s0"."Id" = "t"."ShowId"
+      ORDER BY "s0"."Id"
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (0ms) [Parameters=[@id='?' (DbType = Guid)], CommandType='Text', CommandTimeout='30']
+      SELECT EXISTS (
+          SELECT 1
+          FROM "Venues" AS "v"
+          WHERE "v"."Id" = @id)
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (0ms) [Parameters=[@id='?' (DbType = Guid)], CommandType='Text', CommandTimeout='30']
+      SELECT "v0"."Id", "v0"."Address", "v0"."Capacity", "v0"."Name", "s"."Id", "s"."StartsAt", "s"."Status", "s"."Title", "s"."VenueId"
+      FROM (
+          SELECT "v"."Id", "v"."Address", "v"."Capacity", "v"."Name"
+          FROM "Venues" AS "v"
+          WHERE "v"."Id" = @id
+          LIMIT 1
+      ) AS "v0"
+      LEFT JOIN "Shows" AS "s" ON "v0"."Id" = "s"."VenueId"
+      ORDER BY "v0"."Id"
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (3ms) [Parameters=[@p0='?' (DbType = Guid), @p1='?' (Size = 61), @p2='?' (DbType = Int32), @p3='?' (Size = 38)], CommandType='Text', CommandTimeout='30']
+      INSERT INTO "Venues" ("Id", "Address", "Capacity", "Name")
+      VALUES (@p0, @p1, @p2, @p3);
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (0ms) [Parameters=[@id='?' (DbType = Guid)], CommandType='Text', CommandTimeout='30']
+      SELECT EXISTS (
+          SELECT 1
+          FROM "Venues" AS "v"
+          WHERE "v"."Id" = @id)
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (0ms) [Parameters=[@id='?' (DbType = Guid)], CommandType='Text', CommandTimeout='30']
+      SELECT EXISTS (
+          SELECT 1
+          FROM "Venues" AS "v"
+          WHERE "v"."Id" = @id)
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (0ms) [Parameters=[@id='?' (DbType = Guid)], CommandType='Text', CommandTimeout='30']
+      SELECT EXISTS (
+          SELECT 1
+          FROM "Venues" AS "v"
+          WHERE "v"."Id" = @id)
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (0ms) [Parameters=[@id='?' (DbType = Guid)], CommandType='Text', CommandTimeout='30']
+      SELECT EXISTS (
+          SELECT 1
+          FROM "Venues" AS "v"
+          WHERE "v"."Id" = @id)
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (3ms) [Parameters=[@p0='?' (DbType = Guid), @p1='?' (Size = 61), @p2='?' (DbType = Int32), @p3='?' (Size = 38)], CommandType='Text', CommandTimeout='30']
+      INSERT INTO "Venues" ("Id", "Address", "Capacity", "Name")
+      VALUES (@p0, @p1, @p2, @p3);
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (0ms) [Parameters=[@id='?' (DbType = Guid)], CommandType='Text', CommandTimeout='30']
+      SELECT EXISTS (
+          SELECT 1
+          FROM "Venues" AS "v"
+          WHERE "v"."Id" = @id)
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (0ms) [Parameters=[@id='?' (DbType = Guid)], CommandType='Text', CommandTimeout='30']
+      SELECT "v0"."Id", "v0"."Address", "v0"."Capacity", "v0"."Name", "s"."Id", "s"."StartsAt", "s"."Status", "s"."Title", "s"."VenueId"
+      FROM (
+          SELECT "v"."Id", "v"."Address", "v"."Capacity", "v"."Name"
+          FROM "Venues" AS "v"
+          WHERE "v"."Id" = @id
+          LIMIT 1
+      ) AS "v0"
+      LEFT JOIN "Shows" AS "s" ON "v0"."Id" = "s"."VenueId"
+      ORDER BY "v0"."Id"
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (0ms) [Parameters=[@p0='?' (DbType = Guid), @p1='?' (DbType = DateTime), @p2='?' (Size = 6), @p3='?' (Size = 37), @p4='?' (DbType = Guid)], CommandType='Text', CommandTimeout='30']
+      INSERT INTO "Shows" ("Id", "StartsAt", "Status", "Title", "VenueId")
+      VALUES (@p0, @p1, @p2, @p3, @p4);
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (0ms) [Parameters=[@p0='?' (DbType = Guid), @p1='?' (Size = 3), @p2='?' (DbType = Decimal), @p3='?' (DbType = Int32), @p4='?' (DbType = Guid), @p5='?' (DbType = Int32)], CommandType='Text', CommandTimeout='30']
+      INSERT INTO "TicketTiers" ("Id", "Name", "Price", "Quota", "ShowId", "Sold")
+      VALUES (@p0, @p1, @p2, @p3, @p4, @p5);
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (0ms) [Parameters=[@id='?' (DbType = Guid)], CommandType='Text', CommandTimeout='30']
+      SELECT "s0"."Id", "s0"."StartsAt", "s0"."Status", "s0"."Title", "s0"."VenueId", "t"."Id", "t"."Name", "t"."Price", "t"."Quota", "t"."ShowId", "t"."Sold"
+      FROM (
+          SELECT "s"."Id", "s"."StartsAt", "s"."Status", "s"."Title", "s"."VenueId"
+          FROM "Shows" AS "s"
+          WHERE "s"."Id" = @id
+          LIMIT 1
+      ) AS "s0"
+      LEFT JOIN "TicketTiers" AS "t" ON "s0"."Id" = "t"."ShowId"
+      ORDER BY "s0"."Id"
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (0ms) [Parameters=[@p0='?' (DbType = Guid)], CommandType='Text', CommandTimeout='30']
+      DELETE FROM "TicketTiers"
+      WHERE "Id" = @p0
+      RETURNING 1;
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (0ms) [Parameters=[@p0='?' (DbType = Guid)], CommandType='Text', CommandTimeout='30']
+      DELETE FROM "Shows"
+      WHERE "Id" = @p0
+      RETURNING 1;
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (0ms) [Parameters=[@id='?' (DbType = Guid)], CommandType='Text', CommandTimeout='30']
+      SELECT "s0"."Id", "s0"."StartsAt", "s0"."Status", "s0"."Title", "s0"."VenueId", "t"."Id", "t"."Name", "t"."Price", "t"."Quota", "t"."ShowId", "t"."Sold"
+      FROM (
+          SELECT "s"."Id", "s"."StartsAt", "s"."Status", "s"."Title", "s"."VenueId"
+          FROM "Shows" AS "s"
+          WHERE "s"."Id" = @id
+          LIMIT 1
+      ) AS "s0"
+      LEFT JOIN "TicketTiers" AS "t" ON "s0"."Id" = "t"."ShowId"
+      ORDER BY "s0"."Id"
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (0ms) [Parameters=[@id='?' (DbType = Guid)], CommandType='Text', CommandTimeout='30']
+      SELECT "s0"."Id", "s0"."StartsAt", "s0"."Status", "s0"."Title", "s0"."VenueId", "t"."Id", "t"."Name", "t"."Price", "t"."Quota", "t"."ShowId", "t"."Sold"
+      FROM (
+          SELECT "s"."Id", "s"."StartsAt", "s"."Status", "s"."Title", "s"."VenueId"
+          FROM "Shows" AS "s"
+          WHERE "s"."Id" = @id
+          LIMIT 1
+      ) AS "s0"
+      LEFT JOIN "TicketTiers" AS "t" ON "s0"."Id" = "t"."ShowId"
+      ORDER BY "s0"."Id"
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (3ms) [Parameters=[@p0='?' (DbType = Guid), @p1='?' (Size = 61), @p2='?' (DbType = Int32), @p3='?' (Size = 38)], CommandType='Text', CommandTimeout='30']
+      INSERT INTO "Venues" ("Id", "Address", "Capacity", "Name")
+      VALUES (@p0, @p1, @p2, @p3);
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (0ms) [Parameters=[@id='?' (DbType = Guid)], CommandType='Text', CommandTimeout='30']
+      SELECT "s0"."Id", "s0"."StartsAt", "s0"."Status", "s0"."Title", "s0"."VenueId", "t"."Id", "t"."Name", "t"."Price", "t"."Quota", "t"."ShowId", "t"."Sold"
+      FROM (
+          SELECT "s"."Id", "s"."StartsAt", "s"."Status", "s"."Title", "s"."VenueId"
+          FROM "Shows" AS "s"
+          WHERE "s"."Id" = @id
+          LIMIT 1
+      ) AS "s0"
+      LEFT JOIN "TicketTiers" AS "t" ON "s0"."Id" = "t"."ShowId"
+      ORDER BY "s0"."Id"
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (0ms) [Parameters=[@id='?' (DbType = Guid)], CommandType='Text', CommandTimeout='30']
+      SELECT "s0"."Id", "s0"."StartsAt", "s0"."Status", "s0"."Title", "s0"."VenueId", "t"."Id", "t"."Name", "t"."Price", "t"."Quota", "t"."ShowId", "t"."Sold"
+      FROM (
+          SELECT "s"."Id", "s"."StartsAt", "s"."Status", "s"."Title", "s"."VenueId"
+          FROM "Shows" AS "s"
+          WHERE "s"."Id" = @id
+          LIMIT 1
+      ) AS "s0"
+      LEFT JOIN "TicketTiers" AS "t" ON "s0"."Id" = "t"."ShowId"
+      ORDER BY "s0"."Id"
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (3ms) [Parameters=[@p0='?' (DbType = Guid), @p1='?' (Size = 61), @p2='?' (DbType = Int32), @p3='?' (Size = 38)], CommandType='Text', CommandTimeout='30']
+      INSERT INTO "Venues" ("Id", "Address", "Capacity", "Name")
+      VALUES (@p0, @p1, @p2, @p3);
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (0ms) [Parameters=[@id='?' (DbType = Guid)], CommandType='Text', CommandTimeout='30']
+      SELECT EXISTS (
+          SELECT 1
+          FROM "Venues" AS "v"
+          WHERE "v"."Id" = @id)
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (0ms) [Parameters=[@id='?' (DbType = Guid)], CommandType='Text', CommandTimeout='30']
+      SELECT "v0"."Id", "v0"."Address", "v0"."Capacity", "v0"."Name", "s"."Id", "s"."StartsAt", "s"."Status", "s"."Title", "s"."VenueId"
+      FROM (
+          SELECT "v"."Id", "v"."Address", "v"."Capacity", "v"."Name"
+          FROM "Venues" AS "v"
+          WHERE "v"."Id" = @id
+          LIMIT 1
+      ) AS "v0"
+      LEFT JOIN "Shows" AS "s" ON "v0"."Id" = "s"."VenueId"
+      ORDER BY "v0"."Id"
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (0ms) [Parameters=[@p0='?' (DbType = Guid), @p1='?' (DbType = DateTime), @p2='?' (Size = 6), @p3='?' (Size = 37), @p4='?' (DbType = Guid)], CommandType='Text', CommandTimeout='30']
+      INSERT INTO "Shows" ("Id", "StartsAt", "Status", "Title", "VenueId")
+      VALUES (@p0, @p1, @p2, @p3, @p4);
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (0ms) [Parameters=[@p0='?' (DbType = Guid), @p1='?' (Size = 3), @p2='?' (DbType = Decimal), @p3='?' (DbType = Int32), @p4='?' (DbType = Guid), @p5='?' (DbType = Int32)], CommandType='Text', CommandTimeout='30']
+      INSERT INTO "TicketTiers" ("Id", "Name", "Price", "Quota", "ShowId", "Sold")
+      VALUES (@p0, @p1, @p2, @p3, @p4, @p5);
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (0ms) [Parameters=[@p0='?' (DbType = Guid), @p1='?' (Size = 7), @p2='?' (DbType = Decimal), @p3='?' (DbType = Int32), @p4='?' (DbType = Guid), @p5='?' (DbType = Int32)], CommandType='Text', CommandTimeout='30']
+      INSERT INTO "TicketTiers" ("Id", "Name", "Price", "Quota", "ShowId", "Sold")
+      VALUES (@p0, @p1, @p2, @p3, @p4, @p5);
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (0ms) [Parameters=[@id='?' (DbType = Guid)], CommandType='Text', CommandTimeout='30']
+      SELECT "s0"."Id", "s0"."StartsAt", "s0"."Status", "s0"."Title", "s0"."VenueId", "t"."Id", "t"."Name", "t"."Price", "t"."Quota", "t"."ShowId", "t"."Sold"
+      FROM (
+          SELECT "s"."Id", "s"."StartsAt", "s"."Status", "s"."Title", "s"."VenueId"
+          FROM "Shows" AS "s"
+          WHERE "s"."Id" = @id
+          LIMIT 1
+      ) AS "s0"
+      LEFT JOIN "TicketTiers" AS "t" ON "s0"."Id" = "t"."ShowId"
+      ORDER BY "s0"."Id"
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (0ms) [Parameters=[@p0='?' (DbType = Guid), @p1='?' (Size = 17), @p2='?' (DbType = Int32), @p3='?' (DbType = Guid), @p4='?' (Size = 3), @p5='?' (DbType = Decimal)], CommandType='Text', CommandTimeout='30']
+      INSERT INTO "Bookings" ("Id", "CustomerEmail", "Quantity", "ShowId", "Tier", "TotalPrice")
+      VALUES (@p0, @p1, @p2, @p3, @p4, @p5);
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (0ms) [Parameters=[@p1='?' (DbType = Guid), @p0='?' (DbType = Int32)], CommandType='Text', CommandTimeout='30']
+      UPDATE "TicketTiers" SET "Sold" = @p0
+      WHERE "Id" = @p1
+      RETURNING 1;
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (0ms) [Parameters=[@id='?' (DbType = Guid)], CommandType='Text', CommandTimeout='30']
+      SELECT "s0"."Id", "s0"."StartsAt", "s0"."Status", "s0"."Title", "s0"."VenueId", "t"."Id", "t"."Name", "t"."Price", "t"."Quota", "t"."ShowId", "t"."Sold"
+      FROM (
+          SELECT "s"."Id", "s"."StartsAt", "s"."Status", "s"."Title", "s"."VenueId"
+          FROM "Shows" AS "s"
+          WHERE "s"."Id" = @id
+          LIMIT 1
+      ) AS "s0"
+      LEFT JOIN "TicketTiers" AS "t" ON "s0"."Id" = "t"."ShowId"
+      ORDER BY "s0"."Id"
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (0ms) [Parameters=[], CommandType='Text', CommandTimeout='30']
+      SELECT COUNT(*)
+      FROM "Bookings" AS "b"
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (0ms) [Parameters=[@p1='?' (DbType = Int32), @p='?' (DbType = Int32)], CommandType='Text', CommandTimeout='30']
+      SELECT "b"."Id", "b"."CustomerEmail", "b"."Quantity", "b"."ShowId", "b"."Tier", "b"."TotalPrice"
+      FROM "Bookings" AS "b"
+      ORDER BY "b"."Id"
+      LIMIT @p1 OFFSET @p
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (3ms) [Parameters=[@p0='?' (DbType = Guid), @p1='?' (Size = 61), @p2='?' (DbType = Int32), @p3='?' (Size = 38)], CommandType='Text', CommandTimeout='30']
+      INSERT INTO "Venues" ("Id", "Address", "Capacity", "Name")
+      VALUES (@p0, @p1, @p2, @p3);
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (0ms) [Parameters=[@id='?' (DbType = Guid)], CommandType='Text', CommandTimeout='30']
+      SELECT EXISTS (
+          SELECT 1
+          FROM "Venues" AS "v"
+          WHERE "v"."Id" = @id)
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (0ms) [Parameters=[@id='?' (DbType = Guid)], CommandType='Text', CommandTimeout='30']
+      SELECT "v0"."Id", "v0"."Address", "v0"."Capacity", "v0"."Name", "s"."Id", "s"."StartsAt", "s"."Status", "s"."Title", "s"."VenueId"
+      FROM (
+          SELECT "v"."Id", "v"."Address", "v"."Capacity", "v"."Name"
+          FROM "Venues" AS "v"
+          WHERE "v"."Id" = @id
+          LIMIT 1
+      ) AS "v0"
+      LEFT JOIN "Shows" AS "s" ON "v0"."Id" = "s"."VenueId"
+      ORDER BY "v0"."Id"
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (0ms) [Parameters=[@p0='?' (DbType = Guid), @p1='?' (DbType = DateTime), @p2='?' (Size = 6), @p3='?' (Size = 37), @p4='?' (DbType = Guid)], CommandType='Text', CommandTimeout='30']
+      INSERT INTO "Shows" ("Id", "StartsAt", "Status", "Title", "VenueId")
+      VALUES (@p0, @p1, @p2, @p3, @p4);
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (0ms) [Parameters=[@p0='?' (DbType = Guid), @p1='?' (Size = 7), @p2='?' (DbType = Decimal), @p3='?' (DbType = Int32), @p4='?' (DbType = Guid), @p5='?' (DbType = Int32)], CommandType='Text', CommandTimeout='30']
+      INSERT INTO "TicketTiers" ("Id", "Name", "Price", "Quota", "ShowId", "Sold")
+      VALUES (@p0, @p1, @p2, @p3, @p4, @p5);
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (0ms) [Parameters=[@p0='?' (DbType = Guid), @p1='?' (Size = 3), @p2='?' (DbType = Decimal), @p3='?' (DbType = Int32), @p4='?' (DbType = Guid), @p5='?' (DbType = Int32)], CommandType='Text', CommandTimeout='30']
+      INSERT INTO "TicketTiers" ("Id", "Name", "Price", "Quota", "ShowId", "Sold")
+      VALUES (@p0, @p1, @p2, @p3, @p4, @p5);
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (0ms) [Parameters=[@id='?' (DbType = Guid)], CommandType='Text', CommandTimeout='30']
+      SELECT "s0"."Id", "s0"."StartsAt", "s0"."Status", "s0"."Title", "s0"."VenueId", "t"."Id", "t"."Name", "t"."Price", "t"."Quota", "t"."ShowId", "t"."Sold"
+      FROM (
+          SELECT "s"."Id", "s"."StartsAt", "s"."Status", "s"."Title", "s"."VenueId"
+          FROM "Shows" AS "s"
+          WHERE "s"."Id" = @id
+          LIMIT 1
+      ) AS "s0"
+      LEFT JOIN "TicketTiers" AS "t" ON "s0"."Id" = "t"."ShowId"
+      ORDER BY "s0"."Id"
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (0ms) [Parameters=[@p0='?' (DbType = Guid), @p1='?' (Size = 15), @p2='?' (DbType = Int32), @p3='?' (DbType = Guid), @p4='?' (Size = 3), @p5='?' (DbType = Decimal)], CommandType='Text', CommandTimeout='30']
+      INSERT INTO "Bookings" ("Id", "CustomerEmail", "Quantity", "ShowId", "Tier", "TotalPrice")
+      VALUES (@p0, @p1, @p2, @p3, @p4, @p5);
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (0ms) [Parameters=[@p1='?' (DbType = Guid), @p0='?' (DbType = Int32)], CommandType='Text', CommandTimeout='30']
+      UPDATE "TicketTiers" SET "Sold" = @p0
+      WHERE "Id" = @p1
+      RETURNING 1;
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (0ms) [Parameters=[@id='?' (DbType = Guid)], CommandType='Text', CommandTimeout='30']
+      SELECT "s0"."Id", "s0"."StartsAt", "s0"."Status", "s0"."Title", "s0"."VenueId", "t"."Id", "t"."Name", "t"."Price", "t"."Quota", "t"."ShowId", "t"."Sold"
+      FROM (
+          SELECT "s"."Id", "s"."StartsAt", "s"."Status", "s"."Title", "s"."VenueId"
+          FROM "Shows" AS "s"
+          WHERE "s"."Id" = @id
+          LIMIT 1
+      ) AS "s0"
+      LEFT JOIN "TicketTiers" AS "t" ON "s0"."Id" = "t"."ShowId"
+      ORDER BY "s0"."Id"
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (0ms) [Parameters=[@id='?' (DbType = Guid)], CommandType='Text', CommandTimeout='30']
+      SELECT "s0"."Id", "s0"."StartsAt", "s0"."Status", "s0"."Title", "s0"."VenueId", "t"."Id", "t"."Name", "t"."Price", "t"."Quota", "t"."ShowId", "t"."Sold"
+      FROM (
+          SELECT "s"."Id", "s"."StartsAt", "s"."Status", "s"."Title", "s"."VenueId"
+          FROM "Shows" AS "s"
+          WHERE "s"."Id" = @id
+          LIMIT 1
+      ) AS "s0"
+      LEFT JOIN "TicketTiers" AS "t" ON "s0"."Id" = "t"."ShowId"
+      ORDER BY "s0"."Id"
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (0ms) [Parameters=[@p0='?' (DbType = Guid), @p1='?' (Size = 15), @p2='?' (DbType = Int32), @p3='?' (DbType = Guid), @p4='?' (Size = 7), @p5='?' (DbType = Decimal)], CommandType='Text', CommandTimeout='30']
+      INSERT INTO "Bookings" ("Id", "CustomerEmail", "Quantity", "ShowId", "Tier", "TotalPrice")
+      VALUES (@p0, @p1, @p2, @p3, @p4, @p5);
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (0ms) [Parameters=[@p1='?' (DbType = Guid), @p0='?' (DbType = Int32)], CommandType='Text', CommandTimeout='30']
+      UPDATE "TicketTiers" SET "Sold" = @p0
+      WHERE "Id" = @p1
+      RETURNING 1;
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (0ms) [Parameters=[@id='?' (DbType = Guid)], CommandType='Text', CommandTimeout='30']
+      SELECT "s0"."Id", "s0"."StartsAt", "s0"."Status", "s0"."Title", "s0"."VenueId", "t"."Id", "t"."Name", "t"."Price", "t"."Quota", "t"."ShowId", "t"."Sold"
+      FROM (
+          SELECT "s"."Id", "s"."StartsAt", "s"."Status", "s"."Title", "s"."VenueId"
+          FROM "Shows" AS "s"
+          WHERE "s"."Id" = @id
+          LIMIT 1
+      ) AS "s0"
+      LEFT JOIN "TicketTiers" AS "t" ON "s0"."Id" = "t"."ShowId"
+      ORDER BY "s0"."Id"
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (0ms) [Parameters=[@id='?' (DbType = Guid)], CommandType='Text', CommandTimeout='30']
+      SELECT "s0"."Id", "s0"."StartsAt", "s0"."Status", "s0"."Title", "s0"."VenueId", "t"."Id", "t"."Name", "t"."Price", "t"."Quota", "t"."ShowId", "t"."Sold"
+      FROM (
+          SELECT "s"."Id", "s"."StartsAt", "s"."Status", "s"."Title", "s"."VenueId"
+          FROM "Shows" AS "s"
+          WHERE "s"."Id" = @id
+          LIMIT 1
+      ) AS "s0"
+      LEFT JOIN "TicketTiers" AS "t" ON "s0"."Id" = "t"."ShowId"
+      ORDER BY "s0"."Id"
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (2ms) [Parameters=[@p0='?' (DbType = Guid), @p1='?' (Size = 61), @p2='?' (DbType = Int32), @p3='?' (Size = 38)], CommandType='Text', CommandTimeout='30']
+      INSERT INTO "Venues" ("Id", "Address", "Capacity", "Name")
+      VALUES (@p0, @p1, @p2, @p3);
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (0ms) [Parameters=[@id='?' (DbType = Guid)], CommandType='Text', CommandTimeout='30']
+      SELECT EXISTS (
+          SELECT 1
+          FROM "Venues" AS "v"
+          WHERE "v"."Id" = @id)
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (0ms) [Parameters=[@id='?' (DbType = Guid)], CommandType='Text', CommandTimeout='30']
+      SELECT "v0"."Id", "v0"."Address", "v0"."Capacity", "v0"."Name", "s"."Id", "s"."StartsAt", "s"."Status", "s"."Title", "s"."VenueId"
+      FROM (
+          SELECT "v"."Id", "v"."Address", "v"."Capacity", "v"."Name"
+          FROM "Venues" AS "v"
+          WHERE "v"."Id" = @id
+          LIMIT 1
+      ) AS "v0"
+      LEFT JOIN "Shows" AS "s" ON "v0"."Id" = "s"."VenueId"
+      ORDER BY "v0"."Id"
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (0ms) [Parameters=[@p0='?' (DbType = Guid), @p1='?' (DbType = DateTime), @p2='?' (Size = 6), @p3='?' (Size = 37), @p4='?' (DbType = Guid)], CommandType='Text', CommandTimeout='30']
+      INSERT INTO "Shows" ("Id", "StartsAt", "Status", "Title", "VenueId")
+      VALUES (@p0, @p1, @p2, @p3, @p4);
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (0ms) [Parameters=[@p0='?' (DbType = Guid), @p1='?' (Size = 3), @p2='?' (DbType = Decimal), @p3='?' (DbType = Int32), @p4='?' (DbType = Guid), @p5='?' (DbType = Int32)], CommandType='Text', CommandTimeout='30']
+      INSERT INTO "TicketTiers" ("Id", "Name", "Price", "Quota", "ShowId", "Sold")
+      VALUES (@p0, @p1, @p2, @p3, @p4, @p5);
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (0ms) [Parameters=[@id='?' (DbType = Guid)], CommandType='Text', CommandTimeout='30']
+      SELECT "s0"."Id", "s0"."StartsAt", "s0"."Status", "s0"."Title", "s0"."VenueId", "t"."Id", "t"."Name", "t"."Price", "t"."Quota", "t"."ShowId", "t"."Sold"
+      FROM (
+          SELECT "s"."Id", "s"."StartsAt", "s"."Status", "s"."Title", "s"."VenueId"
+          FROM "Shows" AS "s"
+          WHERE "s"."Id" = @id
+          LIMIT 1
+      ) AS "s0"
+      LEFT JOIN "TicketTiers" AS "t" ON "s0"."Id" = "t"."ShowId"
+      ORDER BY "s0"."Id"
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (0ms) [Parameters=[@p0='?' (DbType = Guid), @p1='?' (Size = 15), @p2='?' (DbType = Int32), @p3='?' (DbType = Guid), @p4='?' (Size = 3), @p5='?' (DbType = Decimal)], CommandType='Text', CommandTimeout='30']
+      INSERT INTO "Bookings" ("Id", "CustomerEmail", "Quantity", "ShowId", "Tier", "TotalPrice")
+      VALUES (@p0, @p1, @p2, @p3, @p4, @p5);
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (0ms) [Parameters=[@p1='?' (DbType = Guid), @p0='?' (DbType = Int32)], CommandType='Text', CommandTimeout='30']
+      UPDATE "TicketTiers" SET "Sold" = @p0
+      WHERE "Id" = @p1
+      RETURNING 1;
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (0ms) [Parameters=[@id='?' (DbType = Guid)], CommandType='Text', CommandTimeout='30']
+      SELECT "s0"."Id", "s0"."StartsAt", "s0"."Status", "s0"."Title", "s0"."VenueId", "t"."Id", "t"."Name", "t"."Price", "t"."Quota", "t"."ShowId", "t"."Sold"
+      FROM (
+          SELECT "s"."Id", "s"."StartsAt", "s"."Status", "s"."Title", "s"."VenueId"
+          FROM "Shows" AS "s"
+          WHERE "s"."Id" = @id
+          LIMIT 1
+      ) AS "s0"
+      LEFT JOIN "TicketTiers" AS "t" ON "s0"."Id" = "t"."ShowId"
+      ORDER BY "s0"."Id"
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (0ms) [Parameters=[@id='?' (DbType = Guid)], CommandType='Text', CommandTimeout='30']
+      SELECT "s0"."Id", "s0"."StartsAt", "s0"."Status", "s0"."Title", "s0"."VenueId", "t"."Id", "t"."Name", "t"."Price", "t"."Quota", "t"."ShowId", "t"."Sold"
+      FROM (
+          SELECT "s"."Id", "s"."StartsAt", "s"."Status", "s"."Title", "s"."VenueId"
+          FROM "Shows" AS "s"
+          WHERE "s"."Id" = @id
+          LIMIT 1
+      ) AS "s0"
+      LEFT JOIN "TicketTiers" AS "t" ON "s0"."Id" = "t"."ShowId"
+      ORDER BY "s0"."Id"
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (3ms) [Parameters=[@p0='?' (DbType = Guid), @p1='?' (Size = 61), @p2='?' (DbType = Int32), @p3='?' (Size = 38)], CommandType='Text', CommandTimeout='30']
+      INSERT INTO "Venues" ("Id", "Address", "Capacity", "Name")
+      VALUES (@p0, @p1, @p2, @p3);
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (0ms) [Parameters=[@id='?' (DbType = Guid)], CommandType='Text', CommandTimeout='30']
+      SELECT EXISTS (
+          SELECT 1
+          FROM "Venues" AS "v"
+          WHERE "v"."Id" = @id)
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (0ms) [Parameters=[@id='?' (DbType = Guid)], CommandType='Text', CommandTimeout='30']
+      SELECT "v0"."Id", "v0"."Address", "v0"."Capacity", "v0"."Name", "s"."Id", "s"."StartsAt", "s"."Status", "s"."Title", "s"."VenueId"
+      FROM (
+          SELECT "v"."Id", "v"."Address", "v"."Capacity", "v"."Name"
+          FROM "Venues" AS "v"
+          WHERE "v"."Id" = @id
+          LIMIT 1
+      ) AS "v0"
+      LEFT JOIN "Shows" AS "s" ON "v0"."Id" = "s"."VenueId"
+      ORDER BY "v0"."Id"
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (0ms) [Parameters=[@p0='?' (DbType = Guid), @p1='?' (DbType = DateTime), @p2='?' (Size = 6), @p3='?' (Size = 37), @p4='?' (DbType = Guid)], CommandType='Text', CommandTimeout='30']
+      INSERT INTO "Shows" ("Id", "StartsAt", "Status", "Title", "VenueId")
+      VALUES (@p0, @p1, @p2, @p3, @p4);
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (0ms) [Parameters=[@p0='?' (DbType = Guid), @p1='?' (Size = 3), @p2='?' (DbType = Decimal), @p3='?' (DbType = Int32), @p4='?' (DbType = Guid), @p5='?' (DbType = Int32)], CommandType='Text', CommandTimeout='30']
+      INSERT INTO "TicketTiers" ("Id", "Name", "Price", "Quota", "ShowId", "Sold")
+      VALUES (@p0, @p1, @p2, @p3, @p4, @p5);
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (0ms) [Parameters=[@id='?' (DbType = Guid)], CommandType='Text', CommandTimeout='30']
+      SELECT "s0"."Id", "s0"."StartsAt", "s0"."Status", "s0"."Title", "s0"."VenueId", "t"."Id", "t"."Name", "t"."Price", "t"."Quota", "t"."ShowId", "t"."Sold"
+      FROM (
+          SELECT "s"."Id", "s"."StartsAt", "s"."Status", "s"."Title", "s"."VenueId"
+          FROM "Shows" AS "s"
+          WHERE "s"."Id" = @id
+          LIMIT 1
+      ) AS "s0"
+      LEFT JOIN "TicketTiers" AS "t" ON "s0"."Id" = "t"."ShowId"
+      ORDER BY "s0"."Id"
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (0ms) [Parameters=[@p0='?' (DbType = Guid), @p1='?' (Size = 15), @p2='?' (DbType = Int32), @p3='?' (DbType = Guid), @p4='?' (Size = 3), @p5='?' (DbType = Decimal)], CommandType='Text', CommandTimeout='30']
+      INSERT INTO "Bookings" ("Id", "CustomerEmail", "Quantity", "ShowId", "Tier", "TotalPrice")
+      VALUES (@p0, @p1, @p2, @p3, @p4, @p5);
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (0ms) [Parameters=[@p1='?' (DbType = Guid), @p0='?' (DbType = Int32)], CommandType='Text', CommandTimeout='30']
+      UPDATE "TicketTiers" SET "Sold" = @p0
+      WHERE "Id" = @p1
+      RETURNING 1;
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (0ms) [Parameters=[@id='?' (DbType = Guid)], CommandType='Text', CommandTimeout='30']
+      SELECT "s0"."Id", "s0"."StartsAt", "s0"."Status", "s0"."Title", "s0"."VenueId", "t"."Id", "t"."Name", "t"."Price", "t"."Quota", "t"."ShowId", "t"."Sold"
+      FROM (
+          SELECT "s"."Id", "s"."StartsAt", "s"."Status", "s"."Title", "s"."VenueId"
+          FROM "Shows" AS "s"
+          WHERE "s"."Id" = @id
+          LIMIT 1
+      ) AS "s0"
+      LEFT JOIN "TicketTiers" AS "t" ON "s0"."Id" = "t"."ShowId"
+      ORDER BY "s0"."Id"
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (0ms) [Parameters=[@id='?' (DbType = Guid)], CommandType='Text', CommandTimeout='30']
+      SELECT EXISTS (
+          SELECT 1
+          FROM "Venues" AS "v"
+          WHERE "v"."Id" = @id)
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (0ms) [Parameters=[@id='?' (DbType = Guid)], CommandType='Text', CommandTimeout='30']
+      SELECT "v0"."Id", "v0"."Address", "v0"."Capacity", "v0"."Name", "s"."Id", "s"."StartsAt", "s"."Status", "s"."Title", "s"."VenueId"
+      FROM (
+          SELECT "v"."Id", "v"."Address", "v"."Capacity", "v"."Name"
+          FROM "Venues" AS "v"
+          WHERE "v"."Id" = @id
+          LIMIT 1
+      ) AS "v0"
+      LEFT JOIN "Shows" AS "s" ON "v0"."Id" = "s"."VenueId"
+      ORDER BY "v0"."Id"
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (0ms) [Parameters=[@p2='?' (DbType = Guid), @p0='?' (DbType = DateTime), @p1='?' (Size = 37)], CommandType='Text', CommandTimeout='30']
+      UPDATE "Shows" SET "StartsAt" = @p0, "Title" = @p1
+      WHERE "Id" = @p2
+      RETURNING 1;
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (0ms) [Parameters=[@p1='?' (DbType = Guid), @p0='?' (DbType = Decimal)], CommandType='Text', CommandTimeout='30']
+      UPDATE "TicketTiers" SET "Price" = @p0
+      WHERE "Id" = @p1
+      RETURNING 1;
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (0ms) [Parameters=[@id='?' (DbType = Guid)], CommandType='Text', CommandTimeout='30']
+      SELECT "s0"."Id", "s0"."StartsAt", "s0"."Status", "s0"."Title", "s0"."VenueId", "t"."Id", "t"."Name", "t"."Price", "t"."Quota", "t"."ShowId", "t"."Sold"
+      FROM (
+          SELECT "s"."Id", "s"."StartsAt", "s"."Status", "s"."Title", "s"."VenueId"
+          FROM "Shows" AS "s"
+          WHERE "s"."Id" = @id
+          LIMIT 1
+      ) AS "s0"
+      LEFT JOIN "TicketTiers" AS "t" ON "s0"."Id" = "t"."ShowId"
+      ORDER BY "s0"."Id"
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (3ms) [Parameters=[@p0='?' (DbType = Guid), @p1='?' (Size = 61), @p2='?' (DbType = Int32), @p3='?' (Size = 38)], CommandType='Text', CommandTimeout='30']
+      INSERT INTO "Venues" ("Id", "Address", "Capacity", "Name")
+      VALUES (@p0, @p1, @p2, @p3);
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (0ms) [Parameters=[@id='?' (DbType = Guid)], CommandType='Text', CommandTimeout='30']
+      SELECT EXISTS (
+          SELECT 1
+          FROM "Venues" AS "v"
+          WHERE "v"."Id" = @id)
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (0ms) [Parameters=[@id='?' (DbType = Guid)], CommandType='Text', CommandTimeout='30']
+      SELECT "v0"."Id", "v0"."Address", "v0"."Capacity", "v0"."Name", "s"."Id", "s"."StartsAt", "s"."Status", "s"."Title", "s"."VenueId"
+      FROM (
+          SELECT "v"."Id", "v"."Address", "v"."Capacity", "v"."Name"
+          FROM "Venues" AS "v"
+          WHERE "v"."Id" = @id
+          LIMIT 1
+      ) AS "v0"
+      LEFT JOIN "Shows" AS "s" ON "v0"."Id" = "s"."VenueId"
+      ORDER BY "v0"."Id"
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (0ms) [Parameters=[@p0='?' (DbType = Guid), @p1='?' (DbType = DateTime), @p2='?' (Size = 5), @p3='?' (Size = 37), @p4='?' (DbType = Guid)], CommandType='Text', CommandTimeout='30']
+      INSERT INTO "Shows" ("Id", "StartsAt", "Status", "Title", "VenueId")
+      VALUES (@p0, @p1, @p2, @p3, @p4);
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (0ms) [Parameters=[@p0='?' (DbType = Guid), @p1='?' (Size = 3), @p2='?' (DbType = Decimal), @p3='?' (DbType = Int32), @p4='?' (DbType = Guid), @p5='?' (DbType = Int32)], CommandType='Text', CommandTimeout='30']
+      INSERT INTO "TicketTiers" ("Id", "Name", "Price", "Quota", "ShowId", "Sold")
+      VALUES (@p0, @p1, @p2, @p3, @p4, @p5);
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (0ms) [Parameters=[@id='?' (DbType = Guid)], CommandType='Text', CommandTimeout='30']
+      SELECT EXISTS (
+          SELECT 1
+          FROM "Venues" AS "v"
+          WHERE "v"."Id" = @id)
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (0ms) [Parameters=[@id='?' (DbType = Guid)], CommandType='Text', CommandTimeout='30']
+      SELECT "v0"."Id", "v0"."Address", "v0"."Capacity", "v0"."Name", "s"."Id", "s"."StartsAt", "s"."Status", "s"."Title", "s"."VenueId"
+      FROM (
+          SELECT "v"."Id", "v"."Address", "v"."Capacity", "v"."Name"
+          FROM "Venues" AS "v"
+          WHERE "v"."Id" = @id
+          LIMIT 1
+      ) AS "v0"
+      LEFT JOIN "Shows" AS "s" ON "v0"."Id" = "s"."VenueId"
+      ORDER BY "v0"."Id"
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (0ms) [Parameters=[@p0='?' (DbType = Guid), @p1='?' (DbType = DateTime), @p2='?' (Size = 9), @p3='?' (Size = 37), @p4='?' (DbType = Guid)], CommandType='Text', CommandTimeout='30']
+      INSERT INTO "Shows" ("Id", "StartsAt", "Status", "Title", "VenueId")
+      VALUES (@p0, @p1, @p2, @p3, @p4);
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (0ms) [Parameters=[@p0='?' (DbType = Guid), @p1='?' (Size = 3), @p2='?' (DbType = Decimal), @p3='?' (DbType = Int32), @p4='?' (DbType = Guid), @p5='?' (DbType = Int32)], CommandType='Text', CommandTimeout='30']
+      INSERT INTO "TicketTiers" ("Id", "Name", "Price", "Quota", "ShowId", "Sold")
+      VALUES (@p0, @p1, @p2, @p3, @p4, @p5);
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (0ms) [Parameters=[@id='?' (DbType = Guid)], CommandType='Text', CommandTimeout='30']
+      SELECT EXISTS (
+          SELECT 1
+          FROM "Venues" AS "v"
+          WHERE "v"."Id" = @id)
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (0ms) [Parameters=[@id='?' (DbType = Guid)], CommandType='Text', CommandTimeout='30']
+      SELECT "v0"."Id", "v0"."Address", "v0"."Capacity", "v0"."Name", "s"."Id", "s"."StartsAt", "s"."Status", "s"."Title", "s"."VenueId"
+      FROM (
+          SELECT "v"."Id", "v"."Address", "v"."Capacity", "v"."Name"
+          FROM "Venues" AS "v"
+          WHERE "v"."Id" = @id
+          LIMIT 1
+      ) AS "v0"
+      LEFT JOIN "Shows" AS "s" ON "v0"."Id" = "s"."VenueId"
+      ORDER BY "v0"."Id"
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (0ms) [Parameters=[@p0='?' (DbType = Guid), @p1='?' (DbType = DateTime), @p2='?' (Size = 6), @p3='?' (Size = 37), @p4='?' (DbType = Guid)], CommandType='Text', CommandTimeout='30']
+      INSERT INTO "Shows" ("Id", "StartsAt", "Status", "Title", "VenueId")
+      VALUES (@p0, @p1, @p2, @p3, @p4);
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (0ms) [Parameters=[@p0='?' (DbType = Guid), @p1='?' (Size = 3), @p2='?' (DbType = Decimal), @p3='?' (DbType = Int32), @p4='?' (DbType = Guid), @p5='?' (DbType = Int32)], CommandType='Text', CommandTimeout='30']
+      INSERT INTO "TicketTiers" ("Id", "Name", "Price", "Quota", "ShowId", "Sold")
+      VALUES (@p0, @p1, @p2, @p3, @p4, @p5);
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (0ms) [Parameters=[@id='?' (DbType = Guid)], CommandType='Text', CommandTimeout='30']
+      SELECT "s0"."Id", "s0"."StartsAt", "s0"."Status", "s0"."Title", "s0"."VenueId", "t"."Id", "t"."Name", "t"."Price", "t"."Quota", "t"."ShowId", "t"."Sold"
+      FROM (
+          SELECT "s"."Id", "s"."StartsAt", "s"."Status", "s"."Title", "s"."VenueId"
+          FROM "Shows" AS "s"
+          WHERE "s"."Id" = @id
+          LIMIT 1
+      ) AS "s0"
+      LEFT JOIN "TicketTiers" AS "t" ON "s0"."Id" = "t"."ShowId"
+      ORDER BY "s0"."Id"
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (0ms) [Parameters=[@id='?' (DbType = Guid)], CommandType='Text', CommandTimeout='30']
+      SELECT "s0"."Id", "s0"."StartsAt", "s0"."Status", "s0"."Title", "s0"."VenueId", "t"."Id", "t"."Name", "t"."Price", "t"."Quota", "t"."ShowId", "t"."Sold"
+      FROM (
+          SELECT "s"."Id", "s"."StartsAt", "s"."Status", "s"."Title", "s"."VenueId"
+          FROM "Shows" AS "s"
+          WHERE "s"."Id" = @id
+          LIMIT 1
+      ) AS "s0"
+      LEFT JOIN "TicketTiers" AS "t" ON "s0"."Id" = "t"."ShowId"
+      ORDER BY "s0"."Id"
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (0ms) [Parameters=[@id='?' (DbType = Guid)], CommandType='Text', CommandTimeout='30']
+      SELECT "s0"."Id", "s0"."StartsAt", "s0"."Status", "s0"."Title", "s0"."VenueId", "t"."Id", "t"."Name", "t"."Price", "t"."Quota", "t"."ShowId", "t"."Sold"
+      FROM (
+          SELECT "s"."Id", "s"."StartsAt", "s"."Status", "s"."Title", "s"."VenueId"
+          FROM "Shows" AS "s"
+          WHERE "s"."Id" = @id
+          LIMIT 1
+      ) AS "s0"
+      LEFT JOIN "TicketTiers" AS "t" ON "s0"."Id" = "t"."ShowId"
+      ORDER BY "s0"."Id"
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (3ms) [Parameters=[@p0='?' (DbType = Guid), @p1='?' (Size = 61), @p2='?' (DbType = Int32), @p3='?' (Size = 38)], CommandType='Text', CommandTimeout='30']
+      INSERT INTO "Venues" ("Id", "Address", "Capacity", "Name")
+      VALUES (@p0, @p1, @p2, @p3);
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (0ms) [Parameters=[@id='?' (DbType = Guid)], CommandType='Text', CommandTimeout='30']
+      SELECT EXISTS (
+          SELECT 1
+          FROM "Venues" AS "v"
+          WHERE "v"."Id" = @id)
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (0ms) [Parameters=[@id='?' (DbType = Guid)], CommandType='Text', CommandTimeout='30']
+      SELECT "v0"."Id", "v0"."Address", "v0"."Capacity", "v0"."Name", "s"."Id", "s"."StartsAt", "s"."Status", "s"."Title", "s"."VenueId"
+      FROM (
+          SELECT "v"."Id", "v"."Address", "v"."Capacity", "v"."Name"
+          FROM "Venues" AS "v"
+          WHERE "v"."Id" = @id
+          LIMIT 1
+      ) AS "v0"
+      LEFT JOIN "Shows" AS "s" ON "v0"."Id" = "s"."VenueId"
+      ORDER BY "v0"."Id"
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (0ms) [Parameters=[@p0='?' (DbType = Guid), @p1='?' (DbType = DateTime), @p2='?' (Size = 6), @p3='?' (Size = 37), @p4='?' (DbType = Guid)], CommandType='Text', CommandTimeout='30']
+      INSERT INTO "Shows" ("Id", "StartsAt", "Status", "Title", "VenueId")
+      VALUES (@p0, @p1, @p2, @p3, @p4);
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (0ms) [Parameters=[@p0='?' (DbType = Guid), @p1='?' (Size = 3), @p2='?' (DbType = Decimal), @p3='?' (DbType = Int32), @p4='?' (DbType = Guid), @p5='?' (DbType = Int32)], CommandType='Text', CommandTimeout='30']
+      INSERT INTO "TicketTiers" ("Id", "Name", "Price", "Quota", "ShowId", "Sold")
+      VALUES (@p0, @p1, @p2, @p3, @p4, @p5);
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (0ms) [Parameters=[@id='?' (DbType = Guid)], CommandType='Text', CommandTimeout='30']
+      SELECT "s0"."Id", "s0"."StartsAt", "s0"."Status", "s0"."Title", "s0"."VenueId", "t"."Id", "t"."Name", "t"."Price", "t"."Quota", "t"."ShowId", "t"."Sold"
+      FROM (
+          SELECT "s"."Id", "s"."StartsAt", "s"."Status", "s"."Title", "s"."VenueId"
+          FROM "Shows" AS "s"
+          WHERE "s"."Id" = @id
+          LIMIT 1
+      ) AS "s0"
+      LEFT JOIN "TicketTiers" AS "t" ON "s0"."Id" = "t"."ShowId"
+      ORDER BY "s0"."Id"
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (0ms) [Parameters=[@id='?' (DbType = Guid)], CommandType='Text', CommandTimeout='30']
+      SELECT "s0"."Id", "s0"."StartsAt", "s0"."Status", "s0"."Title", "s0"."VenueId", "t"."Id", "t"."Name", "t"."Price", "t"."Quota", "t"."ShowId", "t"."Sold"
+      FROM (
+          SELECT "s"."Id", "s"."StartsAt", "s"."Status", "s"."Title", "s"."VenueId"
+          FROM "Shows" AS "s"
+          WHERE "s"."Id" = @id
+          LIMIT 1
+      ) AS "s0"
+      LEFT JOIN "TicketTiers" AS "t" ON "s0"."Id" = "t"."ShowId"
+      ORDER BY "s0"."Id"
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (0ms) [Parameters=[@id='?' (DbType = Guid)], CommandType='Text', CommandTimeout='30']
+      SELECT "s0"."Id", "s0"."StartsAt", "s0"."Status", "s0"."Title", "s0"."VenueId", "t"."Id", "t"."Name", "t"."Price", "t"."Quota", "t"."ShowId", "t"."Sold"
+      FROM (
+          SELECT "s"."Id", "s"."StartsAt", "s"."Status", "s"."Title", "s"."VenueId"
+          FROM "Shows" AS "s"
+          WHERE "s"."Id" = @id
+          LIMIT 1
+      ) AS "s0"
+      LEFT JOIN "TicketTiers" AS "t" ON "s0"."Id" = "t"."ShowId"
+      ORDER BY "s0"."Id"
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (2ms) [Parameters=[@p0='?' (DbType = Guid), @p1='?' (Size = 61), @p2='?' (DbType = Int32), @p3='?' (Size = 38)], CommandType='Text', CommandTimeout='30']
+      INSERT INTO "Venues" ("Id", "Address", "Capacity", "Name")
+      VALUES (@p0, @p1, @p2, @p3);
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (0ms) [Parameters=[@id='?' (DbType = Guid)], CommandType='Text', CommandTimeout='30']
+      SELECT EXISTS (
+          SELECT 1
+          FROM "Venues" AS "v"
+          WHERE "v"."Id" = @id)
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (0ms) [Parameters=[@id='?' (DbType = Guid)], CommandType='Text', CommandTimeout='30']
+      SELECT "v0"."Id", "v0"."Address", "v0"."Capacity", "v0"."Name", "s"."Id", "s"."StartsAt", "s"."Status", "s"."Title", "s"."VenueId"
+      FROM (
+          SELECT "v"."Id", "v"."Address", "v"."Capacity", "v"."Name"
+          FROM "Venues" AS "v"
+          WHERE "v"."Id" = @id
+          LIMIT 1
+      ) AS "v0"
+      LEFT JOIN "Shows" AS "s" ON "v0"."Id" = "s"."VenueId"
+      ORDER BY "v0"."Id"
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (0ms) [Parameters=[@p0='?' (DbType = Guid), @p1='?' (DbType = DateTime), @p2='?' (Size = 6), @p3='?' (Size = 37), @p4='?' (DbType = Guid)], CommandType='Text', CommandTimeout='30']
+      INSERT INTO "Shows" ("Id", "StartsAt", "Status", "Title", "VenueId")
+      VALUES (@p0, @p1, @p2, @p3, @p4);
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (0ms) [Parameters=[@p0='?' (DbType = Guid), @p1='?' (Size = 3), @p2='?' (DbType = Decimal), @p3='?' (DbType = Int32), @p4='?' (DbType = Guid), @p5='?' (DbType = Int32)], CommandType='Text', CommandTimeout='30']
+      INSERT INTO "TicketTiers" ("Id", "Name", "Price", "Quota", "ShowId", "Sold")
+      VALUES (@p0, @p1, @p2, @p3, @p4, @p5);
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (0ms) [Parameters=[@id='?' (DbType = Guid)], CommandType='Text', CommandTimeout='30']
+      SELECT "s0"."Id", "s0"."StartsAt", "s0"."Status", "s0"."Title", "s0"."VenueId", "t"."Id", "t"."Name", "t"."Price", "t"."Quota", "t"."ShowId", "t"."Sold"
+      FROM (
+          SELECT "s"."Id", "s"."StartsAt", "s"."Status", "s"."Title", "s"."VenueId"
+          FROM "Shows" AS "s"
+          WHERE "s"."Id" = @id
+          LIMIT 1
+      ) AS "s0"
+      LEFT JOIN "TicketTiers" AS "t" ON "s0"."Id" = "t"."ShowId"
+      ORDER BY "s0"."Id"
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (0ms) [Parameters=[@p0='?' (DbType = Guid), @p1='?' (Size = 15), @p2='?' (DbType = Int32), @p3='?' (DbType = Guid), @p4='?' (Size = 3), @p5='?' (DbType = Decimal)], CommandType='Text', CommandTimeout='30']
+      INSERT INTO "Bookings" ("Id", "CustomerEmail", "Quantity", "ShowId", "Tier", "TotalPrice")
+      VALUES (@p0, @p1, @p2, @p3, @p4, @p5);
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (0ms) [Parameters=[@p1='?' (DbType = Guid), @p0='?' (DbType = Int32)], CommandType='Text', CommandTimeout='30']
+      UPDATE "TicketTiers" SET "Sold" = @p0
+      WHERE "Id" = @p1
+      RETURNING 1;
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (0ms) [Parameters=[@id='?' (DbType = Guid)], CommandType='Text', CommandTimeout='30']
+      SELECT "s0"."Id", "s0"."StartsAt", "s0"."Status", "s0"."Title", "s0"."VenueId", "t"."Id", "t"."Name", "t"."Price", "t"."Quota", "t"."ShowId", "t"."Sold"
+      FROM (
+          SELECT "s"."Id", "s"."StartsAt", "s"."Status", "s"."Title", "s"."VenueId"
+          FROM "Shows" AS "s"
+          WHERE "s"."Id" = @id
+          LIMIT 1
+      ) AS "s0"
+      LEFT JOIN "TicketTiers" AS "t" ON "s0"."Id" = "t"."ShowId"
+      ORDER BY "s0"."Id"
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (0ms) [Parameters=[@p0='?' (DbType = Guid)], CommandType='Text', CommandTimeout='30']
+      DELETE FROM "TicketTiers"
+      WHERE "Id" = @p0
+      RETURNING 1;
+fail: Microsoft.EntityFrameworkCore.Database.Command[20102]
+      Failed executing DbCommand (0ms) [Parameters=[@p0='?' (DbType = Guid)], CommandType='Text', CommandTimeout='30']
+      DELETE FROM "Shows"
+      WHERE "Id" = @p0
+      RETURNING 1;
+fail: Microsoft.EntityFrameworkCore.Update[10000]
+      An exception occurred in the database while saving changes for context type 'Acme.Ticketing.Infrastructure.TicketingDbContext'.
+      Microsoft.EntityFrameworkCore.DbUpdateException: An error occurred while saving the entity changes. See the inner exception for details.
+       ---> Microsoft.Data.Sqlite.SqliteException (0x80004005): SQLite Error 19: 'FOREIGN KEY constraint failed'.
+         at Microsoft.Data.Sqlite.SqliteException.ThrowExceptionForRC(Int32 rc, sqlite3 db)
+         at Microsoft.Data.Sqlite.SqliteDataReader.NextResult()
+         at Microsoft.Data.Sqlite.SqliteCommand.ExecuteReader(CommandBehavior behavior)
+         at Microsoft.Data.Sqlite.SqliteCommand.ExecuteReaderAsync(CommandBehavior behavior, CancellationToken cancellationToken)
+         at Microsoft.Data.Sqlite.SqliteCommand.ExecuteDbDataReaderAsync(CommandBehavior behavior, CancellationToken cancellationToken)
+         at Microsoft.EntityFrameworkCore.Storage.RelationalCommand.ExecuteReaderAsync(RelationalCommandParameterObject parameterObject, CancellationToken cancellationToken)
+         at Microsoft.EntityFrameworkCore.Storage.RelationalCommand.ExecuteReaderAsync(RelationalCommandParameterObject parameterObject, CancellationToken cancellationToken)
+         at Microsoft.EntityFrameworkCore.Update.ReaderModificationCommandBatch.ExecuteAsync(IRelationalConnection connection, CancellationToken cancellationToken)
+         --- End of inner exception stack trace ---
+         at Microsoft.EntityFrameworkCore.Update.ReaderModificationCommandBatch.ExecuteAsync(IRelationalConnection connection, CancellationToken cancellationToken)
+         at Microsoft.EntityFrameworkCore.Update.Internal.BatchExecutor.ExecuteAsync(IEnumerable`1 commandBatches, IRelationalConnection connection, CancellationToken cancellationToken)
+         at Microsoft.EntityFrameworkCore.Update.Internal.BatchExecutor.ExecuteAsync(IEnumerable`1 commandBatches, IRelationalConnection connection, CancellationToken cancellationToken)
+         at Microsoft.EntityFrameworkCore.Update.Internal.BatchExecutor.ExecuteAsync(IEnumerable`1 commandBatches, IRelationalConnection connection, CancellationToken cancellationToken)
+         at Microsoft.EntityFrameworkCore.Storage.RelationalDatabase.SaveChangesAsync(IList`1 entries, CancellationToken cancellationToken)
+         at Microsoft.EntityFrameworkCore.ChangeTracking.Internal.StateManager.SaveChangesAsync(IList`1 entriesToSave, CancellationToken cancellationToken)
+         at Microsoft.EntityFrameworkCore.ChangeTracking.Internal.StateManager.SaveChangesAsync(StateManager stateManager, Boolean acceptAllChangesOnSuccess, CancellationToken cancellationToken)
+         at Microsoft.EntityFrameworkCore.DbContext.SaveChangesAsync(Boolean acceptAllChangesOnSuccess, CancellationToken cancellationToken)
+      Microsoft.EntityFrameworkCore.DbUpdateException: An error occurred while saving the entity changes. See the inner exception for details.
+       ---> Microsoft.Data.Sqlite.SqliteException (0x80004005): SQLite Error 19: 'FOREIGN KEY constraint failed'.
+         at Microsoft.Data.Sqlite.SqliteException.ThrowExceptionForRC(Int32 rc, sqlite3 db)
+         at Microsoft.Data.Sqlite.SqliteDataReader.NextResult()
+         at Microsoft.Data.Sqlite.SqliteCommand.ExecuteReader(CommandBehavior behavior)
+         at Microsoft.Data.Sqlite.SqliteCommand.ExecuteReaderAsync(CommandBehavior behavior, CancellationToken cancellationToken)
+         at Microsoft.Data.Sqlite.SqliteCommand.ExecuteDbDataReaderAsync(CommandBehavior behavior, CancellationToken cancellationToken)
+         at Microsoft.EntityFrameworkCore.Storage.RelationalCommand.ExecuteReaderAsync(RelationalCommandParameterObject parameterObject, CancellationToken cancellationToken)
+         at Microsoft.EntityFrameworkCore.Storage.RelationalCommand.ExecuteReaderAsync(RelationalCommandParameterObject parameterObject, CancellationToken cancellationToken)
+         at Microsoft.EntityFrameworkCore.Update.ReaderModificationCommandBatch.ExecuteAsync(IRelationalConnection connection, CancellationToken cancellationToken)
+         --- End of inner exception stack trace ---
+         at Microsoft.EntityFrameworkCore.Update.ReaderModificationCommandBatch.ExecuteAsync(IRelationalConnection connection, CancellationToken cancellationToken)
+         at Microsoft.EntityFrameworkCore.Update.Internal.BatchExecutor.ExecuteAsync(IEnumerable`1 commandBatches, IRelationalConnection connection, CancellationToken cancellationToken)
+         at Microsoft.EntityFrameworkCore.Update.Internal.BatchExecutor.ExecuteAsync(IEnumerable`1 commandBatches, IRelationalConnection connection, CancellationToken cancellationToken)
+         at Microsoft.EntityFrameworkCore.Update.Internal.BatchExecutor.ExecuteAsync(IEnumerable`1 commandBatches, IRelationalConnection connection, CancellationToken cancellationToken)
+         at Microsoft.EntityFrameworkCore.Storage.RelationalDatabase.SaveChangesAsync(IList`1 entries, CancellationToken cancellationToken)
+         at Microsoft.EntityFrameworkCore.ChangeTracking.Internal.StateManager.SaveChangesAsync(IList`1 entriesToSave, CancellationToken cancellationToken)
+         at Microsoft.EntityFrameworkCore.ChangeTracking.Internal.StateManager.SaveChangesAsync(StateManager stateManager, Boolean acceptAllChangesOnSuccess, CancellationToken cancellationToken)
+         at Microsoft.EntityFrameworkCore.DbContext.SaveChangesAsync(Boolean acceptAllChangesOnSuccess, CancellationToken cancellationToken)
+info: Microsoft.Hosting.Lifetime[0]
+      Application is shutting down...

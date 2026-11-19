@@ -1,0 +1,36 @@
+diff --git a/src/Library.Tests/LibraryApiTests.cs b/src/Library.Tests/LibraryApiTests.cs
+index 06c2279..1609f9f 100755
+--- a/src/Library.Tests/LibraryApiTests.cs
++++ b/src/Library.Tests/LibraryApiTests.cs
+@@ -63,6 +63,20 @@ public sealed class LibraryApiTests
+         Assert.AreEqual(1, read.Books.Count(b => b.IsAvailable));
+     }
+ 
++    [TestMethod]
++    public async Task PublishedBookWithoutCopyIsNotAvailable()
++    {
++        var author = await PostAsync<AuthorDto>("/authors", new AuthorInput { Name = "Ann Leckie" });
++        var empty = await PostAsync<BookDto>("/books", NewBook(author.Id, "978-0316246620", BookStatus.Published, copies: 0));
++        var stocked = await PostAsync<BookDto>("/books", NewBook(author.Id, "978-0316246621", BookStatus.Published, copies: 1));
++
++        var readEmpty = await client.GetFromJsonAsync<BookDto>($"/books/{empty.Id}");
++        var readStocked = await client.GetFromJsonAsync<BookDto>($"/books/{stocked.Id}");
++
++        Assert.IsFalse(readEmpty!.IsAvailable);
++        Assert.IsTrue(readStocked!.IsAvailable);
++    }
++
+     [TestMethod]
+     public async Task BookOfAnUnknownAuthorIsInvalid()
+     {
+diff --git a/src/Library/Domain/Book.cs b/src/Library/Domain/Book.cs
+index 03ca5e0..66860e0 100755
+--- a/src/Library/Domain/Book.cs
++++ b/src/Library/Domain/Book.cs
+@@ -2,5 +2,5 @@ namespace Acme.Library.Domain;
+ 
+ public partial class Book
+ {
+-    private partial bool CalculateIsAvailable() => Status == BookStatus.Published && Copies >= 0;
++    private partial bool CalculateIsAvailable() => Status == BookStatus.Published && Copies > 0;
+ }

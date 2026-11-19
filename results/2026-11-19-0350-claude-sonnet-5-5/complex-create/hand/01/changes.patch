@@ -1,0 +1,1554 @@
+diff --git a/src/Ticketing.Api/Endpoints/Endpoints.cs b/src/Ticketing.Api/Endpoints/Endpoints.cs
+new file mode 100644
+index 0000000..3167db2
+--- /dev/null
++++ b/src/Ticketing.Api/Endpoints/Endpoints.cs
+@@ -0,0 +1,39 @@
++using Acme.Ticketing.Api.Framework;
++using Acme.Ticketing.Application;
++
++namespace Acme.Ticketing.Api.Endpoints;
++
++public static class Endpoints
++{
++    public static void MapTicketing(this IEndpointRouteBuilder app)
++    {
++        var venues = app.MapGroup("/venues");
++        venues.MapGet("/", async (VenueService s, int page = 1, int pageSize = 50, string? orderBy = null, bool descending = false) =>
++            (await s.QueryAsync(new(page, pageSize, orderBy, descending))).ToHttp());
++        venues.MapGet("/{id:guid}", async (Guid id, VenueService s) => (await s.GetAsync(id)).ToHttp());
++        venues.MapPost("/", async (VenueInput input, VenueService s) =>
++            (await s.AddAsync(input)).ToHttp(v => Results.Created($"/venues/{v.Id}", v))).RequireAuthorization(Rights.ManageVenues);
++        venues.MapPut("/{id:guid}", async (Guid id, VenueInput input, VenueService s) =>
++            (await s.UpdateAsync(id, input)).ToHttp()).RequireAuthorization(Rights.ManageVenues);
++        venues.MapDelete("/{id:guid}", async (Guid id, VenueService s) =>
++            (await s.RemoveAsync(id)).ToHttp(_ => Results.NoContent())).RequireAuthorization(Rights.ManageVenues);
++
++        var shows = app.MapGroup("/shows");
++        shows.MapGet("/", async (ShowService s, int page = 1, int pageSize = 50, string? orderBy = null, bool descending = false) =>
++            (await s.QueryAsync(new(page, pageSize, orderBy, descending))).ToHttp());
++        shows.MapGet("/{id:guid}", async (Guid id, ShowService s) => (await s.GetAsync(id)).ToHttp());
++        shows.MapPost("/", async (ShowInput input, ShowService s) =>
++            (await s.AddAsync(input)).ToHttp(v => Results.Created($"/shows/{v.Id}", v))).RequireAuthorization(Rights.ManageShows);
++        shows.MapPut("/{id:guid}", async (Guid id, ShowInput input, ShowService s) =>
++            (await s.UpdateAsync(id, input)).ToHttp()).RequireAuthorization(Rights.ManageShows);
++        shows.MapDelete("/{id:guid}", async (Guid id, ShowService s) =>
++            (await s.RemoveAsync(id)).ToHttp(_ => Results.NoContent())).RequireAuthorization(Rights.ManageShows);
++
++        var bookings = app.MapGroup("/bookings").RequireAuthorization(Rights.ManageShows);
++        bookings.MapGet("/", async (BookingService s, int page = 1, int pageSize = 50, string? orderBy = null, bool descending = false) =>
++            (await s.QueryAsync(new(page, pageSize, orderBy, descending))).ToHttp());
++        bookings.MapGet("/{id:guid}", async (Guid id, BookingService s) => (await s.GetAsync(id)).ToHttp());
++
++        app.MapPost("/box-office/book", async (BookingInput input, BoxOfficeService s) => (await s.BookAsync(input)).ToHttp());
++    }
++}
+diff --git a/src/Ticketing.Api/Framework/ResultExtensions.cs b/src/Ticketing.Api/Framework/ResultExtensions.cs
+new file mode 100644
+index 0000000..b5a2fd1
+--- /dev/null
++++ b/src/Ticketing.Api/Framework/ResultExtensions.cs
+@@ -0,0 +1,20 @@
++using Acme.Ticketing.Application.Framework;
++
++namespace Acme.Ticketing.Api.Framework;
++
++public static class ResultExtensions
++{
++    public static IResult ToHttp<T>(this Result<T> result, Func<T, IResult>? onSuccess = null)
++    {
++        if (result.IsSuccess) return onSuccess is null ? Results.Ok(result.Value) : onSuccess(result.Value);
++
++        var error = result.Error;
++        return error.Kind switch
++        {
++            ErrorKind.NotFound => Results.Problem(error.Message, statusCode: StatusCodes.Status404NotFound),
++            ErrorKind.Invalid => Results.ValidationProblem(error.Errors ?? new Dictionary<string, string[]>()),
++            ErrorKind.Conflict => Results.Problem(error.Message, statusCode: StatusCodes.Status409Conflict),
++            _ => Results.Problem(error.Message, statusCode: StatusCodes.Status403Forbidden),
++        };
++    }
++}
+diff --git a/src/Ticketing.Api/Framework/Security.cs b/src/Ticketing.Api/Framework/Security.cs
+new file mode 100644
+index 0000000..567941c
+--- /dev/null
++++ b/src/Ticketing.Api/Framework/Security.cs
+@@ -0,0 +1,57 @@
++using System.Security.Claims;
++using System.Text;
++using Microsoft.AspNetCore.Authentication.JwtBearer;
++using Microsoft.Extensions.Options;
++using Microsoft.IdentityModel.Tokens;
++
++namespace Acme.Ticketing.Api.Framework;
++
++public static class Security
++{
++    public const string RightClaim = "right";
++
++    public static bool HasRight(this ClaimsPrincipal user, string right) =>
++        user.FindAll(RightClaim).Any(c => c.Value == right || c.Value == Application.Rights.All);
++
++    /// <summary>The UTF-8 bytes of the key, right-padded with spaces to 32 bytes.</summary>
++    public static byte[] KeyBytes(string key)
++    {
++        var bytes = Encoding.UTF8.GetBytes(key);
++        if (bytes.Length >= 32) return bytes;
++        var padded = new byte[32];
++        Array.Fill(padded, (byte)' ');
++        bytes.CopyTo(padded, 0);
++        return padded;
++    }
++
++    public static IServiceCollection AddTicketingSecurity(this IServiceCollection services)
++    {
++        services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme).AddJwtBearer();
++        // Configured lazily so that the configuration is read when the host starts.
++        services.AddOptions<JwtBearerOptions>(JwtBearerDefaults.AuthenticationScheme)
++            .Configure<IConfiguration>((options, configuration) =>
++            {
++                options.MapInboundClaims = false;
++                options.TokenValidationParameters = new TokenValidationParameters
++                {
++                    ValidateIssuerSigningKey = true,
++                    IssuerSigningKey = new SymmetricSecurityKey(KeyBytes(configuration["Jwt:Key"] ?? "")),
++                    ValidAlgorithms = [SecurityAlgorithms.HmacSha256],
++                    RequireSignedTokens = true,
++                    ValidateIssuer = false,
++                    ValidateAudience = false,
++                    ValidateLifetime = true,
++                    RequireExpirationTime = false,
++                    ClockSkew = TimeSpan.Zero,
++                };
++            });
++
++        services.AddAuthorization(options =>
++        {
++            options.FallbackPolicy = new Microsoft.AspNetCore.Authorization.AuthorizationPolicyBuilder().RequireAuthenticatedUser().Build();
++            foreach (var right in new[] { Application.Rights.ManageVenues, Application.Rights.ManageShows })
++                options.AddPolicy(right, p => p.RequireAuthenticatedUser().RequireAssertion(c => c.User.HasRight(right)));
++        });
++        return services;
++    }
++}
+diff --git a/src/Ticketing.Api/Program.cs b/src/Ticketing.Api/Program.cs
+new file mode 100644
+index 0000000..a7d0d8e
+--- /dev/null
++++ b/src/Ticketing.Api/Program.cs
+@@ -0,0 +1,42 @@
++using Acme.Ticketing.Api.Endpoints;
++using Acme.Ticketing.Api.Framework;
++using Acme.Ticketing.Application;
++using Acme.Ticketing.Infrastructure;
++using Microsoft.AspNetCore.Diagnostics;
++using Microsoft.AspNetCore.Http.Json;
++using Microsoft.EntityFrameworkCore;
++
++var builder = WebApplication.CreateBuilder(args);
++
++builder.Services.AddTicketingApplication();
++builder.Services.AddTicketingInfrastructure((sp, options) =>
++    options.UseSqlite(sp.GetRequiredService<IConfiguration>().GetConnectionString("Ticketing")));
++builder.Services.AddTicketingSecurity();
++builder.Services.Configure<RouteHandlerOptions>(o => o.ThrowOnBadRequest = true);
++
++var app = builder.Build();
++
++// An unreadable body (malformed JSON, wrong type...) is a validation problem.
++app.UseExceptionHandler(handler => handler.Run(async context =>
++{
++    var exception = context.Features.Get<IExceptionHandlerFeature>()?.Error;
++    if (exception is BadHttpRequestException bad)
++    {
++        context.Response.StatusCode = StatusCodes.Status400BadRequest;
++        await Results.ValidationProblem(new Dictionary<string, string[]> { ["body"] = [bad.Message] }).ExecuteAsync(context);
++    }
++    else
++    {
++        context.Response.StatusCode = StatusCodes.Status500InternalServerError;
++        await Results.Problem(statusCode: 500).ExecuteAsync(context);
++    }
++}));
++
++app.UseAuthentication();
++app.UseAuthorization();
++app.MapTicketing();
++
++await app.Services.EnsureTicketingDatabaseAsync();
++app.Run();
++
++public partial class Program;
+diff --git a/src/Ticketing.Api/appsettings.json b/src/Ticketing.Api/appsettings.json
+new file mode 100644
+index 0000000..e628fb0
+--- /dev/null
++++ b/src/Ticketing.Api/appsettings.json
+@@ -0,0 +1,6 @@
++{
++  "ConnectionStrings": { "Ticketing": "Data Source=ticketing.db" },
++  "Jwt": { "Key": "change-me-development-signing-key" },
++  "Logging": { "LogLevel": { "Default": "Information", "Microsoft.AspNetCore": "Warning" } },
++  "AllowedHosts": "*"
++}
+diff --git a/src/Ticketing.Application/BookingService.cs b/src/Ticketing.Application/BookingService.cs
+new file mode 100644
+index 0000000..6ea63a6
+--- /dev/null
++++ b/src/Ticketing.Application/BookingService.cs
+@@ -0,0 +1,46 @@
++using Acme.Ticketing.Application.Framework;
++using Acme.Ticketing.Domain;
++using Acme.Ticketing.Domain.Framework;
++
++namespace Acme.Ticketing.Application;
++
++public sealed class BookingService(IBookingRepository bookings)
++{
++    public Task<Result<PagedResult<BookingDto>>> QueryAsync(PageRequest request) =>
++        Paging.QueryAsync(bookings, request, b => b.ToDto());
++
++    public async Task<Result<BookingDto>> GetAsync(Guid id) =>
++        await bookings.GetAsync(id) is { } booking ? booking.ToDto() : Error.NotFound("Booking not found.");
++}
++
++public sealed class BoxOfficeService(IShowRepository shows, IBookingRepository bookings, IUnitOfWork unitOfWork, TimeProvider clock)
++    : ServiceBase(unitOfWork)
++{
++    public async Task<Result<BookingDto>> BookAsync(BookingInput input)
++    {
++        var errors = new ValidationErrors();
++        if (input.Quantity is not (>= 1 and <= 10)) errors.Add("quantity", "The quantity must be between 1 and 10.");
++        if (input.CustomerEmail is null || !input.CustomerEmail.Contains('@')) errors.Add("customerEmail", "The email is invalid.");
++        if (errors.Any) return Error.Invalid(errors);
++
++        if (input.ShowId is null || await shows.GetAsync(input.ShowId.Value) is not { } show) return Error.NotFound("Show not found.");
++        if (show.Status != ShowStatus.OnSale) return Error.Conflict("The show is not on sale.");
++        if (show.StartsAt <= clock.GetUtcNow().UtcDateTime) return Error.Conflict("The show has already started.");
++
++        var tier = show.TicketTiers.FirstOrDefault(t => t.Name == input.Tier);
++        if (tier is null) return Error.Invalid("tier", "The show has no tier with this name.");
++
++        var quantity = input.Quantity!.Value;
++        if (tier.Remaining < quantity) return Error.Conflict("Not enough tickets left.");
++
++        tier.Sold += quantity;
++        var booking = new Booking
++        {
++            ShowId = show.Id, Tier = tier.Name, CustomerEmail = input.CustomerEmail!,
++            Quantity = quantity, TotalPrice = tier.Price * quantity,
++        };
++        bookings.Add(booking);
++        if (await CommitAsync("Not enough tickets left.") is { } error) return error;
++        return booking.ToDto();
++    }
++}
+diff --git a/src/Ticketing.Application/DependencyInjection.cs b/src/Ticketing.Application/DependencyInjection.cs
+new file mode 100644
+index 0000000..affe851
+--- /dev/null
++++ b/src/Ticketing.Application/DependencyInjection.cs
+@@ -0,0 +1,17 @@
++using Microsoft.Extensions.DependencyInjection;
++using Microsoft.Extensions.DependencyInjection.Extensions;
++
++namespace Acme.Ticketing.Application;
++
++public static class DependencyInjection
++{
++    public static IServiceCollection AddTicketingApplication(this IServiceCollection services)
++    {
++        services.TryAddSingleton(TimeProvider.System);
++        services.AddScoped<VenueService>();
++        services.AddScoped<ShowService>();
++        services.AddScoped<BookingService>();
++        services.AddScoped<BoxOfficeService>();
++        return services;
++    }
++}
+diff --git a/src/Ticketing.Application/Dtos.cs b/src/Ticketing.Application/Dtos.cs
+new file mode 100644
+index 0000000..9c70b11
+--- /dev/null
++++ b/src/Ticketing.Application/Dtos.cs
+@@ -0,0 +1,32 @@
++using System.Text.Json.Serialization;
++using Acme.Ticketing.Domain;
++
++namespace Acme.Ticketing.Application;
++
++public sealed record AddressDto(string Street, string City, string PostalCode);
++
++public sealed record VenueDto(
++    Guid Id, string Name, AddressDto Address, int Capacity,
++    [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] IReadOnlyList<ShowDto>? Shows = null);
++
++public sealed record TicketTierDto(Guid Id, string Name, decimal Price, int Quota, int Sold);
++
++public sealed record ShowDto(
++    Guid Id, string Title, DateTime StartsAt, ShowStatus Status, Guid VenueId,
++    IReadOnlyList<TicketTierDto> TicketTiers, bool IsSoldOut);
++
++public sealed record BookingDto(Guid Id, Guid ShowId, string Tier, string CustomerEmail, int Quantity, decimal TotalPrice);
++
++public static class Mappings
++{
++    public static VenueDto ToDto(this Venue v, bool withShows = false) =>
++        new(v.Id, v.Name, new AddressDto(v.Address.Street, v.Address.City, v.Address.PostalCode), v.Capacity,
++            withShows ? v.Shows.OrderBy(s => s.StartsAt).ThenBy(s => s.Id).Select(s => s.ToDto()).ToList() : null);
++
++    public static ShowDto ToDto(this Show s) =>
++        new(s.Id, s.Title, s.StartsAt, s.Status, s.VenueId,
++            s.TicketTiers.Select(t => new TicketTierDto(t.Id, t.Name, t.Price, t.Quota, t.Sold)).ToList(), s.IsSoldOut);
++
++    public static BookingDto ToDto(this Booking b) =>
++        new(b.Id, b.ShowId, b.Tier, b.CustomerEmail, b.Quantity, b.TotalPrice);
++}
+diff --git a/src/Ticketing.Application/Framework/Paging.cs b/src/Ticketing.Application/Framework/Paging.cs
+new file mode 100644
+index 0000000..f456738
+--- /dev/null
++++ b/src/Ticketing.Application/Framework/Paging.cs
+@@ -0,0 +1,43 @@
++using System.Reflection;
++using Acme.Ticketing.Domain.Framework;
++
++namespace Acme.Ticketing.Application.Framework;
++
++public sealed record PageRequest(int Page = 1, int PageSize = 50, string? OrderBy = null, bool Descending = false);
++
++public sealed record PagedResult<T>(IReadOnlyList<T> Items, int PageNumber, int PageSize, int TotalCount);
++
++public static class Paging
++{
++    /// <summary>Simple (scalar, writable) properties of an entity: the ones a query can order by.</summary>
++    public static PropertyInfo[] OrderableProperties(Type entity) => entity
++        .GetProperties(BindingFlags.Public | BindingFlags.Instance)
++        .Where(p => p.GetMethod is { IsPublic: true } && p.SetMethod is not null && IsScalar(p.PropertyType))
++        .ToArray();
++
++    private static bool IsScalar(Type t)
++    {
++        t = Nullable.GetUnderlyingType(t) ?? t;
++        return t.IsPrimitive || t.IsEnum || t == typeof(string) || t == typeof(Guid) || t == typeof(decimal) || t == typeof(DateTime);
++    }
++
++    public static async Task<Result<PagedResult<TDto>>> QueryAsync<TEntity, TDto>(
++        IRepository<TEntity> repository, PageRequest request, Func<TEntity, TDto> map) where TEntity : Entity
++    {
++        var errors = new ValidationErrors();
++        if (request.Page < 1) errors.Add("page", "The page must be at least 1.");
++        if (request.PageSize is < 1 or > 200) errors.Add("pageSize", "The page size must be between 1 and 200.");
++
++        string? orderBy = null;
++        if (!string.IsNullOrWhiteSpace(request.OrderBy))
++        {
++            orderBy = OrderableProperties(typeof(TEntity))
++                .FirstOrDefault(p => string.Equals(p.Name, request.OrderBy, StringComparison.OrdinalIgnoreCase))?.Name;
++            if (orderBy is null) errors.Add("orderBy", $"'{request.OrderBy}' is not a property that can be ordered by.");
++        }
++        if (errors.Any) return Error.Invalid(errors);
++
++        var page = await repository.QueryAsync(new PageQuery(request.Page, request.PageSize, orderBy, request.Descending));
++        return new PagedResult<TDto>(page.Items.Select(map).ToList(), request.Page, request.PageSize, page.TotalCount);
++    }
++}
+diff --git a/src/Ticketing.Application/Framework/Result.cs b/src/Ticketing.Application/Framework/Result.cs
+new file mode 100644
+index 0000000..d4529f6
+--- /dev/null
++++ b/src/Ticketing.Application/Framework/Result.cs
+@@ -0,0 +1,54 @@
++namespace Acme.Ticketing.Application.Framework;
++
++public enum ErrorKind { NotFound, Invalid, Conflict, Forbidden }
++
++public sealed record Error(ErrorKind Kind, string Message, IReadOnlyDictionary<string, string[]>? Errors = null)
++{
++    public static Error NotFound(string message) => new(ErrorKind.NotFound, message);
++    public static Error Conflict(string message) => new(ErrorKind.Conflict, message);
++    public static Error Forbidden(string message) => new(ErrorKind.Forbidden, message);
++    public static Error Invalid(string path, string message) =>
++        new(ErrorKind.Invalid, "Validation failed.", new Dictionary<string, string[]> { [path] = [message] });
++    public static Error Invalid(ValidationErrors errors) => new(ErrorKind.Invalid, "Validation failed.", errors.ToDictionary());
++}
++
++public readonly record struct Unit;
++
++public sealed class Result<T>
++{
++    private readonly T? _value;
++    private readonly Error? _error;
++
++    private Result(T? value, Error? error) { _value = value; _error = error; }
++
++    public bool IsSuccess => _error is null;
++    public T Value => _error is null ? _value! : throw new InvalidOperationException("The result is an error.");
++    public Error Error => _error ?? throw new InvalidOperationException("The result is a success.");
++
++    public static implicit operator Result<T>(T value) => new(value, null);
++    public static implicit operator Result<T>(Error error) => new(default, error);
++
++    public Result<U> Map<U>(Func<T, U> map) => IsSuccess ? map(Value) : Error;
++}
++
++public sealed class ValidationErrors
++{
++    private readonly Dictionary<string, List<string>> _errors = [];
++
++    public bool Any => _errors.Count > 0;
++
++    public void Add(string path, string message)
++    {
++        if (!_errors.TryGetValue(path, out var list)) _errors[path] = list = [];
++        list.Add(message);
++    }
++
++    /// <summary>Checks a required string with a maximum length.</summary>
++    public void Text(string path, string? value, int maxLength)
++    {
++        if (string.IsNullOrWhiteSpace(value)) Add(path, "The value is required.");
++        else if (value.Length > maxLength) Add(path, $"The value must be at most {maxLength} characters.");
++    }
++
++    public Dictionary<string, string[]> ToDictionary() => _errors.ToDictionary(e => e.Key, e => e.Value.ToArray());
++}
+diff --git a/src/Ticketing.Application/Framework/ServiceBase.cs b/src/Ticketing.Application/Framework/ServiceBase.cs
+new file mode 100644
+index 0000000..35b0d6d
+--- /dev/null
++++ b/src/Ticketing.Application/Framework/ServiceBase.cs
+@@ -0,0 +1,20 @@
++using Acme.Ticketing.Domain.Framework;
++
++namespace Acme.Ticketing.Application.Framework;
++
++public abstract class ServiceBase(IUnitOfWork unitOfWork)
++{
++    /// <summary>Commits; a violated unique index or foreign key is a conflict.</summary>
++    protected async Task<Error?> CommitAsync(string conflictMessage)
++    {
++        try
++        {
++            await unitOfWork.CommitAsync();
++            return null;
++        }
++        catch (ConflictException)
++        {
++            return Error.Conflict(conflictMessage);
++        }
++    }
++}
+diff --git a/src/Ticketing.Application/Inputs.cs b/src/Ticketing.Application/Inputs.cs
+new file mode 100644
+index 0000000..7a1b9a7
+--- /dev/null
++++ b/src/Ticketing.Application/Inputs.cs
+@@ -0,0 +1,56 @@
++using Acme.Ticketing.Application.Framework;
++
++namespace Acme.Ticketing.Application;
++
++public sealed record AddressInput(string? Street, string? City, string? PostalCode);
++
++public sealed record VenueInput(string? Name, AddressInput? Address, int? Capacity)
++{
++    public ValidationErrors Validate()
++    {
++        var e = new ValidationErrors();
++        e.Text("name", Name, 100);
++        if (Address is null) e.Add("address", "The address is required.");
++        else
++        {
++            e.Text("address.street", Address.Street, 100);
++            e.Text("address.city", Address.City, 50);
++            e.Text("address.postalCode", Address.PostalCode, 10);
++        }
++        if (Capacity is null) e.Add("capacity", "The capacity is required.");
++        else if (Capacity < 0) e.Add("capacity", "The capacity must not be negative.");
++        return e;
++    }
++}
++
++public sealed record TicketTierInput(Guid? Id, string? Name, decimal? Price, int? Quota)
++{
++    public void Validate(ValidationErrors e, string path)
++    {
++        e.Text($"{path}.name", Name, 50);
++        if (Price is null) e.Add($"{path}.price", "The price is required.");
++        else if (Price < 0) e.Add($"{path}.price", "The price must not be negative.");
++        if (Quota is null) e.Add($"{path}.quota", "The quota is required.");
++        else if (Quota < 0) e.Add($"{path}.quota", "The quota must not be negative.");
++    }
++}
++
++public sealed record ShowInput(string? Title, DateTime? StartsAt, int? Status, Guid? VenueId, List<TicketTierInput?>? TicketTiers)
++{
++    public ValidationErrors Validate()
++    {
++        var e = new ValidationErrors();
++        e.Text("title", Title, 200);
++        if (StartsAt is null) e.Add("startsAt", "The start date is required.");
++        if (Status is not null && !Enum.IsDefined(typeof(Domain.ShowStatus), Status.Value)) e.Add("status", "The status is unknown.");
++        if (VenueId is null || VenueId == Guid.Empty) e.Add("venueId", "The venue is required.");
++        for (var i = 0; i < (TicketTiers?.Count ?? 0); i++)
++        {
++            if (TicketTiers![i] is { } tier) tier.Validate(e, $"ticketTiers[{i}]");
++            else e.Add($"ticketTiers[{i}]", "The tier is required.");
++        }
++        return e;
++    }
++}
++
++public sealed record BookingInput(Guid? ShowId, string? Tier, string? CustomerEmail, int? Quantity);
+diff --git a/src/Ticketing.Application/Rights.cs b/src/Ticketing.Application/Rights.cs
+new file mode 100644
+index 0000000..0773294
+--- /dev/null
++++ b/src/Ticketing.Application/Rights.cs
+@@ -0,0 +1,8 @@
++namespace Acme.Ticketing.Application;
++
++public static class Rights
++{
++    public const string All = "*";
++    public const string ManageVenues = "ManageVenues";
++    public const string ManageShows = "ManageShows";
++}
+diff --git a/src/Ticketing.Application/ShowService.cs b/src/Ticketing.Application/ShowService.cs
+new file mode 100644
+index 0000000..48523fb
+--- /dev/null
++++ b/src/Ticketing.Application/ShowService.cs
+@@ -0,0 +1,114 @@
++using Acme.Ticketing.Application.Framework;
++using Acme.Ticketing.Domain;
++using Acme.Ticketing.Domain.Framework;
++
++namespace Acme.Ticketing.Application;
++
++public sealed class ShowService(IShowRepository shows, IVenueRepository venues, IUnitOfWork unitOfWork) : ServiceBase(unitOfWork)
++{
++    private const string Refused = "The show is referenced by other data.";
++
++    public Task<Result<PagedResult<ShowDto>>> QueryAsync(PageRequest request) =>
++        Paging.QueryAsync(shows, request, s => s.ToDto());
++
++    public async Task<Result<ShowDto>> GetAsync(Guid id) =>
++        await shows.GetAsync(id) is { } show ? show.ToDto() : Error.NotFound("Show not found.");
++
++    public async Task<Result<ShowDto>> AddAsync(ShowInput input)
++    {
++        var errors = input.Validate();
++        var venue = errors.Any || input.VenueId is null ? null : await venues.GetAsync(input.VenueId.Value);
++        if (!errors.Any && venue is null) errors.Add("venueId", "The venue does not exist.");
++        CheckCapacity(errors, input, venue, null);
++        if (errors.Any) return Error.Invalid(errors);
++
++        var show = new Show();
++        ApplyScalars(show, input);
++        shows.Add(show);
++        foreach (var tierInput in input.TicketTiers ?? [])
++        {
++            var tier = new TicketTier { ShowId = show.Id };
++            ApplyTier(tier, tierInput!);
++            show.TicketTiers.Add(tier);
++            shows.AddTier(tier);
++        }
++        if (await CommitAsync(Refused) is { } error) return error;
++        return show.ToDto();
++    }
++
++    public async Task<Result<ShowDto>> UpdateAsync(Guid id, ShowInput input)
++    {
++        if (await shows.GetAsync(id) is not { } show) return Error.NotFound("Show not found.");
++        var errors = input.Validate();
++        var venue = errors.Any || input.VenueId is null ? null : await venues.GetAsync(input.VenueId.Value);
++        if (!errors.Any && venue is null) errors.Add("venueId", "The venue does not exist.");
++        CheckCapacity(errors, input, venue, show);
++        if (errors.Any) return Error.Invalid(errors);
++
++        ApplyScalars(show, input);
++        var wanted = input.TicketTiers ?? [];
++        foreach (var existing in show.TicketTiers.ToList())
++        {
++            if (wanted.Any(t => t!.Id == existing.Id)) continue;
++            show.TicketTiers.Remove(existing);
++            shows.RemoveTier(existing);
++        }
++        foreach (var tierInput in wanted)
++        {
++            if (tierInput!.Id is { } tierId)
++            {
++                ApplyTier(show.TicketTiers.First(t => t.Id == tierId), tierInput);
++                continue;
++            }
++            var tier = new TicketTier { ShowId = show.Id };
++            ApplyTier(tier, tierInput);
++            show.TicketTiers.Add(tier);
++            shows.AddTier(tier);
++        }
++        if (await CommitAsync(Refused) is { } error) return error;
++        return show.ToDto();
++    }
++
++    public async Task<Result<Unit>> RemoveAsync(Guid id)
++    {
++        if (await shows.GetAsync(id) is not { } show) return Error.NotFound("Show not found.");
++        if (await shows.HasBookingsAsync(id)) return Error.Conflict("The show has bookings.");
++
++        shows.Remove(show);
++        if (await CommitAsync("The show has bookings.") is { } error) return error;
++        return default(Unit);
++    }
++
++    /// <summary>Tier ids must belong to the show, quotas cannot go under what is sold, and add up within the venue capacity.</summary>
++    private static void CheckCapacity(ValidationErrors errors, ShowInput input, Venue? venue, Show? current)
++    {
++        var tiers = input.TicketTiers ?? [];
++        var seen = new HashSet<Guid>();
++        for (var i = 0; i < tiers.Count; i++)
++        {
++            if (tiers[i] is not { } tier) continue;
++            if (tier.Id is not { } id) continue;
++            var existing = current?.TicketTiers.FirstOrDefault(t => t.Id == id);
++            if (existing is null || !seen.Add(id)) errors.Add($"ticketTiers[{i}].id", "The tier does not belong to the show.");
++            else if (tier.Quota < existing.Sold) errors.Add($"ticketTiers[{i}].quota", "The quota is lower than the tickets already sold.");
++        }
++        if (venue is not null && tiers.Sum(t => t?.Quota ?? 0) > venue.Capacity)
++            errors.Add("ticketTiers", $"The quotas exceed the capacity of the venue ({venue.Capacity}).");
++    }
++
++    private static void ApplyScalars(Show show, ShowInput input)
++    {
++        show.Title = input.Title!;
++        var startsAt = input.StartsAt!.Value;
++        show.StartsAt = startsAt.Kind == DateTimeKind.Local ? startsAt.ToUniversalTime() : DateTime.SpecifyKind(startsAt, DateTimeKind.Utc);
++        show.Status = input.Status is { } s ? (ShowStatus)s : ShowStatus.Draft;
++        show.VenueId = input.VenueId!.Value;
++    }
++
++    private static void ApplyTier(TicketTier tier, TicketTierInput input)
++    {
++        tier.Name = input.Name!;
++        tier.Price = input.Price!.Value;
++        tier.Quota = input.Quota!.Value;
++    }
++}
+diff --git a/src/Ticketing.Application/VenueService.cs b/src/Ticketing.Application/VenueService.cs
+new file mode 100644
+index 0000000..21c1cd7
+--- /dev/null
++++ b/src/Ticketing.Application/VenueService.cs
+@@ -0,0 +1,61 @@
++using Acme.Ticketing.Application.Framework;
++using Acme.Ticketing.Domain;
++using Acme.Ticketing.Domain.Framework;
++
++namespace Acme.Ticketing.Application;
++
++public sealed class VenueService(IVenueRepository venues, IShowRepository shows, IUnitOfWork unitOfWork) : ServiceBase(unitOfWork)
++{
++    private const string NameTaken = "A venue with this name already exists.";
++
++    public Task<Result<PagedResult<VenueDto>>> QueryAsync(PageRequest request) =>
++        Paging.QueryAsync(venues, request, v => v.ToDto());
++
++    public async Task<Result<VenueDto>> GetAsync(Guid id) =>
++        await venues.GetWithShowsAsync(id) is { } venue ? venue.ToDto(withShows: true) : Error.NotFound("Venue not found.");
++
++    public async Task<Result<VenueDto>> AddAsync(VenueInput input)
++    {
++        var errors = input.Validate();
++        if (errors.Any) return Error.Invalid(errors);
++        if (await venues.NameExistsAsync(input.Name!, null)) return Error.Conflict(NameTaken);
++
++        var venue = new Venue();
++        Apply(venue, input);
++        venues.Add(venue);
++        if (await CommitAsync(NameTaken) is { } error) return error;
++        return venue.ToDto();
++    }
++
++    public async Task<Result<VenueDto>> UpdateAsync(Guid id, VenueInput input)
++    {
++        if (await venues.GetAsync(id) is not { } venue) return Error.NotFound("Venue not found.");
++        var errors = input.Validate();
++        if (errors.Any) return Error.Invalid(errors);
++        if (await venues.NameExistsAsync(input.Name!, id)) return Error.Conflict(NameTaken);
++
++        var tooBig = (await shows.ListByVenueAsync(id)).Any(s => s.TicketTiers.Sum(t => t.Quota) > input.Capacity);
++        if (tooBig) return Error.Invalid("capacity", "The capacity is lower than the quotas of the shows of the venue.");
++
++        Apply(venue, input);
++        if (await CommitAsync(NameTaken) is { } error) return error;
++        return venue.ToDto();
++    }
++
++    public async Task<Result<Unit>> RemoveAsync(Guid id)
++    {
++        if (await venues.GetAsync(id) is not { } venue) return Error.NotFound("Venue not found.");
++        if (await venues.HasShowsAsync(id)) return Error.Conflict("The venue still has shows.");
++
++        venues.Remove(venue);
++        if (await CommitAsync("The venue still has shows.") is { } error) return error;
++        return default(Unit);
++    }
++
++    private static void Apply(Venue venue, VenueInput input)
++    {
++        venue.Name = input.Name!;
++        venue.Address = new Address { Street = input.Address!.Street!, City = input.Address.City!, PostalCode = input.Address.PostalCode! };
++        venue.Capacity = input.Capacity!.Value;
++    }
++}
+diff --git a/src/Ticketing.Domain/Bookings.cs b/src/Ticketing.Domain/Bookings.cs
+new file mode 100644
+index 0000000..ecc270a
+--- /dev/null
++++ b/src/Ticketing.Domain/Bookings.cs
+@@ -0,0 +1,14 @@
++using Acme.Ticketing.Domain.Framework;
++
++namespace Acme.Ticketing.Domain;
++
++public class Booking : Entity
++{
++    public Guid ShowId { get; set; }
++    public string Tier { get; set; } = "";
++    public string CustomerEmail { get; set; } = "";
++    public int Quantity { get; set; }
++    public decimal TotalPrice { get; set; }
++}
++
++public interface IBookingRepository : IRepository<Booking>;
+diff --git a/src/Ticketing.Domain/Framework/Entity.cs b/src/Ticketing.Domain/Framework/Entity.cs
+new file mode 100644
+index 0000000..09fba93
+--- /dev/null
++++ b/src/Ticketing.Domain/Framework/Entity.cs
+@@ -0,0 +1,6 @@
++namespace Acme.Ticketing.Domain.Framework;
++
++public abstract class Entity
++{
++    public Guid Id { get; protected set; } = Guid.NewGuid();
++}
+diff --git a/src/Ticketing.Domain/Framework/Repository.cs b/src/Ticketing.Domain/Framework/Repository.cs
+new file mode 100644
+index 0000000..1b64cc4
+--- /dev/null
++++ b/src/Ticketing.Domain/Framework/Repository.cs
+@@ -0,0 +1,21 @@
++namespace Acme.Ticketing.Domain.Framework;
++
++public sealed record PageQuery(int Page, int PageSize, string? OrderBy, bool Descending);
++
++public sealed record Page<T>(IReadOnlyList<T> Items, int TotalCount);
++
++public interface IRepository<T> where T : Entity
++{
++    Task<T?> GetAsync(Guid id);
++    Task<Page<T>> QueryAsync(PageQuery query);
++    void Add(T entity);
++    void Remove(T entity);
++}
++
++public interface IUnitOfWork
++{
++    /// <summary>Saves everything; throws <see cref="ConflictException"/> on a unique/foreign key/concurrency violation.</summary>
++    Task CommitAsync();
++}
++
++public sealed class ConflictException(string message, Exception? inner = null) : Exception(message, inner);
+diff --git a/src/Ticketing.Domain/Shows.cs b/src/Ticketing.Domain/Shows.cs
+new file mode 100644
+index 0000000..5dee43b
+--- /dev/null
++++ b/src/Ticketing.Domain/Shows.cs
+@@ -0,0 +1,37 @@
++using Acme.Ticketing.Domain.Framework;
++
++namespace Acme.Ticketing.Domain;
++
++public enum ShowStatus { Draft = 0, OnSale = 1, Cancelled = 2 }
++
++public class Show : Entity
++{
++    public string Title { get; set; } = "";
++    public DateTime StartsAt { get; set; }
++    public ShowStatus Status { get; set; }
++    public Guid VenueId { get; set; }
++    public Venue? Venue { get; set; }
++    public List<TicketTier> TicketTiers { get; set; } = [];
++
++    public bool IsSoldOut => TicketTiers.Count > 0 && TicketTiers.All(t => t.Sold >= t.Quota);
++}
++
++public class TicketTier : Entity
++{
++    public Guid ShowId { get; set; }
++    public string Name { get; set; } = "";
++    public decimal Price { get; set; }
++    public int Quota { get; set; }
++    public int Sold { get; set; }
++
++    public int Remaining => Quota - Sold;
++}
++
++public interface IShowRepository : IRepository<Show>
++{
++    /// <summary>Tiers added to a tracked show must be registered explicitly.</summary>
++    void AddTier(TicketTier tier);
++    void RemoveTier(TicketTier tier);
++    Task<bool> HasBookingsAsync(Guid showId);
++    Task<IReadOnlyList<Show>> ListByVenueAsync(Guid venueId);
++}
+diff --git a/src/Ticketing.Domain/Venues.cs b/src/Ticketing.Domain/Venues.cs
+new file mode 100644
+index 0000000..8fed623
+--- /dev/null
++++ b/src/Ticketing.Domain/Venues.cs
+@@ -0,0 +1,25 @@
++using Acme.Ticketing.Domain.Framework;
++
++namespace Acme.Ticketing.Domain;
++
++public record Address
++{
++    public string Street { get; init; } = "";
++    public string City { get; init; } = "";
++    public string PostalCode { get; init; } = "";
++}
++
++public class Venue : Entity
++{
++    public string Name { get; set; } = "";
++    public Address Address { get; set; } = new();
++    public int Capacity { get; set; }
++    public List<Show> Shows { get; set; } = [];
++}
++
++public interface IVenueRepository : IRepository<Venue>
++{
++    Task<Venue?> GetWithShowsAsync(Guid id);
++    Task<bool> NameExistsAsync(string name, Guid? exceptId);
++    Task<bool> HasShowsAsync(Guid id);
++}
+diff --git a/src/Ticketing.Infrastructure/DependencyInjection.cs b/src/Ticketing.Infrastructure/DependencyInjection.cs
+new file mode 100644
+index 0000000..7d32358
+--- /dev/null
++++ b/src/Ticketing.Infrastructure/DependencyInjection.cs
+@@ -0,0 +1,27 @@
++using Acme.Ticketing.Domain.Framework;
++using Acme.Ticketing.Domain;
++using Microsoft.EntityFrameworkCore;
++using Microsoft.Extensions.DependencyInjection;
++
++namespace Acme.Ticketing.Infrastructure;
++
++public static class DependencyInjection
++{
++    public static IServiceCollection AddTicketingInfrastructure(
++        this IServiceCollection services, Action<IServiceProvider, DbContextOptionsBuilder> configureDatabase)
++    {
++        services.AddDbContext<TicketingDbContext>(configureDatabase);
++        services.AddScoped<IVenueRepository, VenueRepository>();
++        services.AddScoped<IShowRepository, ShowRepository>();
++        services.AddScoped<IBookingRepository, BookingRepository>();
++        services.AddScoped<IUnitOfWork, UnitOfWork>();
++        return services;
++    }
++
++    /// <summary>Creates the schema if it does not exist.</summary>
++    public static async Task EnsureTicketingDatabaseAsync(this IServiceProvider services)
++    {
++        await using var scope = services.CreateAsyncScope();
++        await scope.ServiceProvider.GetRequiredService<TicketingDbContext>().Database.EnsureCreatedAsync();
++    }
++}
+diff --git a/src/Ticketing.Infrastructure/Framework/EfRepository.cs b/src/Ticketing.Infrastructure/Framework/EfRepository.cs
+new file mode 100644
+index 0000000..159abf5
+--- /dev/null
++++ b/src/Ticketing.Infrastructure/Framework/EfRepository.cs
+@@ -0,0 +1,44 @@
++using System.Linq.Expressions;
++using Acme.Ticketing.Application.Framework;
++using Acme.Ticketing.Domain.Framework;
++using Microsoft.EntityFrameworkCore;
++
++namespace Acme.Ticketing.Infrastructure.Framework;
++
++public abstract class EfRepository<T>(TicketingDbContext db) : IRepository<T> where T : Entity
++{
++    protected TicketingDbContext Db => db;
++
++    /// <summary>The base query, with the includes of the aggregate.</summary>
++    protected virtual IQueryable<T> Query() => db.Set<T>();
++
++    public Task<T?> GetAsync(Guid id) => Query().FirstOrDefaultAsync(e => e.Id == id);
++
++    public void Add(T entity) => db.Set<T>().Add(entity);
++
++    public void Remove(T entity) => db.Set<T>().Remove(entity);
++
++    public async Task<Page<T>> QueryAsync(PageQuery query)
++    {
++        var source = Query();
++        var total = await source.CountAsync();
++        var property = Paging.OrderableProperties(typeof(T)).First(p => p.Name == (query.OrderBy ?? nameof(Entity.Id)));
++        var skip = (query.Page - 1) * query.PageSize;
++
++        // SQLite cannot order by a decimal: sort those in memory.
++        if (property.PropertyType == typeof(decimal))
++        {
++            var all = await source.ToListAsync();
++            Func<T, decimal> key = e => (decimal)property.GetValue(e)!;
++            var sorted = (query.Descending ? all.OrderByDescending(key) : all.OrderBy(key)).ThenBy(e => e.Id);
++            return new Page<T>(sorted.Skip(skip).Take(query.PageSize).ToList(), total);
++        }
++
++        var parameter = Expression.Parameter(typeof(T), "e");
++        var selector = Expression.Lambda(Expression.Property(parameter, property), parameter);
++        var call = Expression.Call(typeof(Queryable), query.Descending ? nameof(Queryable.OrderByDescending) : nameof(Queryable.OrderBy),
++            [typeof(T), property.PropertyType], source.Expression, Expression.Quote(selector));
++        var ordered = (IOrderedQueryable<T>)source.Provider.CreateQuery<T>(call);
++        return new Page<T>(await ordered.ThenBy(e => e.Id).Skip(skip).Take(query.PageSize).ToListAsync(), total);
++    }
++}
+diff --git a/src/Ticketing.Infrastructure/Repositories.cs b/src/Ticketing.Infrastructure/Repositories.cs
+new file mode 100644
+index 0000000..630536d
+--- /dev/null
++++ b/src/Ticketing.Infrastructure/Repositories.cs
+@@ -0,0 +1,53 @@
++using Acme.Ticketing.Domain;
++using Acme.Ticketing.Domain.Framework;
++using Acme.Ticketing.Infrastructure.Framework;
++using Microsoft.Data.Sqlite;
++using Microsoft.EntityFrameworkCore;
++
++namespace Acme.Ticketing.Infrastructure;
++
++public sealed class VenueRepository(TicketingDbContext db) : EfRepository<Venue>(db), IVenueRepository
++{
++    public Task<Venue?> GetWithShowsAsync(Guid id) =>
++        Db.Venues.Include(v => v.Shows).ThenInclude(s => s.TicketTiers).FirstOrDefaultAsync(v => v.Id == id);
++
++    public Task<bool> NameExistsAsync(string name, Guid? exceptId) =>
++        Db.Venues.AnyAsync(v => v.Name == name && v.Id != exceptId);
++
++    public Task<bool> HasShowsAsync(Guid id) => Db.Shows.AnyAsync(s => s.VenueId == id);
++}
++
++public sealed class ShowRepository(TicketingDbContext db) : EfRepository<Show>(db), IShowRepository
++{
++    protected override IQueryable<Show> Query() => Db.Shows.Include(s => s.TicketTiers);
++
++    public void AddTier(TicketTier tier) => Db.TicketTiers.Add(tier);
++
++    public void RemoveTier(TicketTier tier) => Db.TicketTiers.Remove(tier);
++
++    public Task<bool> HasBookingsAsync(Guid showId) => Db.Bookings.AnyAsync(b => b.ShowId == showId);
++
++    public async Task<IReadOnlyList<Show>> ListByVenueAsync(Guid venueId) =>
++        await Query().Where(s => s.VenueId == venueId).ToListAsync();
++}
++
++public sealed class BookingRepository(TicketingDbContext db) : EfRepository<Booking>(db), IBookingRepository;
++
++public sealed class UnitOfWork(TicketingDbContext db) : IUnitOfWork
++{
++    public async Task CommitAsync()
++    {
++        try
++        {
++            await db.SaveChangesAsync();
++        }
++        catch (DbUpdateConcurrencyException e)
++        {
++            throw new ConflictException("The data was changed concurrently.", e);
++        }
++        catch (DbUpdateException e) when (e.InnerException is SqliteException { SqliteErrorCode: 19 })
++        {
++            throw new ConflictException("A unique or foreign key constraint is violated.", e);
++        }
++    }
++}
+diff --git a/src/Ticketing.Infrastructure/Ticketing.Infrastructure.csproj b/src/Ticketing.Infrastructure/Ticketing.Infrastructure.csproj
+index e4df804..9943639 100755
+--- a/src/Ticketing.Infrastructure/Ticketing.Infrastructure.csproj
++++ b/src/Ticketing.Infrastructure/Ticketing.Infrastructure.csproj
+@@ -10,6 +10,8 @@
+ 
+   <ItemGroup>
+     <PackageReference Include="Microsoft.EntityFrameworkCore" Version="10.0.10" />
++    <PackageReference Include="Microsoft.EntityFrameworkCore.Sqlite" Version="10.0.10" />
++    <PackageReference Include="SQLitePCLRaw.lib.e_sqlite3" Version="3.53.3" />
+   </ItemGroup>
+ 
+   <ItemGroup>
+diff --git a/src/Ticketing.Infrastructure/TicketingDbContext.cs b/src/Ticketing.Infrastructure/TicketingDbContext.cs
+new file mode 100644
+index 0000000..36708bd
+--- /dev/null
++++ b/src/Ticketing.Infrastructure/TicketingDbContext.cs
+@@ -0,0 +1,45 @@
++using Acme.Ticketing.Domain;
++using Acme.Ticketing.Domain.Framework;
++using Microsoft.EntityFrameworkCore;
++
++namespace Acme.Ticketing.Infrastructure;
++
++public sealed class TicketingDbContext(DbContextOptions<TicketingDbContext> options) : DbContext(options)
++{
++    public DbSet<Venue> Venues => Set<Venue>();
++    public DbSet<Show> Shows => Set<Show>();
++    public DbSet<TicketTier> TicketTiers => Set<TicketTier>();
++    public DbSet<Booking> Bookings => Set<Booking>();
++
++    protected override void OnModelCreating(ModelBuilder model)
++    {
++        foreach (var entity in new[] { typeof(Venue), typeof(Show), typeof(TicketTier), typeof(Booking) })
++            model.Entity(entity).Property(nameof(Entity.Id)).ValueGeneratedNever();
++
++        model.Entity<Venue>(b =>
++        {
++            b.Property(v => v.Name).HasMaxLength(100);
++            b.HasIndex(v => v.Name).IsUnique();
++            b.ComplexProperty(v => v.Address, a => a.ToJson());
++            b.HasMany(v => v.Shows).WithOne(s => s.Venue).HasForeignKey(s => s.VenueId).OnDelete(DeleteBehavior.Restrict);
++        });
++
++        model.Entity<Show>(b =>
++        {
++            b.Property(s => s.Title).HasMaxLength(200);
++            b.Property(s => s.StartsAt).HasConversion(v => v, v => DateTime.SpecifyKind(v, DateTimeKind.Utc));
++            b.HasMany(s => s.TicketTiers).WithOne().HasForeignKey(t => t.ShowId).OnDelete(DeleteBehavior.Cascade);
++        });
++
++        model.Entity<TicketTier>(b =>
++        {
++            b.Property(t => t.Name).HasMaxLength(50);
++            b.Property(t => t.Sold).IsConcurrencyToken();
++        });
++
++        model.Entity<Booking>(b =>
++        {
++            b.HasOne<Show>().WithMany().HasForeignKey(x => x.ShowId).OnDelete(DeleteBehavior.Restrict);
++        });
++    }
++}
+diff --git a/src/Ticketing.Tests/BoxOfficeTests.cs b/src/Ticketing.Tests/BoxOfficeTests.cs
+new file mode 100644
+index 0000000..0d90f8c
+--- /dev/null
++++ b/src/Ticketing.Tests/BoxOfficeTests.cs
+@@ -0,0 +1,90 @@
++using System.Net;
++using Acme.Ticketing.Tests.Framework;
++
++namespace Acme.Ticketing.Tests;
++
++[TestClass]
++public class BoxOfficeTests : TestBase
++{
++    private async Task<string> OnSaleShow(int status = 1, DateTime? startsAt = null, int quota = 5)
++    {
++        var venue = await CreateVenue(Guid.NewGuid().ToString("N"));
++        var show = await CreateShow(venue, [Tier("Standard", 12.5m, quota)], status, startsAt);
++        return show["id"]!.GetValue<string>();
++    }
++
++    private async Task<HttpStatusCode> BookStatus(string showId, string tier = "Standard", int quantity = 1, string email = "a@b.c") =>
++        (await Post("/box-office/book", Book(showId, tier, quantity, email))).Status;
++
++    [TestMethod]
++    public async Task Booking_IncreasesSold_AndIsListed()
++    {
++        var show = await OnSaleShow();
++        var (status, booking) = await Post("/box-office/book", Book(show, quantity: 3, email: "x@y.z"));
++        Assert.AreEqual(HttpStatusCode.OK, status);
++        Assert.AreEqual(37.5m, booking!["totalPrice"]!.GetValue<decimal>());
++        Assert.AreEqual("Standard", booking["tier"]!.GetValue<string>());
++        Assert.AreEqual(show, booking["showId"]!.GetValue<string>());
++
++        Assert.AreEqual(3, (await Get($"/shows/{show}")).Body!["ticketTiers"]![0]!["sold"]!.GetValue<int>());
++
++        var (_, got) = await Get($"/bookings/{booking["id"]}");
++        Assert.AreEqual("x@y.z", got!["customerEmail"]!.GetValue<string>());
++        var (_, page) = await Get("/bookings?orderBy=TotalPrice&descending=true");
++        Assert.AreEqual(1, page!["totalCount"]!.GetValue<int>());
++        Assert.AreEqual(HttpStatusCode.NotFound, (await Get($"/bookings/{Guid.NewGuid()}")).Status);
++        Assert.AreEqual(HttpStatusCode.MethodNotAllowed, (await Delete($"/bookings/{booking["id"]}")).Status);
++    }
++
++    [TestMethod]
++    public async Task Quantity_And_Email_AreValidatedFirst()
++    {
++        Assert.AreEqual(HttpStatusCode.BadRequest, await BookStatus(Guid.NewGuid().ToString(), quantity: 0));
++        Assert.AreEqual(HttpStatusCode.BadRequest, await BookStatus(Guid.NewGuid().ToString(), quantity: 11));
++        Assert.AreEqual(HttpStatusCode.BadRequest, await BookStatus(Guid.NewGuid().ToString(), email: "nope"));
++        Assert.AreEqual(HttpStatusCode.NotFound, await BookStatus(Guid.NewGuid().ToString()));
++        var show = await OnSaleShow(quota: 20);
++        Assert.AreEqual(HttpStatusCode.OK, await BookStatus(show, quantity: 10));
++    }
++
++    [TestMethod]
++    public async Task ShowMustBeOnSale_AndInTheFuture()
++    {
++        Assert.AreEqual(HttpStatusCode.Conflict, await BookStatus(await OnSaleShow(status: 0)));
++        Assert.AreEqual(HttpStatusCode.Conflict, await BookStatus(await OnSaleShow(status: 2)));
++        Assert.AreEqual(HttpStatusCode.Conflict, await BookStatus(await OnSaleShow(startsAt: DateTime.UtcNow.AddDays(-1))));
++    }
++
++    [TestMethod]
++    public async Task UnknownTier_Is400_BeforeStockCheck()
++    {
++        var show = await OnSaleShow();
++        var (status, body) = await Post("/box-office/book", Book(show, "VIP", quantity: 10));
++        Assert.AreEqual(HttpStatusCode.BadRequest, status);
++        CollectionAssert.Contains(ErrorKeys(body).ToList(), "tier");
++    }
++
++    [TestMethod]
++    public async Task NotEnoughTickets_Is409_AndNothingChanges()
++    {
++        var show = await OnSaleShow(quota: 5);
++        Assert.AreEqual(HttpStatusCode.OK, await BookStatus(show, quantity: 4));
++        Assert.AreEqual(HttpStatusCode.Conflict, await BookStatus(show, quantity: 2));
++        Assert.AreEqual(4, (await Get($"/shows/{show}")).Body!["ticketTiers"]![0]!["sold"]!.GetValue<int>());
++        Assert.AreEqual(1, (await Get("/bookings")).Body!["totalCount"]!.GetValue<int>());
++        Assert.AreEqual(HttpStatusCode.OK, await BookStatus(show, quantity: 1));
++        Assert.AreEqual(HttpStatusCode.Conflict, await BookStatus(show, quantity: 1));
++    }
++
++    [TestMethod]
++    public async Task QuotaCannotGoUnderSold()
++    {
++        var show = await OnSaleShow(quota: 5);
++        await BookStatus(show, quantity: 3);
++        var current = (await Get($"/shows/{show}")).Body!;
++        var tierId = current["ticketTiers"]![0]!["id"]!.GetValue<string>();
++        var venue = current["venueId"]!.GetValue<string>();
++        Assert.AreEqual(HttpStatusCode.BadRequest, (await Put($"/shows/{show}", ShowBody(venue, [Tier("Standard", 1, 2, tierId)]))).Status);
++        Assert.AreEqual(HttpStatusCode.OK, (await Put($"/shows/{show}", ShowBody(venue, [Tier("Standard", 1, 3, tierId)]))).Status);
++    }
++}
+diff --git a/src/Ticketing.Tests/Framework/TestBase.cs b/src/Ticketing.Tests/Framework/TestBase.cs
+new file mode 100644
+index 0000000..e9b8246
+--- /dev/null
++++ b/src/Ticketing.Tests/Framework/TestBase.cs
+@@ -0,0 +1,102 @@
++using System.IdentityModel.Tokens.Jwt;
++using System.Net;
++using System.Net.Http.Headers;
++using System.Net.Http.Json;
++using System.Security.Claims;
++using System.Text.Json;
++using System.Text.Json.Nodes;
++using Acme.Ticketing.Api.Framework;
++using Microsoft.AspNetCore.Mvc.Testing;
++using Microsoft.Data.Sqlite;
++using Microsoft.IdentityModel.Tokens;
++
++namespace Acme.Ticketing.Tests.Framework;
++
++/// <summary>A real host per test, with a throw-away SQLite database and a signed token.</summary>
++[TestClass]
++public abstract class TestBase
++{
++    protected const string JwtKey = "test-signing-key";
++    private string _db = "";
++    private WebApplicationFactory<Program> _factory = null!;
++    protected HttpClient Client { get; private set; } = null!;
++
++    [TestInitialize]
++    public void Start()
++    {
++        _db = Path.Combine(Path.GetTempPath(), $"ticketing-{Guid.NewGuid():N}.db");
++        _factory = new WebApplicationFactory<Program>().WithWebHostBuilder(b =>
++        {
++            b.UseSetting("ConnectionStrings:Ticketing", $"Data Source={_db}");
++            b.UseSetting("Jwt:Key", JwtKey);
++        });
++        Client = _factory.CreateClient();
++        Authenticate("*");
++    }
++
++    [TestCleanup]
++    public void Stop()
++    {
++        Client.Dispose();
++        _factory.Dispose();
++        SqliteConnection.ClearAllPools();
++        File.Delete(_db);
++    }
++
++    public static string Token(string[] rights, string key = JwtKey, DateTime? expires = null)
++    {
++        var claims = rights.Select(r => new Claim("right", r)).Append(new Claim("sub", "tester"));
++        var credentials = new SigningCredentials(new SymmetricSecurityKey(Security.KeyBytes(key)), SecurityAlgorithms.HmacSha256);
++        var now = DateTime.UtcNow;
++        var token = new JwtSecurityToken(claims: claims, notBefore: expires is null ? null : now.AddHours(-2),
++            expires: expires ?? now.AddHours(1), signingCredentials: credentials);
++        return new JwtSecurityTokenHandler().WriteToken(token);
++    }
++
++    protected void Authenticate(params string[] rights) =>
++        Client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", Token(rights));
++
++    protected void Anonymous() => Client.DefaultRequestHeaders.Authorization = null;
++
++    protected async Task<(HttpStatusCode Status, JsonNode? Body)> Send(HttpMethod method, string url, object? body = null)
++    {
++        var request = new HttpRequestMessage(method, url);
++        if (body is not null) request.Content = JsonContent.Create(body);
++        var response = await Client.SendAsync(request);
++        var text = await response.Content.ReadAsStringAsync();
++        return (response.StatusCode, string.IsNullOrEmpty(text) ? null : JsonNode.Parse(text));
++    }
++
++    protected Task<(HttpStatusCode Status, JsonNode? Body)> Get(string url) => Send(HttpMethod.Get, url);
++    protected Task<(HttpStatusCode Status, JsonNode? Body)> Post(string url, object body) => Send(HttpMethod.Post, url, body);
++    protected Task<(HttpStatusCode Status, JsonNode? Body)> Put(string url, object body) => Send(HttpMethod.Put, url, body);
++    protected Task<(HttpStatusCode Status, JsonNode? Body)> Delete(string url) => Send(HttpMethod.Delete, url);
++
++    protected static object VenueBody(string name = "Arena", int capacity = 100) =>
++        new { name, address = new { street = "1 Main St", city = "Paris", postalCode = "75001" }, capacity };
++
++    protected static object ShowBody(string venueId, object[]? tiers = null, int status = 1, DateTime? startsAt = null, string title = "Concert") =>
++        new { title, startsAt = startsAt ?? DateTime.UtcNow.AddDays(10), status, venueId, ticketTiers = tiers ?? [] };
++
++    protected static object Tier(string name, decimal price, int quota, string? id = null) => new { id, name, price, quota };
++
++    protected async Task<string> CreateVenue(string name = "Arena", int capacity = 100)
++    {
++        var (status, body) = await Post("/venues", VenueBody(name, capacity));
++        Assert.AreEqual(HttpStatusCode.Created, status);
++        return body!["id"]!.GetValue<string>();
++    }
++
++    protected async Task<JsonNode> CreateShow(string venueId, object[]? tiers = null, int status = 1, DateTime? startsAt = null)
++    {
++        var (code, body) = await Post("/shows", ShowBody(venueId, tiers, status, startsAt));
++        Assert.AreEqual(HttpStatusCode.Created, code, body?.ToJsonString());
++        return body!;
++    }
++
++    protected static JsonNode Book(string showId, string tier = "Standard", int quantity = 1, string email = "a@b.c") =>
++        JsonNode.Parse(JsonSerializer.Serialize(new { showId, tier, customerEmail = email, quantity }))!;
++
++    protected static HashSet<string> ErrorKeys(JsonNode? body) =>
++        body!["errors"]!.AsObject().Select(p => p.Key).ToHashSet();
++}
+diff --git a/src/Ticketing.Tests/SecurityTests.cs b/src/Ticketing.Tests/SecurityTests.cs
+new file mode 100644
+index 0000000..0b5e1c6
+--- /dev/null
++++ b/src/Ticketing.Tests/SecurityTests.cs
+@@ -0,0 +1,61 @@
++using System.Net;
++using System.Net.Http.Headers;
++using Acme.Ticketing.Tests.Framework;
++
++namespace Acme.Ticketing.Tests;
++
++[TestClass]
++public class SecurityTests : TestBase
++{
++    [TestMethod]
++    public async Task NoToken_Is401_OnEveryKindOfEndpoint()
++    {
++        Anonymous();
++        Assert.AreEqual(HttpStatusCode.Unauthorized, (await Get("/venues")).Status);
++        Assert.AreEqual(HttpStatusCode.Unauthorized, (await Post("/venues", VenueBody())).Status);
++        Assert.AreEqual(HttpStatusCode.Unauthorized, (await Post("/box-office/book", new { })).Status);
++        Assert.AreEqual(HttpStatusCode.Unauthorized, (await Get("/bookings")).Status);
++    }
++
++    [TestMethod]
++    public async Task BadSignature_And_ExpiredToken_Are401()
++    {
++        Client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", Token(["*"], key: "another-key"));
++        Assert.AreEqual(HttpStatusCode.Unauthorized, (await Get("/venues")).Status);
++        Client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", Token(["*"], expires: DateTime.UtcNow.AddHours(-1)));
++        Assert.AreEqual(HttpStatusCode.Unauthorized, (await Get("/venues")).Status);
++    }
++
++    [TestMethod]
++    public async Task AuthenticatedWithoutRights_CanRead_ButNotWrite()
++    {
++        Authenticate();
++        Assert.AreEqual(HttpStatusCode.OK, (await Get("/venues")).Status);
++        Assert.AreEqual(HttpStatusCode.OK, (await Get("/shows")).Status);
++        Assert.AreEqual(HttpStatusCode.Forbidden, (await Post("/venues", VenueBody())).Status);
++        Assert.AreEqual(HttpStatusCode.Forbidden, (await Put($"/venues/{Guid.NewGuid()}", VenueBody())).Status);
++        Assert.AreEqual(HttpStatusCode.Forbidden, (await Delete($"/venues/{Guid.NewGuid()}")).Status);
++        Assert.AreEqual(HttpStatusCode.Forbidden, (await Post("/shows", ShowBody(Guid.NewGuid().ToString()))).Status);
++        Assert.AreEqual(HttpStatusCode.Forbidden, (await Delete($"/shows/{Guid.NewGuid()}")).Status);
++        Assert.AreEqual(HttpStatusCode.Forbidden, (await Get("/bookings")).Status);
++    }
++
++    [TestMethod]
++    public async Task EachRight_GrantsItsOwnArea()
++    {
++        Authenticate("ManageVenues");
++        Assert.AreEqual(HttpStatusCode.Created, (await Post("/venues", VenueBody())).Status);
++        Assert.AreEqual(HttpStatusCode.Forbidden, (await Post("/shows", ShowBody(Guid.NewGuid().ToString()))).Status);
++        Authenticate("ManageShows");
++        Assert.AreEqual(HttpStatusCode.Forbidden, (await Post("/venues", VenueBody("Other"))).Status);
++        Assert.AreEqual(HttpStatusCode.BadRequest, (await Post("/shows", ShowBody(Guid.NewGuid().ToString()))).Status);
++        Assert.AreEqual(HttpStatusCode.OK, (await Get("/bookings")).Status);
++    }
++
++    [TestMethod]
++    public async Task Booking_OnlyRequiresAuthentication()
++    {
++        Authenticate();
++        Assert.AreEqual(HttpStatusCode.NotFound, (await Post("/box-office/book", Book(Guid.NewGuid().ToString()))).Status);
++    }
++}
+diff --git a/src/Ticketing.Tests/ShowTests.cs b/src/Ticketing.Tests/ShowTests.cs
+new file mode 100644
+index 0000000..bdfaf63
+--- /dev/null
++++ b/src/Ticketing.Tests/ShowTests.cs
+@@ -0,0 +1,129 @@
++using System.Net;
++using Acme.Ticketing.Tests.Framework;
++
++namespace Acme.Ticketing.Tests;
++
++[TestClass]
++public class ShowTests : TestBase
++{
++    [TestMethod]
++    public async Task RoundTrip()
++    {
++        var venue = await CreateVenue();
++        var (status, created) = await Post("/shows", ShowBody(venue, [Tier("Standard", 12.5m, 40)], status: 0));
++        Assert.AreEqual(HttpStatusCode.Created, status);
++        var id = created!["id"]!.GetValue<string>();
++        Assert.AreEqual(0, created["status"]!.GetValue<int>());
++        Assert.AreEqual(venue, created["venueId"]!.GetValue<string>());
++        Assert.AreEqual(12.5m, created["ticketTiers"]![0]!["price"]!.GetValue<decimal>());
++        Assert.AreEqual(0, created["ticketTiers"]![0]!["sold"]!.GetValue<int>());
++
++        var (_, got) = await Get($"/shows/{id}");
++        Assert.IsFalse(got!["isSoldOut"]!.GetValue<bool>());
++        Assert.AreEqual("Concert", got["title"]!.GetValue<string>());
++
++        var (putStatus, updated) = await Put($"/shows/{id}", ShowBody(venue, [], status: 2, title: "Renamed"));
++        Assert.AreEqual(HttpStatusCode.OK, putStatus);
++        Assert.AreEqual(2, updated!["status"]!.GetValue<int>());
++        Assert.AreEqual(0, updated["ticketTiers"]!.AsArray().Count);
++
++        var (_, page) = await Get("/shows?orderBy=Title");
++        Assert.AreEqual(1, page!["totalCount"]!.GetValue<int>());
++        Assert.AreEqual(HttpStatusCode.NoContent, (await Delete($"/shows/{id}")).Status);
++        Assert.AreEqual(HttpStatusCode.NotFound, (await Get($"/shows/{id}")).Status);
++        Assert.AreEqual(HttpStatusCode.NotFound, (await Put($"/shows/{id}", ShowBody(venue))).Status);
++    }
++
++    [TestMethod]
++    public async Task TiersAreSynchronizedByTheWholeList()
++    {
++        var venue = await CreateVenue(capacity: 100);
++        var show = await CreateShow(venue, [Tier("A", 10, 10), Tier("B", 20, 20), Tier("C", 30, 30)]);
++        var id = show["id"]!.GetValue<string>();
++        var tiers = show["ticketTiers"]!.AsArray();
++        string TierId(string name) => tiers.First(t => t!["name"]!.GetValue<string>() == name)!["id"]!.GetValue<string>();
++
++        var (status, updated) = await Put($"/shows/{id}", ShowBody(venue, [Tier("A", 11, 15, TierId("A")), Tier("D", 40, 40)]));
++        Assert.AreEqual(HttpStatusCode.OK, status, updated?.ToJsonString());
++        var result = updated!["ticketTiers"]!.AsArray();
++        Assert.AreEqual(2, result.Count);
++        var a = result.First(t => t!["name"]!.GetValue<string>() == "A")!;
++        Assert.AreEqual(TierId("A"), a["id"]!.GetValue<string>());
++        Assert.AreEqual(11m, a["price"]!.GetValue<decimal>());
++        Assert.AreEqual(15, a["quota"]!.GetValue<int>());
++        Assert.IsTrue(result.Any(t => t!["name"]!.GetValue<string>() == "D"));
++
++        var (_, got) = await Get($"/shows/{id}");
++        Assert.AreEqual(2, got!["ticketTiers"]!.AsArray().Count);
++    }
++
++    [TestMethod]
++    public async Task SoldInTheBodyIsIgnored()
++    {
++        var venue = await CreateVenue();
++        var (_, show) = await Post("/shows", ShowBody(venue, [new { name = "A", price = 1, quota = 5, sold = 5 }]));
++        Assert.AreEqual(0, show!["ticketTiers"]![0]!["sold"]!.GetValue<int>());
++    }
++
++    [TestMethod]
++    public async Task Invalid_Bodies()
++    {
++        var venue = await CreateVenue(capacity: 10);
++
++        var (s1, b1) = await Post("/shows", ShowBody(venue, [Tier("A", 1, 6), Tier("B", 1, 5)]));
++        Assert.AreEqual(HttpStatusCode.BadRequest, s1);
++        CollectionAssert.Contains(ErrorKeys(b1).ToList(), "ticketTiers");
++
++        var (s2, b2) = await Post("/shows", ShowBody(Guid.NewGuid().ToString()));
++        Assert.AreEqual(HttpStatusCode.BadRequest, s2);
++        CollectionAssert.Contains(ErrorKeys(b2).ToList(), "venueId");
++
++        var (s3, b3) = await Post("/shows", ShowBody(venue, status: 7));
++        Assert.AreEqual(HttpStatusCode.BadRequest, s3);
++        CollectionAssert.Contains(ErrorKeys(b3).ToList(), "status");
++
++        Assert.AreEqual(HttpStatusCode.BadRequest, (await Post("/shows", ShowBody(venue, status: 1) is var _ ? new { title = "x", startsAt = DateTime.UtcNow, status = "Bogus", venueId = venue } : null!)).Status);
++
++        var (s4, b4) = await Post("/shows", new { title = "", venueId = venue, ticketTiers = new[] { new { name = "", price = -1, quota = -1 } } });
++        Assert.AreEqual(HttpStatusCode.BadRequest, s4);
++        var keys = ErrorKeys(b4);
++        foreach (var key in new[] { "title", "startsAt", "ticketTiers[0].name", "ticketTiers[0].price", "ticketTiers[0].quota" })
++            CollectionAssert.Contains(keys.ToList(), key);
++
++        var show = await CreateShow(venue, [Tier("A", 1, 1)]);
++        var (s5, b5) = await Put($"/shows/{show["id"]}", ShowBody(venue, [Tier("X", 1, 1, Guid.NewGuid().ToString())]));
++        Assert.AreEqual(HttpStatusCode.BadRequest, s5);
++        CollectionAssert.Contains(ErrorKeys(b5).ToList(), "ticketTiers[0].id");
++
++        var (s6, _) = await Put($"/shows/{show["id"]}", ShowBody(venue, [Tier("A", 1, 11)]));
++        Assert.AreEqual(HttpStatusCode.BadRequest, s6);
++    }
++
++    [TestMethod]
++    public async Task IsSoldOut_WhenEveryTierIsSoldOut()
++    {
++        var venue = await CreateVenue();
++        var none = await CreateShow(venue);
++        Assert.IsFalse((await Get($"/shows/{none["id"]}")).Body!["isSoldOut"]!.GetValue<bool>());
++
++        var show = await CreateShow(venue, [Tier("A", 5, 1), Tier("B", 5, 1)]);
++        var id = show["id"]!.GetValue<string>();
++        await Post("/box-office/book", Book(id, "A"));
++        Assert.IsFalse((await Get($"/shows/{id}")).Body!["isSoldOut"]!.GetValue<bool>());
++        await Post("/box-office/book", Book(id, "B"));
++        Assert.IsTrue((await Get($"/shows/{id}")).Body!["isSoldOut"]!.GetValue<bool>());
++    }
++
++    [TestMethod]
++    public async Task ShowWithBookings_CannotBeDeleted_ShowWithoutDeletesItsTiers()
++    {
++        var venue = await CreateVenue();
++        var booked = await CreateShow(venue, [Tier("Standard", 5, 5)]);
++        Assert.AreEqual(HttpStatusCode.OK, (await Post("/box-office/book", Book(booked["id"]!.GetValue<string>()))).Status);
++        Assert.AreEqual(HttpStatusCode.Conflict, (await Delete($"/shows/{booked["id"]}")).Status);
++
++        var free = await CreateShow(venue, [Tier("Standard", 5, 5)]);
++        Assert.AreEqual(HttpStatusCode.NoContent, (await Delete($"/shows/{free["id"]}")).Status);
++        Assert.AreEqual(1, (await Get("/shows")).Body!["totalCount"]!.GetValue<int>());
++    }
++}
+diff --git a/src/Ticketing.Tests/VenueTests.cs b/src/Ticketing.Tests/VenueTests.cs
+new file mode 100644
+index 0000000..bcb180b
+--- /dev/null
++++ b/src/Ticketing.Tests/VenueTests.cs
+@@ -0,0 +1,98 @@
++using System.Net;
++using Acme.Ticketing.Tests.Framework;
++
++namespace Acme.Ticketing.Tests;
++
++[TestClass]
++public class VenueTests : TestBase
++{
++    [TestMethod]
++    public async Task RoundTrip()
++    {
++        var (status, created) = await Post("/venues", VenueBody("Arena", 500));
++        Assert.AreEqual(HttpStatusCode.Created, status);
++        var id = created!["id"]!.GetValue<string>();
++        Assert.AreEqual("Paris", created["address"]!["city"]!.GetValue<string>());
++
++        var (_, got) = await Get($"/venues/{id}");
++        Assert.AreEqual(500, got!["capacity"]!.GetValue<int>());
++        Assert.AreEqual(0, got["shows"]!.AsArray().Count);
++
++        var (putStatus, updated) = await Put($"/venues/{id}", VenueBody("Arena 2", 600));
++        Assert.AreEqual(HttpStatusCode.OK, putStatus);
++        Assert.AreEqual("Arena 2", updated!["name"]!.GetValue<string>());
++
++        var (_, page) = await Get("/venues");
++        Assert.AreEqual(1, page!["totalCount"]!.GetValue<int>());
++        Assert.AreEqual(1, page["pageNumber"]!.GetValue<int>());
++        Assert.AreEqual(50, page["pageSize"]!.GetValue<int>());
++        Assert.IsNull(page["items"]![0]!["shows"]);
++
++        Assert.AreEqual(HttpStatusCode.NoContent, (await Delete($"/venues/{id}")).Status);
++        Assert.AreEqual(HttpStatusCode.NotFound, (await Get($"/venues/{id}")).Status);
++        Assert.AreEqual(HttpStatusCode.NotFound, (await Put($"/venues/{id}", VenueBody())).Status);
++        Assert.AreEqual(HttpStatusCode.NotFound, (await Delete($"/venues/{id}")).Status);
++    }
++
++    [TestMethod]
++    public async Task InvalidBody_IsValidationProblemWithPaths()
++    {
++        var (status, body) = await Post("/venues", new { name = new string('x', 101), address = new { street = "", city = new string('c', 51), postalCode = "12345678901" } });
++        Assert.AreEqual(HttpStatusCode.BadRequest, status);
++        CollectionAssert.IsSubsetOf(new[] { "name", "address.street", "address.city", "address.postalCode", "capacity" }, ErrorKeys(body).ToList());
++
++        Assert.AreEqual(HttpStatusCode.BadRequest, (await Post("/venues", new { name = "x", capacity = 1 })).Status);
++        Assert.AreEqual(HttpStatusCode.BadRequest, (await Post("/venues", new { name = "x", capacity = "many" })).Status);
++    }
++
++    [TestMethod]
++    public async Task NameMustBeUnique()
++    {
++        await CreateVenue("Arena");
++        var other = await CreateVenue("Hall");
++        Assert.AreEqual(HttpStatusCode.Conflict, (await Post("/venues", VenueBody("Arena"))).Status);
++        Assert.AreEqual(HttpStatusCode.Conflict, (await Put($"/venues/{other}", VenueBody("Arena"))).Status);
++        Assert.AreEqual(HttpStatusCode.OK, (await Put($"/venues/{other}", VenueBody("Hall", 7))).Status);
++    }
++
++    [TestMethod]
++    public async Task VenueWithShows_CannotBeDeleted_AndListsShows()
++    {
++        var venue = await CreateVenue();
++        var show = await CreateShow(venue);
++        Assert.AreEqual(HttpStatusCode.Conflict, (await Delete($"/venues/{venue}")).Status);
++
++        var (_, got) = await Get($"/venues/{venue}");
++        Assert.AreEqual(show["id"]!.GetValue<string>(), got!["shows"]![0]!["id"]!.GetValue<string>());
++
++        await Delete($"/shows/{show["id"]}");
++        Assert.AreEqual(HttpStatusCode.NoContent, (await Delete($"/venues/{venue}")).Status);
++    }
++
++    [TestMethod]
++    public async Task CapacityCannotGoBelowTheQuotasOfItsShows()
++    {
++        var venue = await CreateVenue(capacity: 100);
++        await CreateShow(venue, [Tier("Standard", 10, 80)]);
++        var (status, body) = await Put($"/venues/{venue}", VenueBody("Arena", 50));
++        Assert.AreEqual(HttpStatusCode.BadRequest, status);
++        CollectionAssert.Contains(ErrorKeys(body).ToList(), "capacity");
++    }
++
++    [TestMethod]
++    public async Task Paging_And_Ordering()
++    {
++        foreach (var (name, capacity) in new[] { ("B", 20), ("A", 30), ("C", 10) }) await CreateVenue(name, capacity);
++
++        var (_, byName) = await Get("/venues?orderBy=Name");
++        CollectionAssert.AreEqual(new[] { "A", "B", "C" }, byName!["items"]!.AsArray().Select(i => i!["name"]!.GetValue<string>()).ToArray());
++        var (_, desc) = await Get("/venues?orderBy=Capacity&descending=true&page=2&pageSize=1");
++        Assert.AreEqual("B", desc!["items"]![0]!["name"]!.GetValue<string>());
++        Assert.AreEqual(3, desc["totalCount"]!.GetValue<int>());
++        Assert.AreEqual(2, desc["pageNumber"]!.GetValue<int>());
++        Assert.AreEqual(1, desc["items"]!.AsArray().Count);
++
++        foreach (var bad in new[] { "page=0", "pageSize=0", "pageSize=201", "orderBy=Nope", "orderBy=Address", "page=abc", "descending=maybe" })
++            Assert.AreEqual(HttpStatusCode.BadRequest, (await Get($"/venues?{bad}")).Status, bad);
++    }
++}

@@ -1,0 +1,69 @@
+{
+  "case": "complex-evolve",
+  "variant": "hand",
+  "state": "start",
+  "model": "claude-sonnet-5-5",
+  "claudeCodeVersion": "2.1.327 (Claude Code)",
+  "startedAt": "2026-11-19T04:37:13Z",
+  "endedAt": "2026-11-19T04:39:10Z",
+  "claude": {
+    "exitCode": 0,
+    "subtype": "success",
+    "isError": false,
+    "turns": 13,
+    "durationMs": 116088,
+    "durationApiMs": 98216,
+    "costUsd": 0.46975570000000005,
+    "inputTokens": 24,
+    "cacheCreationInputTokens": 59832,
+    "cacheReadInputTokens": 569497,
+    "totalInputTokens": 629353,
+    "outputTokens": 17343,
+    "modelUsage": {
+      "claude-sonnet-5-5": {
+        "inputTokens": 24,
+        "outputTokens": 17343,
+        "cacheReadInputTokens": 569497,
+        "cacheCreationInputTokens": 59832,
+        "webSearchRequests": 0,
+        "costUSD": 0.46975570000000005,
+        "contextWindow": 1000000,
+        "maxOutputTokens": 128000,
+        "thinkingTokens": 1868,
+        "cacheCreationEphemeral5mInputTokens": 0,
+        "cacheCreationEphemeral1hInputTokens": 59832,
+        "canonicalModel": "claude-sonnet-5-5",
+        "provider": "firstParty",
+        "costBasis": "list"
+      }
+    }
+  },
+  "iterations": {
+    "builds": 1,
+    "failedBuilds": 0,
+    "tests": 2,
+    "failedTests": 1,
+    "generations": 0,
+    "failedGenerations": 0,
+    "firstBuildSucceeded": true,
+    "firstTestSucceeded": false,
+    "toolCalls": {
+      "Bash": 12
+    },
+    "harnessRefusals": 0
+  },
+  "written": {
+    "files": 12,
+    "addedLines": 537,
+    "removedLines": 3,
+    "generatedLines": 0
+  },
+  "judge": {
+    "kind": "acceptance",
+    "build": true,
+    "tests": true,
+    "acceptancePassed": 14,
+    "acceptanceTotal": 14
+  },
+  "run": 2
+}

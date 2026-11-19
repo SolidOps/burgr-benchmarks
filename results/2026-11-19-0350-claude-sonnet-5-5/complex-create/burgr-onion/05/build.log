@@ -1,0 +1,13 @@
+  Determining projects to restore...
+  All projects are up-to-date for restore.
+  Ticketing.Domain -> /work/src/Ticketing.Domain/bin/Debug/net10.0/Acme.Ticketing.Domain.dll
+  Ticketing.Application -> /work/src/Ticketing.Application/bin/Debug/net10.0/Acme.Ticketing.Application.dll
+  Ticketing.Infrastructure -> /work/src/Ticketing.Infrastructure/bin/Debug/net10.0/Acme.Ticketing.Infrastructure.dll
+  Ticketing.Api -> /work/src/Ticketing.Api/bin/Debug/net10.0/Acme.Ticketing.Api.dll
+  Ticketing.Tests -> /work/src/Ticketing.Tests/bin/Debug/net10.0/Acme.Ticketing.Tests.dll
+
+Build succeeded.
+    0 Warning(s)
+    0 Error(s)
+
+Time Elapsed 00:00:01.20
